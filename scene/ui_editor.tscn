@@ -101,8 +101,9 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="NavWorkspace" type="Label" parent="RootVBox/NavBar"]
+visible = false
 layout_mode = 2
-text = "workspace"
+text = ""
 
 [node name="MainSplit" type="HSplitContainer" parent="RootVBox"]
 layout_mode = 2

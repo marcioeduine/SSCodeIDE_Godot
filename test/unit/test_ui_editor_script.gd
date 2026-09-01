@@ -92,3 +92,26 @@ func test_file_kind_icons_and_colors() -> void:
 	assert_eq(FileKind.color_for_path("script.sh"), Color("#57e389"))
 	assert_eq(FileKind.color_for_path(".gitignore"), Color("#f05032"))
 	assert_eq(FileKind.label_for_path("main.gd"), "GDScript")
+
+
+func test_prompt_history_and_tab_switching() -> void:
+	var editor_script = load("res://scripts/ui_editor.gd").new()
+	assert_not_null(editor_script)
+	
+	# Prompt history test
+	assert_eq(editor_script._prompt_history.size(), 0)
+	editor_script._prompt_history.append("first prompt")
+	editor_script._prompt_history.append("second prompt")
+	assert_eq(editor_script._prompt_history.size(), 2)
+	assert_eq(editor_script._prompt_history[0], "first prompt")
+	assert_eq(editor_script._prompt_history[1], "second prompt")
+	
+	# Open files mock for tab switching
+	editor_script._open_files = [
+		{"path": "file1.gd", "title": "file1.gd"},
+		{"path": "file2.gd", "title": "file2.gd"},
+		{"path": "file3.gd", "title": "file3.gd"}
+	]
+	editor_script._active_index = 0
+	
+	editor_script.free()

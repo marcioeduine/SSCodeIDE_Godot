@@ -65,6 +65,9 @@ var _model_candidate_index: int = 0
 var _spinner_time: float = 0.0
 var _request_start_time: float = 0.0
 var _chat_history: Array[Dictionary] = []
+var _prompt_history: Array[String] = []
+var _prompt_history_idx: int = -1
+var _prompt_draft: String = ""
 const SPINNER_FRAMES: Array[String] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
 const CHAT_SLASH_COMMANDS: Array[Dictionary] = [
@@ -146,7 +149,8 @@ func _ready() -> void:
 	_nerd_font = FontFile.new()
 	_nerd_font.load_dynamic_font(ProjectSettings.globalize_path("res://fonts/FiraCodeNerdFont-Regular.ttf"))
 	_workspace_root = ProjectSettings.globalize_path("res://").get_base_dir().get_base_dir()
-	_nav_workspace.text = "SSCodeIDE  ·  %s" % _workspace_root.get_file()
+	_nav_workspace.text = ""
+	_nav_workspace.visible = false
 	_load_ai_config()
 	_apply_kitty_fish_theme()
 	_wire_signals()
@@ -187,6 +191,7 @@ func _wire_signals() -> void:
 	_code_edit.caret_changed.connect(_on_caret_changed)
 	_chat_input.text_submitted.connect(_on_chat_submitted)
 	_chat_input.text_changed.connect(_on_chat_input_text_changed)
+	_chat_input.gui_input.connect(_on_chat_input_gui_input)
 	_chat_send.pressed.connect(_on_chat_send_pressed)
 	_chat_tools_btn.pressed.connect(_show_tools_list)
 	_chat_clear_btn.pressed.connect(_on_clear_chat_pressed)
@@ -219,60 +224,174 @@ func _unhandled_input(event: InputEvent) -> void:
 	var ctrl: bool = key.ctrl_pressed
 	var shift: bool = key.shift_pressed
 	var alt: bool = key.alt_pressed
+
+	# Code completion (Ctrl+Space)
 	if ctrl and key.keycode == KEY_SPACE:
 		_update_code_completion()
 		_code_edit.request_code_completion(true)
 		get_viewport().set_input_as_handled()
-	elif key.keycode == KEY_ESCAPE and _ai_busy:
-		_cancel_ai_request()
+		return
+
+	# Escape handling
+	if key.keycode == KEY_ESCAPE:
+		if _find_row.visible:
+			_find_row.visible = false
+			_code_edit.grab_focus()
+		elif _chat_suggestions_popup.visible:
+			_chat_suggestions_popup.visible = false
+		elif _dialog_panel.visible:
+			_hide_overlay()
+		elif _ai_busy:
+			_cancel_ai_request()
+		else:
+			_code_edit.grab_focus()
 		get_viewport().set_input_as_handled()
-	elif key.keycode == KEY_F1:
+		return
+
+	# Help / Shortcuts (F1)
+	if key.keycode == KEY_F1:
 		_show_help()
 		get_viewport().set_input_as_handled()
-	elif ctrl and key.keycode == KEY_COMMA:
+		return
+
+	# Settings (Ctrl+,)
+	if ctrl and key.keycode == KEY_COMMA:
 		_show_config()
 		get_viewport().set_input_as_handled()
-	elif ctrl and shift and key.keycode == KEY_O:
+		return
+
+	# File Operations
+	if ctrl and shift and key.keycode == KEY_O:
 		_open_dir_dlg.popup_centered()
 		get_viewport().set_input_as_handled()
-	elif ctrl and key.keycode == KEY_O:
+		return
+	if ctrl and key.keycode == KEY_O:
 		_open_file_dlg.popup_centered()
 		get_viewport().set_input_as_handled()
-	elif ctrl and shift and key.keycode == KEY_S:
+		return
+	if ctrl and shift and key.keycode == KEY_S:
 		_save_as_dlg.popup_centered()
 		get_viewport().set_input_as_handled()
-	elif ctrl and key.keycode == KEY_S:
+		return
+	if ctrl and key.keycode == KEY_S:
 		_save_active()
 		get_viewport().set_input_as_handled()
-	elif ctrl and key.keycode == KEY_N:
+		return
+	if ctrl and key.keycode == KEY_N:
 		_open_untitled()
 		get_viewport().set_input_as_handled()
-	elif ctrl and key.keycode == KEY_W:
+		return
+	if ctrl and key.keycode == KEY_W:
 		if _active_index >= 0:
 			_on_tab_close(_active_index)
 		get_viewport().set_input_as_handled()
-	elif ctrl and key.keycode == KEY_Q:
+		return
+	if ctrl and key.keycode == KEY_Q:
 		get_tree().quit()
 		get_viewport().set_input_as_handled()
-	elif ctrl and key.keycode == KEY_F:
+		return
+
+	# Tab Navigation (Ctrl+Tab / Ctrl+Shift+Tab)
+	if ctrl and shift and key.keycode == KEY_TAB:
+		_switch_tab(-1)
+		get_viewport().set_input_as_handled()
+		return
+	if ctrl and key.keycode == KEY_TAB:
+		_switch_tab(1)
+		get_viewport().set_input_as_handled()
+		return
+
+	# Panels & Focus Navigation
+	if ctrl and key.keycode == KEY_B:
+		var explorer_pane: Control = $RootVBox/MainSplit/ExplorerPane
+		if explorer_pane:
+			explorer_pane.visible = not explorer_pane.visible
+		get_viewport().set_input_as_handled()
+		return
+	if ctrl and (key.keycode == KEY_J or key.keycode == KEY_K or key.keycode == KEY_QUOTELEFT):
+		_chat_input.grab_focus()
+		get_viewport().set_input_as_handled()
+		return
+	if ctrl and key.keycode == KEY_P:
+		_file_tree.grab_focus()
+		get_viewport().set_input_as_handled()
+		return
+
+	# Smart Git Commit (Ctrl+Shift+C)
+	if ctrl and shift and key.keycode == KEY_C:
+		_generate_smart_commit()
+		get_viewport().set_input_as_handled()
+		return
+
+	# Find & Replace (Ctrl+F)
+	if ctrl and key.keycode == KEY_F:
 		_find_row.visible = true
 		_find_input.grab_focus()
 		get_viewport().set_input_as_handled()
-	elif ctrl and key.keycode == KEY_P:
-		_file_tree.grab_focus()
+		return
+
+	# Go to Line (Ctrl+G)
+	if ctrl and key.keycode == KEY_G:
+		_chat_input.text = "/goto "
+		_chat_input.grab_focus()
+		_chat_input.caret_column = _chat_input.text.length()
 		get_viewport().set_input_as_handled()
-	elif ctrl and key.keycode == KEY_SLASH:
+		return
+
+	# Code Editing Shortcuts
+	if ctrl and key.keycode == KEY_SLASH:
 		_toggle_comment()
 		get_viewport().set_input_as_handled()
-	elif ctrl and key.keycode == KEY_D:
+		return
+	if ctrl and key.keycode == KEY_D:
 		_duplicate_line()
 		get_viewport().set_input_as_handled()
-	elif alt and key.keycode == KEY_UP:
+		return
+	if alt and key.keycode == KEY_UP:
 		_move_line(-1)
 		get_viewport().set_input_as_handled()
-	elif alt and key.keycode == KEY_DOWN:
+		return
+	if alt and key.keycode == KEY_DOWN:
 		_move_line(1)
 		get_viewport().set_input_as_handled()
+		return
+
+
+func _switch_tab(offset: int) -> void:
+	if _open_files.size() <= 1:
+		return
+	var new_idx: int = (_active_index + offset) % _open_files.size()
+	if new_idx < 0:
+		new_idx += _open_files.size()
+	_select_tab(new_idx)
+
+
+func _on_chat_input_gui_input(event: InputEvent) -> void:
+	if not (event is InputEventKey) or not event.pressed:
+		return
+	var key: InputEventKey = event
+	if key.keycode == KEY_UP and not _chat_suggestions_popup.visible:
+		if _prompt_history.is_empty():
+			return
+		if _prompt_history_idx == -1:
+			_prompt_draft = _chat_input.text
+			_prompt_history_idx = _prompt_history.size() - 1
+		elif _prompt_history_idx > 0:
+			_prompt_history_idx -= 1
+		_chat_input.text = _prompt_history[_prompt_history_idx]
+		_chat_input.caret_column = _chat_input.text.length()
+		_chat_input.accept_event()
+	elif key.keycode == KEY_DOWN and not _chat_suggestions_popup.visible:
+		if _prompt_history_idx == -1:
+			return
+		if _prompt_history_idx < _prompt_history.size() - 1:
+			_prompt_history_idx += 1
+			_chat_input.text = _prompt_history[_prompt_history_idx]
+		else:
+			_prompt_history_idx = -1
+			_chat_input.text = _prompt_draft
+		_chat_input.caret_column = _chat_input.text.length()
+		_chat_input.accept_event()
 
 
 func _on_file_menu(id: int) -> void:
@@ -1007,6 +1126,10 @@ func _on_chat_submitted(text: String) -> void:
 	var prompt: String = text.strip_edges()
 	if prompt.is_empty() or _ai_busy:
 		return
+	if _prompt_history.is_empty() or _prompt_history.back() != prompt:
+		_prompt_history.append(prompt)
+	_prompt_history_idx = -1
+	_prompt_draft = ""
 	_chat_input.text = ""
 	_chat_suggestions_popup.visible = false
 	_append_user_message(prompt)
@@ -1052,6 +1175,14 @@ func _handle_slash(cmd: String) -> void:
 			if parts.size() > 1:
 				_open_path(parts[1])
 				_append_tool_badge("Open", parts[1])
+		"/goto":
+			if parts.size() > 1:
+				var line_num: int = parts[1].strip_edges().to_int()
+				if line_num > 0 and _code_edit:
+					var target_idx: int = clampi(line_num - 1, 0, maxi(0, _code_edit.get_line_count() - 1))
+					_code_edit.set_caret_line(target_idx)
+					_code_edit.grab_focus()
+					_append_tool_badge("Go to Line", str(line_num))
 		"/clear":
 			_chat_history.clear()
 			_chat_log.clear()
@@ -1061,7 +1192,7 @@ func _handle_slash(cmd: String) -> void:
 		"/quit", "/exit":
 			get_tree().quit()
 		_:
-			_append_chat("IDE", "Commands: `/tools`, `/git commit`, `/git status`, `/git diff`, `/save`, `/files`, `/open <path>`, `/clear`, `/quit`", Color("#ffa348"))
+			_append_chat("IDE", "Commands: `/tools`, `/git commit`, `/git status`, `/git diff`, `/save`, `/files`, `/open <path>`, `/goto <line>`, `/clear`, `/quit`", Color("#ffa348"))
 
 
 func _show_tools_list() -> void:
@@ -1251,7 +1382,7 @@ func _send_chat_completion() -> void:
 		{"role": "system", "content": system_role_content}
 	]
 	
-	var start_idx: int = maxi(0, _chat_history.size() - 16)
+	var start_idx: int = maxi(0, _chat_history.size() - 60)
 	for i in range(start_idx, _chat_history.size()):
 		messages_payload.append(_chat_history[i])
 
