@@ -35,7 +35,7 @@ func test_markdown_formatting_helpers() -> void:
 	var formatted_link: String = editor_script._replace_links("Read [README](README.md) file.")
 	assert_true(formatted_link.contains("[color=#62a0ea][u]README[/u][/color]"))
 	
-	var markdown_sample := "### Actions\n- [ ] Pending task\n- [x] Completed task\n- **Item 1**: Done\n> Note block\n```gdscript\nvar x = 1\n```"
+	var markdown_sample: String = "### Actions\n- [ ] Pending task\n- [x] Completed task\n- **Item 1**: Done\n> Note block\n```gdscript\nvar x = 1\n```"
 	var bbcode_output: String = editor_script._format_markdown_to_bbcode(markdown_sample)
 	assert_true(bbcode_output.contains("[color=#ffffff][b]Actions[/b][/color]"))
 	assert_true(bbcode_output.contains("☐ Pending task"))
@@ -52,7 +52,7 @@ func test_workspace_context_generation() -> void:
 	assert_not_null(editor_script)
 	
 	editor_script._workspace_root = "/home/mcaquart/sgoinfre/.ss/SSDevTools/SSCodeIDE - Godot"
-	var files := editor_script._get_workspace_files_list()
+	var files: Array[String] = editor_script._get_workspace_files_list()
 	assert_gt(files.size(), 0)
 	
 	var context_str: String = editor_script._get_workspace_context()
