@@ -10,13 +10,13 @@
 
 ---
 
-## 📌 Overview
+## Overview
 
 **SSCodeIDE** is a dedicated code editor and development environment engineered entirely with **Godot Engine 4.x** and **GDScript**. Combining a Monokai Pro aesthetic theme, full typographic support with *FiraCode Nerd Font*, a hierarchical workspace file explorer, and a native AI coding assistant with automated candidate fallback, SSCodeIDE provides a streamlined coding experience.
 
 ---
 
-## ✨ Key Functional Features
+## Key Functional Features
 
 - **Multi-Tab Code Editor (`CodeEdit`)**:
   - Multi-tab management with active file tracking and modification state indicators.
@@ -47,7 +47,7 @@
 
 ---
 
-## ⌨️ Keyboard Shortcuts
+## Keyboard Shortcuts
 
 ### File Operations
 | Shortcut | Action |
@@ -84,7 +84,7 @@
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```text
 .
@@ -109,7 +109,7 @@
 
 ---
 
-## 🔧 Prerequisites & Launch
+## Prerequisites & Launch
 
 ### Requirements
 - **Godot Engine 4.x** (version 4.3 or higher recommended).
@@ -121,7 +121,7 @@
 
 ---
 
-## 🧪 Running Unit Tests
+## Running Unit Tests
 
 Unit tests are managed via **GUT**. To run the full test suite in headless mode via command line:
 
@@ -131,7 +131,7 @@ godot --headless -s addons/gut/gut_cmdln.gd -gconfig=.gutconfig.json
 
 ---
 
-## 🔒 Licence & Copyright
+## Licence & Copyright
 
 **Copyright (C) 2026 Ser Superior (SS). All rights reserved.**
 
