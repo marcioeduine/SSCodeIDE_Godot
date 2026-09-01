@@ -1374,7 +1374,8 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 
 func _append_user_message(prompt: String) -> void:
 	var sanitized: String = prompt.replace("[", "[lb]")
-	_chat_log.append_text("\n[bgcolor=#62a0ea][color=#000000][b] SS [/b][/color][/bgcolor] [b]Ser Superior (SS)[/b]\n[bgcolor=#1e1e26][color=#deddda]  %s  [/color][/bgcolor]\n\n" % sanitized)
+	var user_bubble := "\n[right][b]Ser Superior (SS)[/b]  [bgcolor=#62a0ea][color=#000000][b] SS [/b][/color][/bgcolor][/right]\n[right][bgcolor=#1a324b][color=#f6f5f4]   %s   [/color][/bgcolor][/right]\n\n" % sanitized
+	_chat_log.append_text(user_bubble)
 	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
 
 
