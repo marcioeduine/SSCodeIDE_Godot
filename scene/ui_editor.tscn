@@ -1,0 +1,355 @@
+[gd_scene load_steps=2 format=3 uid="uid://b6s1hdqcbjksc"]
+
+[ext_resource type="Script" path="res://scripts/ui_editor.gd" id="1_editor"]
+
+[node name="UI_Editor" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_editor")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="RootVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="NavBar" type="HBoxContainer" parent="RootVBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MenuBar" type="MenuBar" parent="RootVBox/NavBar"]
+layout_mode = 2
+flat = true
+
+[node name="File" type="PopupMenu" parent="RootVBox/NavBar/MenuBar"]
+item_count = 8
+item_0/text = "Open File…	Ctrl+O"
+item_0/id = 0
+item_1/text = "Open Directory…	Ctrl+Shift+O"
+item_1/id = 1
+item_2/id = 2
+item_2/separator = true
+item_3/text = "New File	Ctrl+N"
+item_3/id = 3
+item_4/text = "Save	Ctrl+S"
+item_4/id = 4
+item_5/text = "Save As…	Ctrl+Shift+S"
+item_5/id = 5
+item_6/id = 6
+item_6/separator = true
+item_7/text = "Quit	Ctrl+Q"
+item_7/id = 7
+
+[node name="Edit" type="PopupMenu" parent="RootVBox/NavBar/MenuBar"]
+item_count = 8
+item_0/text = "Undo	Ctrl+Z"
+item_0/id = 0
+item_1/text = "Redo	Ctrl+Y"
+item_1/id = 1
+item_2/id = 2
+item_2/separator = true
+item_3/text = "Cut	Ctrl+X"
+item_3/id = 3
+item_4/text = "Copy	Ctrl+C"
+item_4/id = 4
+item_5/text = "Paste	Ctrl+V"
+item_5/id = 5
+item_6/text = "Select All	Ctrl+A"
+item_6/id = 6
+item_7/text = "Find	Ctrl+F"
+item_7/id = 7
+
+[node name="Config" type="PopupMenu" parent="RootVBox/NavBar/MenuBar"]
+item_count = 2
+item_0/text = "Settings…	Ctrl+,"
+item_0/id = 0
+item_1/text = "AI Login…	Ctrl+L"
+item_1/id = 1
+
+[node name="Help" type="PopupMenu" parent="RootVBox/NavBar/MenuBar"]
+item_count = 1
+item_0/text = "Keyboard Shortcuts	F1"
+item_0/id = 0
+
+[node name="About" type="PopupMenu" parent="RootVBox/NavBar/MenuBar"]
+item_count = 1
+item_0/text = "About SSCodeIDE"
+item_0/id = 0
+
+[node name="NavSpacer" type="Control" parent="RootVBox/NavBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NavWorkspace" type="Label" parent="RootVBox/NavBar"]
+layout_mode = 2
+text = "workspace"
+
+[node name="MainSplit" type="HSplitContainer" parent="RootVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offset = 260
+
+[node name="ExplorerPane" type="VBoxContainer" parent="RootVBox/MainSplit"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="ExplorerHeader" type="Label" parent="RootVBox/MainSplit/ExplorerPane"]
+layout_mode = 2
+text = "  EXPLORER"
+
+[node name="FileTree" type="Tree" parent="RootVBox/MainSplit/ExplorerPane"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+hide_root = false
+
+[node name="CenterSplit" type="HSplitContainer" parent="RootVBox/MainSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offset = 720
+
+[node name="EditorPane" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="TabBar" type="TabBar" parent="RootVBox/MainSplit/CenterSplit/EditorPane"]
+layout_mode = 2
+size_flags_horizontal = 3
+tab_close_display_policy = 1
+
+[node name="FindRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/EditorPane"]
+visible = false
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+
+[node name="FindInput" type="LineEdit" parent="RootVBox/MainSplit/CenterSplit/EditorPane/FindRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Find…"
+
+[node name="FindNext" type="Button" parent="RootVBox/MainSplit/CenterSplit/EditorPane/FindRow"]
+layout_mode = 2
+text = "Next"
+
+[node name="FindClose" type="Button" parent="RootVBox/MainSplit/CenterSplit/EditorPane/FindRow"]
+layout_mode = 2
+text = "×"
+
+[node name="CodeEdit" type="CodeEdit" parent="RootVBox/MainSplit/CenterSplit/EditorPane"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+gutters_draw_line_numbers = true
+highlight_current_line = true
+minimap_draw = true
+
+[node name="ChatPane" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+
+[node name="ChatHeaderRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+
+[node name="ChatHeader" type="Label" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SSBot"
+clip_text = true
+
+[node name="ProviderSelect" type="OptionButton" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+item_count = 3
+popup/item_0/text = "GPT"
+popup/item_0/id = 0
+popup/item_1/text = "Claude"
+popup/item_1/id = 1
+popup/item_2/text = "Gemini"
+popup/item_2/id = 2
+
+[node name="ChatLoginBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
+layout_mode = 2
+text = "Login"
+
+[node name="ChatLog" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/ChatPane"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
+scroll_following = true
+selection_enabled = true
+
+[node name="ChatInputRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+
+[node name="ChatInput" type="LineEdit" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Pergunta à IA  (login necessário)"
+
+[node name="ChatSend" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputRow"]
+layout_mode = 2
+text = "Enviar"
+
+[node name="StatusBar" type="PanelContainer" parent="RootVBox"]
+custom_minimum_size = Vector2(0, 26)
+layout_mode = 2
+
+[node name="StatusRow" type="HBoxContainer" parent="RootVBox/StatusBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="StatusLeft" type="Label" parent="RootVBox/StatusBar/StatusRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "READY"
+clip_text = true
+
+[node name="StatusCursor" type="Label" parent="RootVBox/StatusBar/StatusRow"]
+layout_mode = 2
+text = "Ln 1, Col 1"
+
+[node name="StatusLang" type="Label" parent="RootVBox/StatusBar/StatusRow"]
+layout_mode = 2
+text = "Plain Text"
+
+[node name="StatusEnc" type="Label" parent="RootVBox/StatusBar/StatusRow"]
+layout_mode = 2
+text = "UTF-8"
+
+[node name="StatusAI" type="Label" parent="RootVBox/StatusBar/StatusRow"]
+layout_mode = 2
+text = "AI: offline"
+
+[node name="OpenFileDialog" type="FileDialog" parent="."]
+title = "Open File"
+size = Vector2i(800, 520)
+access = 2
+file_mode = 0
+use_native_dialog = true
+
+[node name="OpenDirDialog" type="FileDialog" parent="."]
+title = "Open Directory"
+size = Vector2i(800, 520)
+access = 2
+file_mode = 2
+use_native_dialog = true
+
+[node name="SaveAsDialog" type="FileDialog" parent="."]
+title = "Save As"
+size = Vector2i(800, 520)
+access = 2
+file_mode = 4
+use_native_dialog = true
+
+[node name="Overlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.55)
+
+[node name="DialogPanel" type="PanelContainer" parent="Overlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -220.0
+offset_right = 280.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DialogVBox" type="VBoxContainer" parent="Overlay/DialogPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DialogTitle" type="Label" parent="Overlay/DialogPanel/DialogVBox"]
+layout_mode = 2
+text = "Config"
+
+[node name="DialogBody" type="RichTextLabel" parent="Overlay/DialogPanel/DialogVBox"]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = true
+
+[node name="DialogClose" type="Button" parent="Overlay/DialogPanel/DialogVBox"]
+layout_mode = 2
+text = "Fechar"
+
+[node name="ToastPanel" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -400.0
+offset_top = -85.0
+offset_right = -20.0
+offset_bottom = -35.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="ToastMargin" type="MarginContainer" parent="ToastPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 8
+
+[node name="ToastLabel" type="RichTextLabel" parent="ToastPanel/ToastMargin"]
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+text = "Notificação"
+
+[node name="AIAuthHttp" type="HTTPRequest" parent="."]
+timeout = 30.0
+
+[node name="AIChatHttp" type="HTTPRequest" parent="."]
+timeout = 25.0
+
