@@ -12,7 +12,7 @@
 
 ## Overview
 
-**SSCodeIDE** is a dedicated code editor and development environment engineered entirely with **Godot Engine 4.x** and **GDScript**. Combining a Monokai Pro aesthetic theme, full typographic support with *FiraCode Nerd Font*, a hierarchical workspace file explorer, and a native AI coding assistant with automated candidate fallback, SSCodeIDE provides a streamlined coding experience.
+**SSCodeIDE** is a dedicated code editor and development environment engineered entirely with **Godot Engine 4.x** and **GDScript**. Combining a Monokai Pro aesthetic theme, full typographic support with *FiraCode Nerd Font*, a hierarchical workspace file explorer, and a native AI coding assistant with automated candidate fallback, SSCodeIDE provides a streamlined coding experience without external runtime dependencies or mandatory login requirements.
 
 ---
 
@@ -29,21 +29,17 @@
   - Automatic file kind recognition and dedicated visual iconography (`at-icons`) across scripts (`.gd`, `.py`, `.js`, `.ts`, `.cpp`, `.rs`, `.go`), scenes (`.tscn`, `.scn`), configurations (`.json`, `.cfg`, `.toml`, `.yaml`), images, audio, video, documents, and archives.
 
 - **Integrated AI Assistant Panel**:
-  - Dedicated side-panel chat interface for code assistance and queries.
+  - Dedicated side-panel chat interface for code assistance, debugging, and queries.
   - Direct HTTP client communicating with **NVIDIA NIM API**, supporting:
     - `NVIDIA Nemotron` (`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, `nvidia/nemotron-3.5-lightning-30b-a3b`)
     - `Moonshot Kimi K3` (`moonshotai/kimi-k3`)
     - `DeepSeek V4` (`deepseek-ai/deepseek-v4-pro-0813`)
     - `Laguna Code` (`poolside/laguna-xs-2.1`)
-  - Multi-model fallback mechanism to handle transient errors and rate limits seamlessly.
-  - Instant request cancellation (<kbd>Esc</kbd>) and animated toast notifications.
-
-- **Authentication & Web Integration**:
-  - Native Google OAuth 2.0 loopback TCP server authorisation workflow.
-  - Embedded modal dialogue for web authorisation and official provider logins.
+  - Intelligent multi-model candidate fallback mechanism to mitigate transient service errors.
+  - Non-blocking asynchronous requests with cancellation support (<kbd>Esc</kbd>) and animated toast notifications.
 
 - **Automated Test Suite**:
-  - Full unit test coverage powered by **GUT (Godot Unit Test)**.
+  - Unit test coverage powered by **GUT (Godot Unit Test)**.
 
 ---
 
@@ -78,7 +74,6 @@
 | :--- | :--- |
 | <kbd>F1</kbd> | Display Help and keyboard shortcuts |
 | <kbd>Ctrl</kbd> + <kbd>,</kbd> | Display Configuration dialogue |
-| <kbd>Ctrl</kbd> + <kbd>L</kbd> | Open AI Login dialogue |
 | <kbd>Ctrl</kbd> + <kbd>P</kbd> | Focus File Explorer |
 | <kbd>Esc</kbd> | Cancel ongoing AI generation |
 
@@ -95,10 +90,7 @@
 ├── scripts/            # Core GDScript modules
 │   ├── ai_service.gd   # NVIDIA NIM API integration and fallback logic
 │   ├── file_kind.gd    # File type categorisation and icon mapping
-│   ├── google_auth.gd  # Google OAuth 2.0 loopback server handler
-│   ├── oauth_url.gd    # OAuth URL parser and validation helper
-│   ├── ui_editor.gd    # Primary IDE UI controller and state manager
-│   └── web_view.gd     # WebView and web dialogue component
+│   └── ui_editor.gd    # Primary IDE UI controller and workspace manager
 ├── test/               # Automated unit tests (GUT)
 │   └── unit/
 ├── project.godot       # Godot project settings and engine configuration
@@ -123,7 +115,7 @@
 
 ## Running Unit Tests
 
-Unit tests are managed via **GUT**. To run the full test suite in headless mode via command line:
+Unit tests are managed via **GUT**. To run the test suite in headless mode via command line:
 
 ```bash
 godot --headless -s addons/gut/gut_cmdln.gd -gconfig=.gutconfig.json
