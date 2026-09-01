@@ -33,7 +33,7 @@ extends Control
 @onready var _toast_label: RichTextLabel = $ToastPanel/ToastMargin/ToastLabel
 @onready var _ai_chat_http: HTTPRequest = $AIChatHttp
 @onready var _provider_select: OptionButton = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ProviderSelect
-@onready var _chat_login_btn: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatLoginBtn
+@onready var _chat_badge: Label = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatBadge
 @onready var _find_row: HBoxContainer = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow
 @onready var _find_input: LineEdit = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindInput
 @onready var _find_next: Button = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindNext
@@ -47,49 +47,48 @@ var _suppress_tab: bool = false
 var _ai_busy: bool = false
 var _toast_tween: Tween = null
 var _ai_provider: String = "nemotron"
-var _ai_logged: Dictionary = {"nemotron": true, "nemotron_lightning": true, "kimi_k3": true, "deepseek_v4": true, "laguna": true}
 var _current_prompt: String = ""
 var _model_candidates: Array[String] = []
 var _model_candidate_index: int = 0
 
-const HELP_TEXT := """[b]Atalhos SSCodeIDE[/b]
+const HELP_TEXT := """[b]SSCodeIDE Shortcuts[/b]
 
-[b]Ficheiro[/b]
-  Ctrl+N            Novo ficheiro
-  Ctrl+O            Abrir ficheiro
-  Ctrl+Shift+O      Abrir directório
-  Ctrl+S            Gravar
-  Ctrl+Shift+S      Gravar como
-  Ctrl+W            Fechar separador
-  Ctrl+Tab          Próximo separador
-  Ctrl+Shift+Tab    Separador anterior
-  Ctrl+Q            Sair
+[b]File[/b]
+  Ctrl+N            New file
+  Ctrl+O            Open file
+  Ctrl+Shift+O      Open directory
+  Ctrl+S            Save
+  Ctrl+Shift+S      Save as
+  Ctrl+W            Close tab
+  Ctrl+Tab          Next tab
+  Ctrl+Shift+Tab    Previous tab
+  Ctrl+Q            Quit
 
-[b]Edição[/b]
+[b]Edit[/b]
   Ctrl+Z / Ctrl+Y   Undo / Redo
-  Ctrl+X / C / V    Cortar / Copiar / Colar
-  Ctrl+A            Seleccionar tudo
-  Ctrl+F            Procurar
-  Ctrl+G            Ir para linha (usa Find)
-  Ctrl+/            Comentar linha
-  Ctrl+D            Duplicar linha
-  Alt+↑ / Alt+↓     Mover linha
+  Ctrl+X / C / V    Cut / Copy / Paste
+  Ctrl+A            Select all
+  Ctrl+F            Find
+  Ctrl+G            Go to line
+  Ctrl+/            Toggle line comment
+  Ctrl+D            Duplicate line
+  Alt+↑ / Alt+↓     Move line
 
 [b]IDE[/b]
-  Ctrl+,            Config
-  Ctrl+L            Login IA (WebView modal, página oficial)
-  F1                Ajuda (atalhos)
-  Ctrl+P            Foco no explorador
+  Ctrl+,            Settings
+  F1                Help (shortcuts)
+  Ctrl+P            Focus explorer
+  Esc               Cancel AI generation
 """
 
 const ABOUT_TEXT := """[b]SSCodeIDE[/b]
-IDE em 100% GDScript nativo (Godot 4.7) — tema Monokai Pro.
+IDE in 100% native GDScript (Godot 4.7) — Monokai Pro theme.
 
-Fonte padrão: FiraCode Nerd Font
-Chat IA: Nemotron · Kimi K3 · DeepSeek V4 · Laguna Code via NVIDIA NIM API
-Toast automático · Cancelamento instantâneo · Fallback inteligente
+Default Font: FiraCode Nerd Font
+AI Chat: Nemotron · Kimi K3 · DeepSeek V4 · Laguna Code via NVIDIA NIM API
+Automatic Toast · Instant Cancellation · Intelligent Candidate Fallback
 
-© SSDevTools
+© Ser Superior (SS)
 """
 
 
@@ -138,7 +137,6 @@ func _wire_signals() -> void:
 	_save_as_dlg.file_selected.connect(_save_as_path)
 	_dialog_close.pressed.connect(_hide_overlay)
 	_ai_chat_http.request_completed.connect(_on_ai_chat_http_completed)
-	_chat_login_btn.pressed.connect(_show_login)
 	_provider_select.item_selected.connect(_on_provider_selected)
 	_find_input.text_submitted.connect(_do_find)
 	_find_next.pressed.connect(_on_find_next)
@@ -160,9 +158,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif ctrl and key.keycode == KEY_COMMA:
 		_show_config()
-		get_viewport().set_input_as_handled()
-	elif ctrl and key.keycode == KEY_L:
-		_show_login()
 		get_viewport().set_input_as_handled()
 	elif ctrl and shift and key.keycode == KEY_O:
 		_open_dir_dlg.popup_centered()
@@ -233,7 +228,6 @@ func _on_edit_menu(id: int) -> void:
 func _on_config_menu(id: int) -> void:
 	match id:
 		0: _show_config()
-		1: _show_login()
 
 
 func _on_help_menu(_id: int) -> void:
@@ -266,19 +260,11 @@ func _show_about() -> void:
 
 
 func _show_config() -> void:
-	var body := "[b]Config[/b]\n\nFonte: FiraCode Nerd Font (padrão)\nWorkspace: %s\nModelo Ativo: %s (NVIDIA NIM)\nEstado API: Conectado e Ativo" % [
+	var body := "[b]Settings[/b]\n\n• [b]Typography:[/b] FiraCode Nerd Font\n• [b]Workspace:[/b] %s\n• [b]Active Model:[/b] %s (NVIDIA NIM)\n• [b]Status:[/b] Connected & Active" % [
 		_workspace_root,
 		_ai_provider.replace("_", " ").to_upper(),
 	]
-	_show_overlay("Config", body)
-
-
-func _show_login() -> void:
-	_append_chat("NVIDIA", "NVIDIA NIM API ativa com a chave de API configurada.\nModelos disponíveis: Nemotron 3 Omni, Nemotron 3.5 Lightning, Kimi K3, DeepSeek V4 e Laguna Code.\nPodes enviar perguntas diretamente no chat.", Color("#a9dc76"))
-
-
-func _start_provider_oauth() -> void:
-	_show_login()
+	_show_overlay("Settings", body)
 
 
 func _on_provider_selected(index: int) -> void:
@@ -287,7 +273,7 @@ func _on_provider_selected(index: int) -> void:
 	var names: Array[String] = ["nemotron", "nemotron_lightning", "kimi_k3", "deepseek_v4", "laguna"]
 	if index >= 0 and index < names.size():
 		_ai_provider = names[index]
-	_chat_send.text = "Enviar"
+	_chat_send.text = "Send"
 	_save_ai_config()
 	_update_ai_status()
 
@@ -305,21 +291,17 @@ func _load_ai_config() -> void:
 	else:
 		_ai_provider = "nemotron"
 	var names: Array[String] = ["nemotron", "nemotron_lightning", "kimi_k3", "deepseek_v4", "laguna"]
-	for p: String in names:
-		_ai_logged[p] = true
 	var idx: int = names.find(_ai_provider)
 	if idx < 0:
 		idx = 0
 		_ai_provider = "nemotron"
 	_provider_select.select(idx)
-	_chat_send.text = "Enviar"
+	_chat_send.text = "Send"
 
 
 func _save_ai_config() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("ai", "provider", _ai_provider)
-	for p: String in ["nemotron", "nemotron_lightning", "kimi_k3", "deepseek_v4", "laguna"]:
-		cfg.set_value("ai", p + "_logged", true)
 	cfg.save("user://ai_config.cfg")
 
 
@@ -333,8 +315,8 @@ func _update_ai_status() -> void:
 	}
 	var display_title: String = titles.get(_ai_provider, "Nemotron 3 Omni")
 	_status_ai.text = "AI: %s · on" % display_title
-	_chat_login_btn.text = "NVIDIA"
-	_chat_input.placeholder_text = "Pergunta ao %s…" % display_title
+	_chat_badge.text = "NVIDIA NIM"
+	_chat_input.placeholder_text = "Ask %s…" % display_title
 
 
 func _apply_monokai_pro_theme() -> void:
@@ -426,14 +408,8 @@ func _apply_monokai_pro_theme() -> void:
 	_status_enc.add_theme_color_override("font_color", muted)
 	_status_ai.add_theme_color_override("font_color", cyan)
 
-	## Login button
-	var login_sb := StyleBoxFlat.new()
-	login_sb.bg_color = bg_lighter
-	login_sb.set_corner_radius_all(4)
-	login_sb.set_content_margin_all(4)
-	_chat_login_btn.add_theme_stylebox_override("normal", login_sb)
-	_chat_login_btn.add_theme_stylebox_override("hover", login_sb)
-	_chat_login_btn.add_theme_color_override("font_color", green)
+	## AI Badge
+	_chat_badge.add_theme_color_override("font_color", green)
 
 	## Provider select dropdown
 	var provider_sb := StyleBoxFlat.new()
@@ -783,16 +759,14 @@ func _handle_slash(cmd: String) -> void:
 	match head:
 		"/save":
 			_save_active()
-			_append_chat("IDE", "Ficheiro gravado.", Color("#a9dc76"))
+			_append_chat("IDE", "File saved.", Color("#a9dc76"))
 		"/files":
 			_refresh_file_tree()
-			_append_chat("IDE", "Explorador actualizado.", Color("#a9dc76"))
+			_append_chat("IDE", "Explorer refreshed.", Color("#a9dc76"))
 		"/open":
 			if parts.size() > 1:
 				_open_path(parts[1])
-				_append_chat("IDE", "Aberto: " + parts[1], Color("#a9dc76"))
-		"/login":
-			_show_login()
+				_append_chat("IDE", "Opened: " + parts[1], Color("#a9dc76"))
 		"/clear":
 			_chat_log.clear()
 		"/cancel":
@@ -800,7 +774,7 @@ func _handle_slash(cmd: String) -> void:
 		"/quit", "/exit":
 			get_tree().quit()
 		_:
-			_append_chat("IDE", "Comandos: /save /files /open <path> /cancel /login /clear /quit", Color("#fc9867"))
+			_append_chat("IDE", "Commands: /save /files /open <path> /cancel /clear /quit", Color("#fc9867"))
 
 
 func _ask_ai(prompt: String) -> void:

@@ -82,11 +82,9 @@ item_7/text = "Find	Ctrl+F"
 item_7/id = 7
 
 [node name="Config" type="PopupMenu" parent="RootVBox/NavBar/MenuBar"]
-item_count = 2
+item_count = 1
 item_0/text = "Settings…	Ctrl+,"
 item_0/id = 0
-item_1/text = "AI Login…	Ctrl+L"
-item_1/id = 1
 
 [node name="Help" type="PopupMenu" parent="RootVBox/NavBar/MenuBar"]
 item_count = 1
@@ -198,9 +196,9 @@ popup/item_1/id = 1
 popup/item_2/text = "Gemini"
 popup/item_2/id = 2
 
-[node name="ChatLoginBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
+[node name="ChatBadge" type="Label" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
 layout_mode = 2
-text = "Login"
+text = "NVIDIA NIM"
 
 [node name="ChatLog" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/ChatPane"]
 layout_mode = 2
@@ -217,7 +215,7 @@ layout_mode = 2
 [node name="ChatInput" type="LineEdit" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "Pergunta à IA  (login necessário)"
+placeholder_text = "Ask AI…"
 
 [node name="ChatSend" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputRow"]
 layout_mode = 2

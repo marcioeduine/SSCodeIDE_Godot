@@ -1,8 +1,8 @@
 class_name AIService
 extends RefCounted
 
-## AIService — 100% Native GDScript AI Service Integration
-## Configured strictly with Free Endpoint text & coding models from NVIDIA NIM.
+## AIService — Native GDScript AI Service Integration
+## Provides multi-model integration and automated candidate fallback via the NVIDIA NIM API.
 
 const NVIDIA_BASE_URL := "https://integrate.api.nvidia.com/v1/chat/completions"
 const NVIDIA_API_KEY := "***REMOVED***"
@@ -50,20 +50,6 @@ const FALLBACK_MODELS := {
 		"nvidia/nemotron-3.5-lightning-30b-a3b",
 	],
 }
-
-
-static func is_provider_logged_in(_provider: String) -> bool:
-	return true
-
-
-static func clear_session(provider: String) -> void:
-	var sp := get_session_path(provider)
-	if FileAccess.file_exists(sp):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(sp))
-
-
-static func get_session_path(provider: String) -> String:
-	return "user://ai_session_%s.json" % provider
 
 
 static func get_candidate_models(provider: String) -> Array[String]:

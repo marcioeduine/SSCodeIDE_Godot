@@ -23,10 +23,6 @@ window/size/mode=2
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
-[editor]
-
-use_webview=true
-
 [physics]
 
 2d/physics_engine="GodotServo"
