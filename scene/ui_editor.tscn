@@ -208,6 +208,17 @@ bbcode_enabled = true
 scroll_following = true
 selection_enabled = true
 
+[node name="ChatStatusBanner" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane"]
+visible = false
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+
+[node name="ChatStatusLabel" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner"]
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
 [node name="ChatInputRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2

@@ -34,6 +34,8 @@ extends Control
 @onready var _ai_chat_http: HTTPRequest = $AIChatHttp
 @onready var _provider_select: OptionButton = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ProviderSelect
 @onready var _chat_badge: Label = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatBadge
+@onready var _chat_status_banner: PanelContainer = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner
+@onready var _chat_status_label: RichTextLabel = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner/ChatStatusLabel
 @onready var _find_row: HBoxContainer = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow
 @onready var _find_input: LineEdit = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindInput
 @onready var _find_next: Button = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindNext
@@ -50,6 +52,9 @@ var _ai_provider: String = "nemotron"
 var _current_prompt: String = ""
 var _model_candidates: Array[String] = []
 var _model_candidate_index: int = 0
+var _spinner_time: float = 0.0
+var _request_start_time: float = 0.0
+const SPINNER_FRAMES: Array[String] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
 const HELP_TEXT := """[b]SSCodeIDE Shortcuts[/b]
 
@@ -107,6 +112,16 @@ func _ready() -> void:
 	_status_left.text = "READY"
 	_status_enc.text = "UTF-8"
 	call_deferred("_apply_split_offsets")
+
+
+func _process(delta: float) -> void:
+	if _ai_busy:
+		_spinner_time += delta
+		var frame_idx: int = int(_spinner_time * 10.0) % SPINNER_FRAMES.size()
+		var elapsed: float = (Time.get_ticks_msec() / 1000.0) - _request_start_time
+		var frame: String = SPINNER_FRAMES[frame_idx]
+		_chat_status_label.text = "[color=#fc9867]%s[/color] [b]Generating…[/b] [color=#939293](%.1fs)[/color]\n[color=#727072]Tip: Use /save, /files, /open, /cancel[/color]" % [frame, elapsed]
+		_status_left.text = "%s Generating · %s (%.1fs) · esc to cancel" % [frame, _ai_provider, elapsed]
 
 
 func _apply_split_offsets() -> void:
@@ -419,15 +434,26 @@ func _apply_monokai_pro_theme() -> void:
 	_provider_select.add_theme_stylebox_override("normal", provider_sb)
 	_provider_select.add_theme_color_override("font_color", fg)
 
+	## Chat status banner
+	var status_banner_sb := StyleBoxFlat.new()
+	status_banner_sb.bg_color = bg_lighter
+	status_banner_sb.border_color = Color("#4b4b4e")
+	status_banner_sb.set_border_width_all(1)
+	status_banner_sb.set_corner_radius_all(4)
+	status_banner_sb.set_content_margin_all(6)
+	_chat_status_banner.add_theme_stylebox_override("panel", status_banner_sb)
+
 	## Apply font everywhere
 	if _nerd_font:
 		for node: Control in [_code_edit, _file_tree, _chat_log, _chat_input,
 				_status_left, _status_cursor, _status_lang, _status_enc,
-				_status_ai, _nav_workspace, chat_header, explorer_header]:
+				_status_ai, _nav_workspace, chat_header, explorer_header,
+				_chat_status_label]:
 			node.add_theme_font_override("font", _nerd_font)
 		_code_edit.add_theme_font_size_override("font_size", 14)
 		_chat_log.add_theme_font_size_override("normal_font_size", 13)
 		_chat_input.add_theme_font_size_override("font_size", 13)
+		_chat_status_label.add_theme_font_size_override("normal_font_size", 12)
 
 
 func _configure_code_edit() -> void:
@@ -721,7 +747,7 @@ func _move_line(delta: int) -> void:
 
 func _on_chat_input_text_changed(_new_text: String) -> void:
 	if not _ai_busy:
-		_chat_send.text = "Enviar"
+		_chat_send.text = "Send"
 
 
 func _on_chat_send_pressed() -> void:
@@ -735,10 +761,11 @@ func _on_chat_send_pressed() -> void:
 func _cancel_ai_request() -> void:
 	_ai_chat_http.cancel_request()
 	_ai_busy = false
-	_chat_send.text = "Enviar"
+	_chat_status_banner.visible = false
+	_chat_send.text = "Send"
 	_status_left.text = "READY"
-	_show_toast("Requisição cancelada.", false)
-	_append_chat("IDE", "Requisição cancelada.", Color("#fc9867"))
+	_show_toast("Request cancelled.", false)
+	_append_chat("IDE", "Request cancelled.", Color("#fc9867"))
 
 
 func _on_chat_submitted(text: String) -> void:
@@ -746,7 +773,7 @@ func _on_chat_submitted(text: String) -> void:
 	if prompt.is_empty() or _ai_busy:
 		return
 	_chat_input.text = ""
-	_append_chat("TU", prompt, Color("#78dce8"))
+	_append_user_message(prompt)
 	if prompt.begins_with("/"):
 		_handle_slash(prompt)
 		return
@@ -759,14 +786,15 @@ func _handle_slash(cmd: String) -> void:
 	match head:
 		"/save":
 			_save_active()
-			_append_chat("IDE", "File saved.", Color("#a9dc76"))
+			var p: String = _open_files[_active_index]["path"] if _active_index >= 0 else "untitled"
+			_append_tool_badge("Save", p)
 		"/files":
 			_refresh_file_tree()
-			_append_chat("IDE", "Explorer refreshed.", Color("#a9dc76"))
+			_append_tool_badge("Explorer", "refreshed")
 		"/open":
 			if parts.size() > 1:
 				_open_path(parts[1])
-				_append_chat("IDE", "Opened: " + parts[1], Color("#a9dc76"))
+				_append_tool_badge("Open", parts[1])
 		"/clear":
 			_chat_log.clear()
 		"/cancel":
@@ -774,13 +802,16 @@ func _handle_slash(cmd: String) -> void:
 		"/quit", "/exit":
 			get_tree().quit()
 		_:
-			_append_chat("IDE", "Commands: /save /files /open <path> /cancel /clear /quit", Color("#fc9867"))
+			_append_chat("IDE", "Commands: `/save`, `/files`, `/open <path>`, `/cancel`, `/clear`, `/quit`", Color("#fc9867"))
 
 
 func _ask_ai(prompt: String) -> void:
 	_ai_busy = true
-	_chat_send.text = "Cancelar"
-	_status_left.text = "IA  ·  %s a responder…" % _ai_provider
+	_request_start_time = Time.get_ticks_msec() / 1000.0
+	_spinner_time = 0.0
+	_chat_status_banner.visible = true
+	_chat_send.text = "Cancel"
+	_status_left.text = "Generating response…"
 	_current_prompt = prompt
 	_model_candidates = AIService.get_candidate_models(_ai_provider)
 	_model_candidate_index = 0
@@ -790,8 +821,9 @@ func _ask_ai(prompt: String) -> void:
 func _send_chat_completion() -> void:
 	if _model_candidate_index >= _model_candidates.size():
 		_ai_busy = false
-		_chat_send.text = "Enviar"
-		_append_chat(_ai_provider.to_upper(), "Não foi possível obter resposta dos modelos NVIDIA. Tenta novamente.", Color("#ff6188"))
+		_chat_status_banner.visible = false
+		_chat_send.text = "Send"
+		_append_chat(_ai_provider.to_upper(), "Could not retrieve response from NVIDIA NIM models. Please retry.", Color("#ff6188"))
 		_status_left.text = "READY"
 		return
 
@@ -807,7 +839,7 @@ func _send_chat_completion() -> void:
 		"messages": [
 			{"role": "user", "content": _current_prompt},
 		],
-		"temperature": 1.0,
+		"temperature": 0.7,
 		"top_p": 0.95,
 		"max_tokens": 4096,
 		"stream": false
@@ -818,9 +850,10 @@ func _send_chat_completion() -> void:
 	var err: Error = _ai_chat_http.request(target_url, headers, HTTPClient.METHOD_POST, payload_json)
 	if err != OK:
 		_ai_busy = false
-		_chat_send.text = "Enviar"
-		_show_toast("Erro ao iniciar pedido HTTP (Código: %d)." % err, true)
-		_append_chat(_ai_provider.to_upper(), "Erro ao iniciar o pedido HTTP (Código: %d)." % err, Color("#ff6188"))
+		_chat_status_banner.visible = false
+		_chat_send.text = "Send"
+		_show_toast("Failed to initiate HTTP request (Code %d)." % err, true)
+		_append_chat(_ai_provider.to_upper(), "Failed to initiate HTTP request (Code %d)." % err, Color("#ff6188"))
 		_status_left.text = "READY"
 
 
@@ -829,8 +862,8 @@ func _show_toast(message: String, is_warning: bool = true) -> void:
 		_toast_tween.kill()
 
 	var icon_color: String = "#fc9867" if is_warning else "#78dce8"
-	var prefix: String = "⚠️" if is_warning else "ℹ️"
-	_toast_label.text = "[color=%s][b]%s [/b][/color]%s" % [icon_color, prefix, message]
+	var prefix: String = "[!] " if is_warning else "[i] "
+	_toast_label.text = "[color=%s][b]%s[/b][/color]%s" % [icon_color, prefix, message]
 	_toast_panel.modulate = Color(1, 1, 1, 0)
 	_toast_panel.visible = true
 
@@ -850,31 +883,36 @@ func _show_toast(message: String, is_warning: bool = true) -> void:
 
 func _on_ai_chat_http_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
 	_ai_busy = false
-	_chat_send.text = "Enviar"
+	_chat_status_banner.visible = false
+	_chat_send.text = "Send"
 	_status_left.text = "READY"
+
+	var elapsed: float = maxf(0.1, (Time.get_ticks_msec() / 1000.0) - _request_start_time)
 
 	if result != HTTPRequest.RESULT_SUCCESS:
 		_model_candidate_index += 1
 		if _model_candidate_index < _model_candidates.size():
 			_ai_busy = true
-			_chat_send.text = "Cancelar"
-			_show_toast("Tempo limite. A tentar modelo alternativo…", true)
+			_chat_status_banner.visible = true
+			_chat_send.text = "Cancel"
+			_show_toast("Request timeout. Attempting candidate model…", true)
 			_send_chat_completion()
 			return
-		_show_toast("Tempo limite de resposta esgotado. Pedido cancelado automaticamente.", true)
-		_append_chat(_ai_provider.to_upper(), "O modelo demorou demasiado tempo a responder. O pedido foi cancelado automaticamente.", Color("#fc9867"))
+		_show_toast("Response timeout exceeded. Request cancelled.", true)
+		_append_chat(_ai_provider.to_upper(), "The model timed out. The request was cancelled automatically.", Color("#fc9867"))
 		return
 
 	if body.is_empty():
 		_model_candidate_index += 1
 		if _model_candidate_index < _model_candidates.size():
 			_ai_busy = true
-			_chat_send.text = "Cancelar"
-			_show_toast("Servidor sem resposta. A tentar modelo alternativo…", true)
+			_chat_status_banner.visible = true
+			_chat_send.text = "Cancel"
+			_show_toast("Empty response. Attempting candidate model…", true)
 			_send_chat_completion()
 			return
-		_show_toast("Resposta vazia do servidor.", true)
-		_append_chat(_ai_provider.to_upper(), "Resposta vazia do servidor. Tenta novamente.", Color("#ff6188"))
+		_show_toast("Empty server response.", true)
+		_append_chat(_ai_provider.to_upper(), "Empty server response. Please retry.", Color("#ff6188"))
 		return
 
 	var text := body.get_string_from_utf8()
@@ -888,35 +926,174 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 			var msg: Dictionary = choices[0].get("message", {})
 			var reply_text: String = str(msg.get("content", "")).strip_edges()
 			if not reply_text.is_empty():
-				_append_chat(_ai_provider.to_upper(), reply_text, Color("#a9dc76"))
+				var usage: Dictionary = parsed.get("usage", {})
+				var prompt_tokens: int = int(usage.get("prompt_tokens", _current_prompt.length() / 4))
+				var completion_tokens: int = int(usage.get("completion_tokens", reply_text.length() / 4))
+				_append_ai_response(_ai_provider, reply_text, elapsed, prompt_tokens, completion_tokens)
 				return
 	elif response_code in [200, 201] and not text.strip_edges().is_empty() and not text.begins_with("{"):
-		_append_chat(_ai_provider.to_upper(), text.strip_edges(), Color("#a9dc76"))
+		_append_ai_response(_ai_provider, text.strip_edges(), elapsed)
 		return
 
 	_model_candidate_index += 1
 	if _model_candidate_index < _model_candidates.size():
 		_ai_busy = true
-		_chat_send.text = "Cancelar"
-		_show_toast("Servidor ocupado. A tentar modelo alternativo…", true)
+		_chat_status_banner.visible = true
+		_chat_send.text = "Cancel"
+		_show_toast("Server busy. Attempting candidate model…", true)
 		_send_chat_completion()
 	else:
 		var err_detail: String = ""
 		if parsed is Dictionary and parsed.has("error"):
 			var err_dict: Dictionary = parsed["error"] if parsed["error"] is Dictionary else {}
 			err_detail = " — " + str(err_dict.get("message", parsed["error"]))
-		_show_toast("Erro ao contactar a IA (Código %d)" % response_code, true)
-		_append_chat(_ai_provider.to_upper(), "Não foi possível obter resposta (Código HTTP %d)%s." % [response_code, err_detail], Color("#ff6188"))
+		_show_toast("AI Service Error (HTTP %d)" % response_code, true)
+		_append_chat(_ai_provider.to_upper(), "Could not retrieve response (HTTP %d)%s." % [response_code, err_detail], Color("#ff6188"))
+
+
+func _append_user_message(prompt: String) -> void:
+	_chat_log.append_text("[color=#58a6ff][b]> %s[/b][/color]\n" % prompt)
+	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
+
+
+func _append_ai_response(provider: String, reply_text: String, elapsed: float, tokens_in: int = 0, tokens_out: int = 0) -> void:
+	var stats_header := ""
+	if tokens_in > 0 and tokens_out > 0:
+		stats_header = "[color=#fc9867][b]%.1fk in | %.1fk out | %.1fs[/b][/color]\n" % [tokens_in / 1000.0, tokens_out / 1000.0, elapsed]
+	else:
+		stats_header = "[color=#fc9867][b]%s[/b][/color] [color=#727072]·[/color] [color=#a9dc76]● %s[/color] [color=#727072](%.1fs)[/color]\n" % [provider.to_upper(), "Ready", elapsed]
+	
+	var formatted_body := _format_markdown_to_bbcode(reply_text)
+	_chat_log.append_text("%s%s\n[color=#3b3a3c]────────────────────────────────────────[/color]\n" % [stats_header, formatted_body])
+	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
+
+
+func _append_tool_badge(action: String, target: String) -> void:
+	_chat_log.append_text("[color=#a9dc76]●[/color] [b]%s[/b][color=#939293](%s)[/color]\n" % [action, target])
+	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
 
 
 func _append_chat(who: String, msg_body: String, color: Color) -> void:
-	## Copilot-style chat: icon prefix, bold sender, subtle separator
-	var icon: String = "🤖"
-	if who == "TU":
-		icon = "👤"
-	elif who == "IDE":
-		icon = "⚙️"
-	elif who == "NVIDIA":
-		icon = "🟢"
-	_chat_log.append_text("[color=#%s][b]%s %s[/b][/color]\n%s\n[color=#4a4548]───────────────────────────────[/color]\n" % [color.to_html(false), icon, who, msg_body])
+	var formatted := _format_markdown_to_bbcode(msg_body)
+	_chat_log.append_text("[color=#%s][b]● %s[/b][/color] %s\n[color=#3b3a3c]────────────────────────────────────────[/color]\n" % [color.to_html(false), who, formatted])
 	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
+
+
+func _format_markdown_to_bbcode(raw_text: String) -> String:
+	if raw_text.is_empty():
+		return ""
+	
+	var output: String = ""
+	var in_code_block: bool = false
+	var code_block_lang: String = ""
+	var code_block_lines: Array[String] = []
+	
+	var lines := raw_text.split("\n")
+	for line in lines:
+		var trimmed := line.strip_edges()
+		if trimmed.begins_with("```"):
+			if in_code_block:
+				in_code_block = false
+				var code_content := "\n".join(code_block_lines)
+				code_block_lines.clear()
+				output += "[bgcolor=#221f22][color=#a9dc76]  " + code_content.replace("\n", "\n  ") + "\n[/color][/bgcolor]\n"
+			else:
+				in_code_block = true
+				code_block_lang = trimmed.substr(3).strip_edges()
+				code_block_lines.clear()
+				if not code_block_lang.is_empty():
+					output += "[color=#727072]  " + code_block_lang + "[/color]\n"
+			continue
+		
+		if in_code_block:
+			code_block_lines.append(line)
+			continue
+		
+		var formatted_line: String = line
+		
+		# Headers
+		if formatted_line.begins_with("### "):
+			formatted_line = "[color=#ffd866][b]" + formatted_line.substr(4) + "[/b][/color]"
+		elif formatted_line.begins_with("## "):
+			formatted_line = "[font_size=14][color=#ffd866][b]" + formatted_line.substr(3) + "[/b][/color][/font_size]"
+		elif formatted_line.begins_with("# "):
+			formatted_line = "[font_size=15][color=#ffd866][b]" + formatted_line.substr(2) + "[/b][/color][/font_size]"
+		elif formatted_line.begins_with("> "):
+			# Blockquote
+			formatted_line = "[color=#939293]│  " + formatted_line.substr(2) + "[/color]"
+		elif formatted_line.begins_with("- ") or formatted_line.begins_with("* "):
+			# Unordered list item
+			formatted_line = "  [color=#a9dc76]•[/color] " + formatted_line.substr(2)
+		
+		formatted_line = _replace_inline_code(formatted_line)
+		formatted_line = _replace_bold(formatted_line)
+		formatted_line = _replace_italic(formatted_line)
+		formatted_line = _replace_links(formatted_line)
+		
+		output += formatted_line + "\n"
+	
+	if in_code_block and not code_block_lines.is_empty():
+		var code_content := "\n".join(code_block_lines)
+		output += "[bgcolor=#221f22][color=#a9dc76]  " + code_content.replace("\n", "\n  ") + "\n[/color][/bgcolor]\n"
+	
+	return output.strip_edges(false, true)
+
+
+func _replace_bold(text: String) -> String:
+	var result := text
+	while true:
+		var first := result.find("**")
+		if first == -1:
+			break
+		var second := result.find("**", first + 2)
+		if second == -1:
+			break
+		var inner := result.substr(first + 2, second - (first + 2))
+		result = result.substr(0, first) + "[b]" + inner + "[/b]" + result.substr(second + 2)
+	return result
+
+
+func _replace_inline_code(text: String) -> String:
+	var result := text
+	while true:
+		var first := result.find("`")
+		if first == -1:
+			break
+		var second := result.find("`", first + 1)
+		if second == -1:
+			break
+		var inner := result.substr(first + 1, second - (first + 1))
+		result = result.substr(0, first) + "[bgcolor=#3b3a3c][color=#78dce8] " + inner + " [/color][/bgcolor]" + result.substr(second + 1)
+	return result
+
+
+func _replace_italic(text: String) -> String:
+	var result := text
+	while true:
+		var first := result.find("*")
+		if first == -1:
+			break
+		var second := result.find("*", first + 1)
+		if second == -1:
+			break
+		var inner := result.substr(first + 1, second - (first + 1))
+		result = result.substr(0, first) + "[i]" + inner + "[/i]" + result.substr(second + 1)
+	return result
+
+
+func _replace_links(text: String) -> String:
+	var result := text
+	while true:
+		var b_open := result.find("[")
+		if b_open == -1:
+			break
+		var b_close := result.find("]", b_open + 1)
+		if b_close == -1 or b_close + 1 >= result.length() or result[b_close + 1] != "(":
+			break
+		var p_close := result.find(")", b_close + 2)
+		if p_close == -1:
+			break
+		var label := result.substr(b_open + 1, b_close - (b_open + 1))
+		var url := result.substr(b_close + 2, p_close - (b_close + 2))
+		result = result.substr(0, b_open) + "[color=#58a6ff][u]" + label + "[/u][/color]" + result.substr(p_close + 1)
+	return result
