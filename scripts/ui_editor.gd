@@ -2311,7 +2311,7 @@ func _generate_smart_commit() -> void:
 	var diff_stat: String = str(diff_stat_res.get("output", "")).strip_edges()
 
 	## Gather a compact diff (limit to ~3000 chars to fit model context)
-	var diff_res: Dictionary = GitService.get_diff("--cached", false, _workspace_root)
+	var diff_res: Dictionary = GitService.get_diff("", true, _workspace_root)
 	var diff_text: String = str(diff_res.get("output", "")).strip_edges()
 	if diff_text.length() > 3000:
 		diff_text = diff_text.substr(0, 3000) + "\n... [diff truncated]"
@@ -2584,10 +2584,12 @@ func _send_os_notification(title: String, body: String, is_warning: bool = false
 
 
 func _on_ai_chat_http_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
-	_ai_busy = false
-	_chat_status_banner.visible = false
-	_chat_send.text = "↑"
-	_status_left.text = "READY"
+	var is_smart_commit := _current_prompt.begins_with("__SMART_COMMIT__:")
+	if not is_smart_commit:
+		_ai_busy = false
+		_chat_status_banner.visible = false
+		_chat_send.text = "↑"
+		_status_left.text = "READY"
 
 	var elapsed: float = maxf(0.1, (Time.get_ticks_msec() / 1000.0) - _request_start_time)
 
@@ -2649,6 +2651,10 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 					else:
 						_append_chat("GIT", "[color=#ed333b]Erro no commit:[/color]\n" + str(commit_res.get("output", "")), Color("#ed333b"))
 						_show_toast("Smart Commit failed.", true)
+					_ai_busy = false
+					_chat_status_banner.visible = false
+					_chat_send.text = "↑"
+					_status_left.text = "READY"
 					_update_git_status_bar()
 					return
 				## ── End smart commit ────────────────────────────────────────────
@@ -2672,6 +2678,7 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 		_show_toast("Server busy. Attempting candidate model…", true)
 		_send_chat_completion()
 	else:
+		_ai_busy = false
 		var err_detail: String = ""
 		if parsed is Dictionary and parsed.has("error"):
 			var err_dict: Dictionary = parsed["error"] if parsed["error"] is Dictionary else {}

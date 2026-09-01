@@ -141,7 +141,6 @@ split_offsets = PackedInt32Array(260)
 split_offset = 260
 
 [node name="ExplorerPane" type="VBoxContainer" parent="RootVBox/MainSplit" unique_id=1429488087]
-custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 0
@@ -209,7 +208,6 @@ bbcode_enabled = true
 selection_enabled = true
 
 [node name="ChatPane" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit" unique_id=1200057739]
-custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 4
