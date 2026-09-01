@@ -219,18 +219,52 @@ bbcode_enabled = true
 fit_content = true
 scroll_active = false
 
-[node name="ChatInputRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane"]
-custom_minimum_size = Vector2(0, 32)
+[node name="ChatSuggestionsPopup" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane"]
+visible = false
+custom_minimum_size = Vector2(0, 110)
 layout_mode = 2
 
-[node name="ChatInput" type="LineEdit" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputRow"]
+[node name="ChatSuggestionsList" type="ItemList" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatSuggestionsPopup"]
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "Ask AI…"
+size_flags_vertical = 3
+allow_reselect = true
+item_count = 0
 
-[node name="ChatSend" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputRow"]
+[node name="ChatInputCard" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane"]
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
-text = "Enviar"
+
+[node name="ChatInputVBox" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ChatInput" type="LineEdit" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Message SSBot…"
+
+[node name="ChatInputBottomRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ThinkChip" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
+layout_mode = 2
+text = "✦ Deep thinking"
+
+[node name="SearchChip" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
+layout_mode = 2
+text = "🌐 Smart Search"
+
+[node name="InputSpacer" type="Control" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ChatSend" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
+custom_minimum_size = Vector2(32, 24)
+layout_mode = 2
+text = "↑"
 
 [node name="StatusBar" type="PanelContainer" parent="RootVBox"]
 custom_minimum_size = Vector2(0, 26)
