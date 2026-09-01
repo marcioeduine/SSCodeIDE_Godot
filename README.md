@@ -1,7 +1,7 @@
 # SSCodeIDE
 
 <p align="center">
-  <strong>Um ambiente de desenvolvimento integrado (IDE) leve, moderno e construído 100% em GDScript nativo no Godot 4.</strong>
+  <strong>A lightweight, modern Integrated Development Environment (IDE) built entirely in native GDScript for Godot Engine 4.x.</strong>
 </p>
 
 <p align="center">
@@ -10,124 +10,120 @@
 
 ---
 
-## 🚀 Sobre o Projecto
+## 📌 Overview
 
-O **SSCodeIDE** é um editor de código e IDE desenvolvido inteiramente com **Godot Engine 4.x** e **GDScript**. Inspirado em editores modernos, ele combina um tema visual elegante (*Monokai Pro*), suporte a fontes tipográficas com símbolos (*FiraCode Nerd Font*), um explorador de ficheiros inteligente e um assistente de IA integrado com múltiplos modelos e fallback automático.
-
----
-
-## ✨ Funcionalidades Principais
-
-- **Editor de Código Completo (`CodeEdit`)**:
-  - Múltiplos separadores de ficheiros com controlo de estado e histórico de alterações.
-  - Numeração de linhas, realce de sintaxe e indentação automática.
-  - Painel integrado de pesquisa e substituição (`Find & Replace`).
-  - Manipulação rápida de linhas (duplicar, mover para cima/baixo, comentar/descomentar).
-  
-- **Explorador de Ficheiros (`FileTree`)**:
-  - Deteção automática do tipo de ficheiro (*scripts, cenas, configurações, imagens, áudios, vídeos, documentos e arquivos compactados*).
-  - Ícones visuais dedicados através do addon `@icons`.
-
-- **Assistente de Inteligência Artificial Integrado**:
-  - Painel de chat lateral para assistência de código e conversação.
-  - Suporte a múltiplos modelos de ponta via **NVIDIA NIM API**:
-    - `NVIDIA Nemotron` (Reasoning & Lightning)
-    - `Moonshot Kimi K3`
-    - `DeepSeek V4`
-    - `Laguna Code`
-  - Sistema inteligente de fallback e notificações *Toast* em tempo real.
-
-- **Autenticação & Suporte Web**:
-  - Fluxo de autenticação Google / OAuth via WebView modal integrado.
-
-- **Testes Automatizados**:
-  - Suíte de testes unitários integrada via **GUT (Godot Unit Test)**.
+**SSCodeIDE** is a dedicated code editor and development environment engineered entirely with **Godot Engine 4.x** and **GDScript**. Combining a Monokai Pro aesthetic theme, full typographic support with *FiraCode Nerd Font*, a hierarchical workspace file explorer, and a native AI coding assistant with automated candidate fallback, SSCodeIDE provides a streamlined coding experience.
 
 ---
 
-## ⌨️ Atalhos de Teclado
+## ✨ Key Functional Features
 
-### Ficheiro
-| Atalho | Ação |
-| :--- | :--- |
-| <kbd>Ctrl</kbd> + <kbd>N</kbd> | Novo ficheiro |
-| <kbd>Ctrl</kbd> + <kbd>O</kbd> | Abrir ficheiro |
-| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>O</kbd> | Abrir directório / workspace |
-| <kbd>Ctrl</kbd> + <kbd>S</kbd> | Gravar ficheiro |
-| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> | Gravar como... |
-| <kbd>Ctrl</kbd> + <kbd>W</kbd> | Fechar separador actual |
-| <kbd>Ctrl</kbd> + <kbd>Tab</kbd> | Próximo separador |
-| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Tab</kbd> | Separador anterior |
-| <kbd>Ctrl</kbd> + <kbd>Q</kbd> | Sair da aplicação |
+- **Multi-Tab Code Editor (`CodeEdit`)**:
+  - Multi-tab management with active file tracking and modification state indicators.
+  - Line numbers, syntax highlighting, and dynamic auto-indentation.
+  - Built-in search panel (`Find`) with match navigation.
+  - Fast line operations: duplication (<kbd>Ctrl</kbd>+<kbd>D</kbd>), upward/downward line shifting (<kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>Alt</kbd>+<kbd>↓</kbd>), and comment toggling (<kbd>Ctrl</kbd>+<kbd>/</kbd>).
 
-### Edição
-| Atalho | Ação |
-| :--- | :--- |
-| <kbd>Ctrl</kbd> + <kbd>Z</kbd> / <kbd>Ctrl</kbd> + <kbd>Y</kbd> | Desfazer / Refazer |
-| <kbd>Ctrl</kbd> + <kbd>X</kbd> / <kbd>C</kbd> / <kbd>V</kbd> | Cortar / Copiar / Colar |
-| <kbd>Ctrl</kbd> + <kbd>A</kbd> | Seleccionar tudo |
-| <kbd>Ctrl</kbd> + <kbd>F</kbd> | Abrir pesquisa |
-| <kbd>Ctrl</kbd> + <kbd>G</kbd> | Ir para linha |
-| <kbd>Ctrl</kbd> + <kbd>/</kbd> | Alternar comentário de linha |
-| <kbd>Ctrl</kbd> + <kbd>D</kbd> | Duplicar linha actual |
-| <kbd>Alt</kbd> + <kbd>↑</kbd> / <kbd>Alt</kbd> + <kbd>↓</kbd> | Mover linha para cima / baixo |
+- **Workspace File Explorer (`FileTree`)**:
+  - Hierarchical directory inspection and real-time workspace tree updates.
+  - Automatic file kind recognition and dedicated visual iconography (`at-icons`) across scripts (`.gd`, `.py`, `.js`, `.ts`, `.cpp`, `.rs`, `.go`), scenes (`.tscn`, `.scn`), configurations (`.json`, `.cfg`, `.toml`, `.yaml`), images, audio, video, documents, and archives.
 
-### IDE & Navegação
-| Atalho | Ação |
-| :--- | :--- |
-| <kbd>F1</kbd> | Visualizar ajuda e lista de atalhos |
-| <kbd>Ctrl</kbd> + <kbd>,</kbd> | Abrir configurações |
-| <kbd>Ctrl</kbd> + <kbd>L</kbd> | Iniciar sessão IA |
-| <kbd>Ctrl</kbd> + <kbd>P</kbd> | Focar no explorador de ficheiros |
+- **Integrated AI Assistant Panel**:
+  - Dedicated side-panel chat interface for code assistance and queries.
+  - Direct HTTP client communicating with **NVIDIA NIM API**, supporting:
+    - `NVIDIA Nemotron` (`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, `nvidia/nemotron-3.5-lightning-30b-a3b`)
+    - `Moonshot Kimi K3` (`moonshotai/kimi-k3`)
+    - `DeepSeek V4` (`deepseek-ai/deepseek-v4-pro-0813`)
+    - `Laguna Code` (`poolside/laguna-xs-2.1`)
+  - Multi-model fallback mechanism to handle transient errors and rate limits seamlessly.
+  - Instant request cancellation (<kbd>Esc</kbd>) and animated toast notifications.
+
+- **Authentication & Web Integration**:
+  - Native Google OAuth 2.0 loopback TCP server authorisation workflow.
+  - Embedded modal dialogue for web authorisation and official provider logins.
+
+- **Automated Test Suite**:
+  - Full unit test coverage powered by **GUT (Godot Unit Test)**.
 
 ---
 
-## 📁 Estrutura do Projecto
+## ⌨️ Keyboard Shortcuts
+
+### File Operations
+| Shortcut | Action |
+| :--- | :--- |
+| <kbd>Ctrl</kbd> + <kbd>N</kbd> | Create new untitled file |
+| <kbd>Ctrl</kbd> + <kbd>O</kbd> | Open file dialogue |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>O</kbd> | Open workspace directory |
+| <kbd>Ctrl</kbd> + <kbd>S</kbd> | Save active file |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> | Save active file as... |
+| <kbd>Ctrl</kbd> + <kbd>W</kbd> | Close active tab |
+| <kbd>Ctrl</kbd> + <kbd>Tab</kbd> | Switch to next tab |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Tab</kbd> | Switch to previous tab |
+| <kbd>Ctrl</kbd> + <kbd>Q</kbd> | Quit application |
+
+### Editor Operations
+| Shortcut | Action |
+| :--- | :--- |
+| <kbd>Ctrl</kbd> + <kbd>Z</kbd> / <kbd>Ctrl</kbd> + <kbd>Y</kbd> | Undo / Redo |
+| <kbd>Ctrl</kbd> + <kbd>X</kbd> / <kbd>Ctrl</kbd> + <kbd>C</kbd> / <kbd>Ctrl</kbd> + <kbd>V</kbd> | Cut / Copy / Paste |
+| <kbd>Ctrl</kbd> + <kbd>A</kbd> | Select all |
+| <kbd>Ctrl</kbd> + <kbd>F</kbd> | Open search panel |
+| <kbd>Ctrl</kbd> + <kbd>/</kbd> | Toggle line comment |
+| <kbd>Ctrl</kbd> + <kbd>D</kbd> | Duplicate current line |
+| <kbd>Alt</kbd> + <kbd>↑</kbd> / <kbd>Alt</kbd> + <kbd>↓</kbd> | Move current line up / down |
+
+### IDE & Navigation
+| Shortcut | Action |
+| :--- | :--- |
+| <kbd>F1</kbd> | Display Help and keyboard shortcuts |
+| <kbd>Ctrl</kbd> + <kbd>,</kbd> | Display Configuration dialogue |
+| <kbd>Ctrl</kbd> + <kbd>L</kbd> | Open AI Login dialogue |
+| <kbd>Ctrl</kbd> + <kbd>P</kbd> | Focus File Explorer |
+| <kbd>Esc</kbd> | Cancel ongoing AI generation |
+
+---
+
+## 📁 Repository Structure
 
 ```text
 .
-├── addons/             # Addons Godot (at-icons, gut, etc.)
-├── fonts/              # Fontes tipográficas (FiraCode Nerd Font)
-├── scene/              # Cenas Godot (.tscn)
-│   └── ui_editor.tscn  # Interface principal do IDE
-├── scripts/            # Scripts GDScript (.gd)
-│   ├── ai_service.gd   # Serviço de integração de IA
-│   ├── file_kind.gd    # Mapeamento de tipos e extensões de ficheiro
-│   ├── google_auth.gd  # Fluxo de autenticação OAuth
-│   ├── oauth_url.gd    # Gestor de URLs OAuth
-│   ├── ui_editor.gd    # Controlador principal da interface
-│   └── web_view.gd     # Componente WebView / navegação web
-├── test/               # Testes unitários (GUT)
+├── addons/             # Godot addons (at-icons, gut test framework)
+├── fonts/              # Typography (FiraCode Nerd Font)
+├── scene/              # Godot scenes
+│   └── ui_editor.tscn  # Main IDE scene and layout hierarchy
+├── scripts/            # Core GDScript modules
+│   ├── ai_service.gd   # NVIDIA NIM API integration and fallback logic
+│   ├── file_kind.gd    # File type categorisation and icon mapping
+│   ├── google_auth.gd  # Google OAuth 2.0 loopback server handler
+│   ├── oauth_url.gd    # OAuth URL parser and validation helper
+│   ├── ui_editor.gd    # Primary IDE UI controller and state manager
+│   └── web_view.gd     # WebView and web dialogue component
+├── test/               # Automated unit tests (GUT)
 │   └── unit/
-├── project.godot       # Ficheiro de configuração do motor Godot
-├── .gutconfig.json     # Configuração dos testes GUT
-├── LICENSE             # Licença do projecto (MIT)
-└── README.md           # Documentação do projecto
+├── project.godot       # Godot project settings and engine configuration
+├── .gutconfig.json     # GUT test runner configuration
+├── LICENSE             # Proprietary licence agreement
+└── README.md           # Technical documentation
 ```
 
 ---
 
-## 🛠️ Como Executar
+## 🔧 Prerequisites & Launch
 
-### Pré-requisitos
-- **[Godot Engine 4.x](https://godotengine.org/)** (Recomendado 4.3 ou superior).
+### Requirements
+- **Godot Engine 4.x** (version 4.3 or higher recommended).
 
-### Passos
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/marcioeduine/ss_code_ide_godot.git
-   cd ss_code_ide_godot
-   ```
-
-2. Abra o Godot Engine, clique em **Import** e selecione o ficheiro `project.godot`.
-
-3. Execute o projecto pressionando <kbd>F5</kbd> (ou clique no botão **Play** no topo direito do Godot).
+### Running the Project
+1. Open Godot Engine Project Manager.
+2. Select **Import**, navigate to the project directory, and select `project.godot`.
+3. Launch the project by pressing <kbd>F5</kbd> or clicking **Run** in the Godot interface.
 
 ---
 
-## 🧪 Executar Testes Unitários
+## 🧪 Running Unit Tests
 
-Para correr os testes automatizados utilizando o GUT via terminal:
+Unit tests are managed via **GUT**. To run the full test suite in headless mode via command line:
 
 ```bash
 godot --headless -s addons/gut/gut_cmdln.gd -gconfig=.gutconfig.json
@@ -135,10 +131,10 @@ godot --headless -s addons/gut/gut_cmdln.gd -gconfig=.gutconfig.json
 
 ---
 
-## 📄 Licença
+## 🔒 Licence & Copyright
 
-Este projecto está licenciado sob os termos da licença **MIT**. Consulte o ficheiro [LICENSE](LICENSE) para mais detalhes.
+**Copyright (C) 2026 Ser Superior (SS). All rights reserved.**
 
----
+This project is strictly proprietary and confidential. It is **not** open-source software, and third parties are strictly prohibited from copying, distributing, modifying, sublicensing, or commercialising any portion of this software without prior express written authorisation from **Ser Superior (SS)**.
 
-<p align="center">Desenvolvido por <strong>Márcio (SSDevTools)</strong></p>
+See the [LICENSE](LICENSE) file for complete licence terms.
