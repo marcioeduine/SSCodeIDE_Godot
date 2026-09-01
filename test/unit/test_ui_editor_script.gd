@@ -1,6 +1,6 @@
 extends GutTest
 
-## Unit tests verifying core scripts, editor scenes, Adwaita/Fish formatting, and workspace awareness.
+## Unit tests verifying core scripts, editor scenes, Git tools, checklist formatting, and prompt controls.
 
 
 func test_ui_editor_script_loads() -> void:
@@ -35,9 +35,11 @@ func test_markdown_formatting_helpers() -> void:
 	var formatted_link: String = editor_script._replace_links("Read [README](README.md) file.")
 	assert_true(formatted_link.contains("[color=#62a0ea][u]README[/u][/color]"))
 	
-	var markdown_sample := "### Actions\n- **Item 1**: Done\n> Note block\n```gdscript\nvar x = 1\n```"
+	var markdown_sample := "### Actions\n- [ ] Pending task\n- [x] Completed task\n- **Item 1**: Done\n> Note block\n```gdscript\nvar x = 1\n```"
 	var bbcode_output: String = editor_script._format_markdown_to_bbcode(markdown_sample)
 	assert_true(bbcode_output.contains("[color=#ffffff][b]Actions[/b][/color]"))
+	assert_true(bbcode_output.contains("☐ Pending task"))
+	assert_true(bbcode_output.contains("✔ Completed task"))
 	assert_true(bbcode_output.contains("[color=#57e389]•[/color] [b]Item 1[/b]: Done"))
 	assert_true(bbcode_output.contains("▎"))
 	assert_true(bbcode_output.contains("Copy"))
@@ -56,5 +58,16 @@ func test_workspace_context_generation() -> void:
 	var context_str: String = editor_script._get_workspace_context()
 	assert_true(context_str.contains("Workspace Root:"))
 	assert_true(context_str.contains("Project Directory Structure"))
+	
+	editor_script.free()
+
+
+func test_git_command_execution() -> void:
+	var editor_script = load("res://scripts/ui_editor.gd").new()
+	assert_not_null(editor_script)
+	
+	var res: Dictionary = editor_script._execute_git_command(["--version"])
+	assert_eq(res["exit_code"], 0)
+	assert_true(str(res["output"]).to_lower().contains("git version"))
 	
 	editor_script.free()

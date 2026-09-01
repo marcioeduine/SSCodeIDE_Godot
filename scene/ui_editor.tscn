@@ -178,27 +178,25 @@ theme_override_constants/separation = 4
 [node name="ChatHeaderRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane"]
 custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
+theme_override_constants/separation = 8
 
 [node name="ChatHeader" type="Label" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "SSBot"
+text = "CHAT"
 clip_text = true
 
-[node name="ProviderSelect" type="OptionButton" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
-custom_minimum_size = Vector2(110, 0)
+[node name="ChatContextBadge" type="Label" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
 layout_mode = 2
-item_count = 3
-popup/item_0/text = "GPT"
-popup/item_0/id = 0
-popup/item_1/text = "Claude"
-popup/item_1/id = 1
-popup/item_2/text = "Gemini"
-popup/item_2/id = 2
+text = "Local · Autopilot"
 
-[node name="ChatBadge" type="Label" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
+[node name="ChatToolsBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
 layout_mode = 2
-text = "NVIDIA NIM"
+text = "Tools"
+
+[node name="ChatClearBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
+layout_mode = 2
+text = "+"
 
 [node name="ChatLog" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/ChatPane"]
 layout_mode = 2
@@ -232,30 +230,54 @@ allow_reselect = true
 item_count = 0
 
 [node name="ChatInputCard" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane"]
-custom_minimum_size = Vector2(0, 68)
+custom_minimum_size = Vector2(0, 78)
 layout_mode = 2
 
 [node name="ChatInputVBox" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
+[node name="ChatContextChip" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox"]
+layout_mode = 2
+size_flags_horizontal = 0
+text = "+ Active File"
+
 [node name="ChatInput" type="LineEdit" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "Message SSBot…"
+placeholder_text = "Describe what to build or ask a question…"
 
 [node name="ChatInputBottomRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="ThinkChip" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
+[node name="AttachBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
 layout_mode = 2
-text = "✦ Deep thinking"
+text = "+"
 
-[node name="SearchChip" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
+[node name="AgentModeBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
 layout_mode = 2
-text = "🌐 Smart Search"
+text = "</> Agent"
+
+[node name="ProviderSelect" type="OptionButton" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+item_count = 5
+popup/item_0/text = "Nemotron 3 Omni"
+popup/item_0/id = 0
+popup/item_1/text = "Nemotron 3.5"
+popup/item_1/id = 1
+popup/item_2/text = "Kimi K3"
+popup/item_2/id = 2
+popup/item_3/text = "DeepSeek V4"
+popup/item_3/id = 3
+popup/item_4/text = "Laguna Code"
+popup/item_4/id = 4
+
+[node name="SmartCommitBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
+layout_mode = 2
+text = "⎇ Commit"
 
 [node name="InputSpacer" type="Control" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
 layout_mode = 2

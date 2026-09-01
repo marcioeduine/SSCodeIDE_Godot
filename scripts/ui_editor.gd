@@ -6,11 +6,18 @@ extends Control
 @onready var _tab_bar: TabBar = $RootVBox/MainSplit/CenterSplit/EditorPane/TabBar
 @onready var _code_edit: CodeEdit = $RootVBox/MainSplit/CenterSplit/EditorPane/CodeEdit
 @onready var _chat_log: RichTextLabel = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatLog
+@onready var _chat_header: Label = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatHeader
+@onready var _chat_context_badge: Label = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatContextBadge
+@onready var _chat_tools_btn: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatToolsBtn
+@onready var _chat_clear_btn: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatClearBtn
 @onready var _chat_input_card: PanelContainer = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard
+@onready var _chat_context_chip: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatContextChip
 @onready var _chat_input: LineEdit = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInput
+@onready var _attach_btn: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow/AttachBtn
+@onready var _agent_mode_btn: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow/AgentModeBtn
+@onready var _provider_select: OptionButton = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow/ProviderSelect
+@onready var _smart_commit_btn: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow/SmartCommitBtn
 @onready var _chat_send: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow/ChatSend
-@onready var _think_chip: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow/ThinkChip
-@onready var _search_chip: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow/SearchChip
 @onready var _status_left: Label = $RootVBox/StatusBar/StatusRow/StatusLeft
 @onready var _status_cursor: Label = $RootVBox/StatusBar/StatusRow/StatusCursor
 @onready var _status_lang: Label = $RootVBox/StatusBar/StatusRow/StatusLang
@@ -35,8 +42,6 @@ extends Control
 @onready var _toast_panel: PanelContainer = $ToastPanel
 @onready var _toast_label: RichTextLabel = $ToastPanel/ToastMargin/ToastLabel
 @onready var _ai_chat_http: HTTPRequest = $AIChatHttp
-@onready var _provider_select: OptionButton = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ProviderSelect
-@onready var _chat_badge: Label = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatBadge
 @onready var _chat_status_banner: PanelContainer = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner
 @onready var _chat_status_label: RichTextLabel = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner/ChatStatusLabel
 @onready var _chat_suggestions_popup: PanelContainer = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatSuggestionsPopup
@@ -60,11 +65,13 @@ var _model_candidate_index: int = 0
 var _spinner_time: float = 0.0
 var _request_start_time: float = 0.0
 var _chat_history: Array[Dictionary] = []
-var _think_active: bool = true
-var _search_active: bool = false
 const SPINNER_FRAMES: Array[String] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
 const CHAT_SLASH_COMMANDS: Array[Dictionary] = [
+	{"cmd": "/tools", "desc": "List all available AI agent tools"},
+	{"cmd": "/git commit", "desc": "Generate intelligent Git commit message and commit"},
+	{"cmd": "/git status", "desc": "Show repository status and changed files"},
+	{"cmd": "/git diff", "desc": "Show repository diff"},
 	{"cmd": "/save", "desc": "Save the active file in editor"},
 	{"cmd": "/files", "desc": "Refresh workspace file explorer"},
 	{"cmd": "/open ", "desc": "Open file by path (/open <path>)"},
@@ -180,8 +187,12 @@ func _wire_signals() -> void:
 	_chat_input.text_submitted.connect(_on_chat_submitted)
 	_chat_input.text_changed.connect(_on_chat_input_text_changed)
 	_chat_send.pressed.connect(_on_chat_send_pressed)
-	_think_chip.pressed.connect(_on_think_chip_pressed)
-	_search_chip.pressed.connect(_on_search_chip_pressed)
+	_chat_tools_btn.pressed.connect(_show_tools_list)
+	_chat_clear_btn.pressed.connect(_on_clear_chat_pressed)
+	_chat_context_chip.pressed.connect(_on_context_chip_pressed)
+	_attach_btn.pressed.connect(_on_attach_btn_pressed)
+	_agent_mode_btn.pressed.connect(_on_agent_mode_pressed)
+	_smart_commit_btn.pressed.connect(_generate_smart_commit)
 	_file_menu.id_pressed.connect(_on_file_menu)
 	_edit_menu.id_pressed.connect(_on_edit_menu)
 	_config_menu.id_pressed.connect(_on_config_menu)
@@ -357,7 +368,7 @@ func _load_ai_config() -> void:
 		idx = 0
 		_ai_provider = "nemotron"
 	_provider_select.select(idx)
-	_chat_send.text = "Send"
+	_chat_send.text = "↑"
 
 
 func _save_ai_config() -> void:
@@ -376,8 +387,8 @@ func _update_ai_status() -> void:
 	}
 	var display_title: String = titles.get(_ai_provider, "Nemotron 3 Omni")
 	_status_ai.text = "AI: %s · on" % display_title
-	_chat_badge.text = "NVIDIA NIM"
-	_chat_input.placeholder_text = "Ask %s…" % display_title
+	_chat_context_badge.text = "Local · Autopilot"
+	_chat_input.placeholder_text = "Describe what to build or ask %s…" % display_title
 
 
 func _apply_kitty_fish_theme() -> void:
@@ -469,9 +480,18 @@ func _apply_kitty_fish_theme() -> void:
 	_chat_send.add_theme_color_override("font_hover_color", Color("#ffffff"))
 	_chat_send.add_theme_color_override("font_pressed_color", Color("#ffffff"))
 
-	## Chat header
-	var chat_header: Label = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatHeader
-	chat_header.add_theme_color_override("font_color", fg_bright)
+	## Chat header & actions
+	_chat_header.add_theme_color_override("font_color", fg_bright)
+	_chat_context_badge.add_theme_color_override("font_color", cyan)
+	
+	var btn_pill_sb := StyleBoxFlat.new()
+	btn_pill_sb.bg_color = bg_lighter
+	btn_pill_sb.set_corner_radius_all(6)
+	btn_pill_sb.set_content_margin_all(4)
+	for btn: Button in [_chat_tools_btn, _chat_clear_btn, _chat_context_chip, _attach_btn, _agent_mode_btn, _smart_commit_btn]:
+		btn.add_theme_stylebox_override("normal", btn_pill_sb)
+		btn.add_theme_stylebox_override("hover", btn_pill_sb)
+		btn.add_theme_color_override("font_color", fg)
 
 	## Status bar — Adwaita Darker
 	var status_sb := StyleBoxFlat.new()
@@ -483,13 +503,12 @@ func _apply_kitty_fish_theme() -> void:
 	_status_enc.add_theme_color_override("font_color", muted)
 	_status_ai.add_theme_color_override("font_color", blue)
 
-	## AI Badge
-	_chat_badge.add_theme_color_override("font_color", cyan)
-
-	## Provider select dropdown
+	## Provider select dropdown (inside prompt capsule)
 	var provider_sb := StyleBoxFlat.new()
-	provider_sb.bg_color = bg_lighter
-	provider_sb.set_corner_radius_all(4)
+	provider_sb.bg_color = bg_card
+	provider_sb.border_color = Color("#282832")
+	provider_sb.set_border_width_all(1)
+	provider_sb.set_corner_radius_all(6)
 	provider_sb.set_content_margin_all(4)
 	_provider_select.add_theme_stylebox_override("normal", provider_sb)
 	_provider_select.add_theme_color_override("font_color", fg)
@@ -521,59 +540,51 @@ func _apply_kitty_fish_theme() -> void:
 	if _nerd_font:
 		for node: Control in [_code_edit, _file_tree, _chat_log, _chat_input,
 				_status_left, _status_cursor, _status_lang, _status_enc,
-				_status_ai, _nav_workspace, chat_header, explorer_header,
-				_chat_status_label, _think_chip, _search_chip, _chat_send,
-				_chat_suggestions_list]:
+				_status_ai, _nav_workspace, _chat_header, _chat_context_badge,
+				_chat_tools_btn, _chat_clear_btn, _chat_context_chip,
+				_attach_btn, _agent_mode_btn, _smart_commit_btn,
+				_provider_select, explorer_header,
+				_chat_status_label, _chat_send, _chat_suggestions_list]:
 			node.add_theme_font_override("font", _nerd_font)
 		_code_edit.add_theme_font_size_override("font_size", 14)
 		_chat_log.add_theme_font_size_override("normal_font_size", 13)
 		_chat_input.add_theme_font_size_override("font_size", 13)
 		_chat_status_label.add_theme_font_size_override("normal_font_size", 12)
-		_think_chip.add_theme_font_size_override("font_size", 11)
-		_search_chip.add_theme_font_size_override("font_size", 11)
 		_chat_suggestions_list.add_theme_font_size_override("font_size", 11)
+		_provider_select.add_theme_font_size_override("font_size", 11)
+		_smart_commit_btn.add_theme_font_size_override("font_size", 11)
+		_agent_mode_btn.add_theme_font_size_override("font_size", 11)
 
 
-func _on_think_chip_pressed() -> void:
-	_think_active = not _think_active
-	_update_chip_styles()
+func _on_clear_chat_pressed() -> void:
+	_chat_history.clear()
+	_chat_log.clear()
+	_append_chat("IDE", "Chat history and context reset.", Color("#57e389"))
 
 
-func _on_search_chip_pressed() -> void:
-	_search_active = not _search_active
-	_update_chip_styles()
+func _on_context_chip_pressed() -> void:
+	if _active_index >= 0 and _active_index < _open_files.size():
+		var fname: String = _open_files[_active_index].get("path", "").get_file()
+		_chat_input.text = "Review " + fname + ": "
+		_chat_input.caret_column = _chat_input.text.length()
+		_chat_input.grab_focus()
 
 
-func _update_chip_styles() -> void:
-	var think_sb := StyleBoxFlat.new()
-	think_sb.set_corner_radius_all(10)
-	think_sb.set_content_margin_all(5)
-	if _think_active:
-		think_sb.bg_color = Color("#1e2a38")
-		think_sb.border_color = Color("#62a0ea")
-		think_sb.set_border_width_all(1)
-		_think_chip.add_theme_color_override("font_color", Color("#99c1f1"))
+func _on_attach_btn_pressed() -> void:
+	if _active_index >= 0 and _active_index < _open_files.size():
+		var p: String = _open_files[_active_index].get("path", "")
+		_chat_input.text += " @" + p.get_file() + " "
+		_chat_input.caret_column = _chat_input.text.length()
+		_chat_input.grab_focus()
+
+
+func _on_agent_mode_pressed() -> void:
+	if _agent_mode_btn.text == "</> Agent":
+		_agent_mode_btn.text = "💬 Chat"
+		_chat_context_badge.text = "Local · Chat"
 	else:
-		think_sb.bg_color = Color("#222228")
-		think_sb.set_border_width_all(0)
-		_think_chip.add_theme_color_override("font_color", Color("#9a9996"))
-	_think_chip.add_theme_stylebox_override("normal", think_sb)
-	_think_chip.add_theme_stylebox_override("hover", think_sb)
-
-	var search_sb := StyleBoxFlat.new()
-	search_sb.set_corner_radius_all(10)
-	search_sb.set_content_margin_all(5)
-	if _search_active:
-		search_sb.bg_color = Color("#1e3028")
-		search_sb.border_color = Color("#57e389")
-		search_sb.set_border_width_all(1)
-		_search_chip.add_theme_color_override("font_color", Color("#8ff0a4"))
-	else:
-		search_sb.bg_color = Color("#222228")
-		search_sb.set_border_width_all(0)
-		_search_chip.add_theme_color_override("font_color", Color("#9a9996"))
-	_search_chip.add_theme_stylebox_override("normal", search_sb)
-	_search_chip.add_theme_stylebox_override("hover", search_sb)
+		_agent_mode_btn.text = "</> Agent"
+		_chat_context_badge.text = "Local · Autopilot"
 
 
 func _configure_code_edit() -> void:
@@ -750,6 +761,10 @@ func _load_active_into_editor() -> void:
 	var path: String = str(info.get("path", ""))
 	_status_lang.text = FileKind.label_for_path(path)
 	_update_cursor_status()
+	if not path.is_empty():
+		_chat_context_chip.text = "+ " + path.get_file()
+	else:
+		_chat_context_chip.text = "+ Untitled"
 
 
 func _save_active() -> void:
@@ -967,6 +982,26 @@ func _handle_slash(cmd: String) -> void:
 	var parts: PackedStringArray = cmd.split(" ", false, 1)
 	var head: String = parts[0].to_lower()
 	match head:
+		"/tools":
+			_show_tools_list()
+		"/git":
+			var subcmd: String = parts[1].strip_edges().to_lower() if parts.size() > 1 else "status"
+			if subcmd.begins_with("commit"):
+				_generate_smart_commit()
+			elif subcmd.begins_with("diff"):
+				var res := _execute_git_command(["diff"])
+				var diff_out := res["output"].strip_edges()
+				if diff_out.is_empty():
+					_append_chat("GIT", "No diffs. Working tree clean.", Color("#57e389"))
+				else:
+					_append_chat("GIT", "```diff\n" + diff_out + "\n```", Color("#62a0ea"))
+			else:
+				var res := _execute_git_command(["status", "--short"])
+				var status_out := res["output"].strip_edges()
+				if status_out.is_empty():
+					_append_chat("GIT", "Working tree clean. Nothing to commit.", Color("#57e389"))
+				else:
+					_append_chat("GIT", "```bash\n" + status_out + "\n```", Color("#62a0ea"))
 		"/save":
 			_save_active()
 			var p: String = _open_files[_active_index]["path"] if _active_index >= 0 else "untitled"
@@ -987,7 +1022,94 @@ func _handle_slash(cmd: String) -> void:
 		"/quit", "/exit":
 			get_tree().quit()
 		_:
-			_append_chat("IDE", "Commands: `/save`, `/files`, `/open <path>`, `/cancel`, `/clear`, `/quit`", Color("#ffa348"))
+			_append_chat("IDE", "Commands: `/tools`, `/git commit`, `/git status`, `/git diff`, `/save`, `/files`, `/open <path>`, `/clear`, `/quit`", Color("#ffa348"))
+
+
+func _show_tools_list() -> void:
+	var tools_md := """Vou sinalizar que terminei após listar as ferramentas. Em seguida marco a tarefa como concluída.
+
+Aqui estão as ferramentas que posso usar:
+
+• **apply_patch**: Editar ficheiros do workspace aplicando patches (criar/atualizar/eliminar).
+• **create_file**: Criar novos ficheiros com conteúdo.
+• **read_file**: Ler conteúdo de ficheiros (intervalo de linhas).
+• **list_dir**: Listar conteúdo de directórios.
+• **file_search**: Procurar ficheiros por padrão glob.
+• **grep_search**: Pesquisa de texto/regex rápida em ficheiros do workspace.
+• **git_status**: Verificar estado do repositório Git e ficheiros alterados.
+• **git_diff**: Inspecionar alterações de código (estatísticas de adições e remoções).
+• **git_commit**: Gerar e executar commits inteligentes automáticos.
+• **create_new_workspace**: Scaffold completo de novo projecto/directório.
+• **run_terminal**: Executar comandos na consola persistente (sync/async).
+• **manage_todo_list**: Criar e actualizar lista de tarefas de progresso (Todos).
+
+Resumo: listei as ferramentas disponíveis e posso usá-las conforme precisar."""
+	_append_chat("AGENT", tools_md, Color("#62a0ea"))
+
+
+func _execute_git_command(args: PackedStringArray) -> Dictionary:
+	var output: Array = []
+	var exit_code: int = OS.execute("git", args, output, true)
+	var out_text: String = output[0] if output.size() > 0 else ""
+	return {"exit_code": exit_code, "output": out_text}
+
+
+func _generate_smart_commit() -> void:
+	# 1. Run git status
+	var status_res := _execute_git_command(["status", "--porcelain"])
+	var status_text: String = status_res["output"].strip_edges()
+	if status_text.is_empty():
+		_append_chat("GIT", "Working tree clean. No changes to commit.", Color("#57e389"))
+		return
+	
+	# 2. Run git diff --stat
+	var diff_stat_res := _execute_git_command(["diff", "--stat"])
+	var diff_stat: String = diff_stat_res["output"].strip_edges()
+	
+	# 3. Analyze modified files
+	var lines := status_text.split("\n")
+	var modified_files: Array[String] = []
+	for l in lines:
+		var trimmed := l.strip_edges()
+		if trimmed.length() > 3:
+			modified_files.append(trimmed.substr(3).strip_edges())
+	
+	# 4. Generate intelligent conventional commit message
+	var scope: String = "workspace"
+	if not modified_files.is_empty():
+		var first_file: String = modified_files[0]
+		if first_file.begins_with("scripts/"):
+			scope = first_file.get_file().get_basename()
+		elif first_file.begins_with("scene/"):
+			scope = "ui"
+		elif first_file.begins_with("test/"):
+			scope = "test"
+		elif first_file.ends_with(".md"):
+			scope = "docs"
+	
+	var summary_msg := "feat(%s): update %s with smart tools & context" % [scope, ", ".join(modified_files.slice(0, 3))]
+	if modified_files.size() > 3:
+		summary_msg += " and more"
+	
+	# 5. Stage & commit
+	var add_res := _execute_git_command(["add", "."])
+	if add_res["exit_code"] != 0:
+		_append_chat("GIT", "Error staging files:\n" + add_res["output"], Color("#ed333b"))
+		return
+	
+	var commit_res := _execute_git_command(["commit", "-m", summary_msg])
+	if commit_res["exit_code"] != 0:
+		_append_chat("GIT", "Git commit failed:\n" + commit_res["output"], Color("#ed333b"))
+		return
+	
+	var commit_report := "[b]Intelligent Git Commit Created:[/b]\n"
+	commit_report += "[bgcolor=#1e1e24][color=#57e389]  " + summary_msg + "\n[/color][/bgcolor]\n\n"
+	if not diff_stat.is_empty():
+		commit_report += "[color=#9a9996]Changes Summary:\n" + diff_stat + "[/color]\n"
+	commit_report += "\n[color=#57e389]● Git[/color] [color=#62a0ea]committed successfully[/color]"
+	
+	_append_chat("GIT", commit_report, Color("#57e389"))
+	_show_toast("Git commit completed: " + summary_msg, false)
 
 
 func _get_workspace_files_list() -> Array[String]:
@@ -1078,15 +1200,13 @@ func _send_chat_completion() -> void:
 	
 	var workspace_info: String = _get_workspace_context()
 	var system_role_content: String = (
-		"You are SSBot, an elite AI programming assistant integrated directly into SSCodeIDE.\n" +
+		"You are SSBot, an elite autonomous AI programming agent integrated directly into SSCodeIDE.\n" +
 		"You have direct access and visibility to the project workspace files, directory tree, and active file.\n\n" +
 		"=== WORKSPACE CONTEXT ===\n" +
 		workspace_info + "\n" +
 		"=========================\n\n" +
-		"Provide accurate, deeply knowledgeable, concise and clean answers with syntax highlighting in British English."
+		"You can provide guidance, plan development tasks with Todos, list files, and format code clearly with British English technical explanations."
 	)
-	if _think_active:
-		system_role_content += " Think deeply and provide comprehensive step-by-step reasoning."
 	
 	var messages_payload: Array[Dictionary] = [
 		{"role": "system", "content": system_role_content}
@@ -1105,7 +1225,7 @@ func _send_chat_completion() -> void:
 		"stream": false
 	}
 	if model_name.begins_with("nvidia/nemotron"):
-		payload_dict["chat_template_kwargs"] = {"thinking": _think_active}
+		payload_dict["chat_template_kwargs"] = {"thinking": true}
 	var payload_json := JSON.stringify(payload_dict)
 	var err: Error = _ai_chat_http.request(target_url, headers, HTTPClient.METHOD_POST, payload_json)
 	if err != OK:
@@ -1284,6 +1404,10 @@ func _format_markdown_to_bbcode(raw_text: String) -> String:
 		elif formatted_line.begins_with("> "):
 			# Blockquote / Callout
 			formatted_line = "[color=#5bc8af]▎[/color] [color=#c0bfbc]" + formatted_line.substr(2) + "[/color]"
+		elif formatted_line.begins_with("- [ ] ") or formatted_line.begins_with("* [ ] "):
+			formatted_line = "  [color=#9a9996]☐[/color] " + formatted_line.substr(6)
+		elif formatted_line.begins_with("- [x] ") or formatted_line.begins_with("* [x] ") or formatted_line.begins_with("- [X] "):
+			formatted_line = "  [color=#57e389]✔[/color] " + formatted_line.substr(6)
 		elif formatted_line.begins_with("- ") or formatted_line.begins_with("* "):
 			# Unordered list item
 			formatted_line = "  [color=#57e389]•[/color] " + formatted_line.substr(2)
