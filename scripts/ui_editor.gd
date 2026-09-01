@@ -465,8 +465,15 @@ func _apply_kitty_fish_theme() -> void:
 	_chat_input.add_theme_color_override("font_color", fg_bright)
 	_chat_input.add_theme_color_override("font_placeholder_color", muted)
 
-	## Action Chips
-	_update_chip_styles()
+	## Action toolbar buttons
+	var btn_tool_sb := StyleBoxFlat.new()
+	btn_tool_sb.bg_color = bg_elevated
+	btn_tool_sb.set_corner_radius_all(6)
+	btn_tool_sb.set_content_margin_all(4)
+	for btn: Button in [_attach_btn, _agent_mode_btn, _smart_commit_btn, _chat_context_chip]:
+		if btn:
+			btn.add_theme_stylebox_override("normal", btn_tool_sb)
+			btn.add_theme_color_override("font_color", fg_bright)
 
 	## Send button (Circular / pill button with Adwaita blue accent)
 	var send_sb := StyleBoxFlat.new()
@@ -915,10 +922,10 @@ func _update_chat_suggestions(input_text: String) -> void:
 	_chat_suggestions_list.clear()
 	
 	if query.begins_with("/"):
-		for item in CHAT_SLASH_COMMANDS:
-			var cmd: String = item["cmd"]
+		for item: Dictionary in CHAT_SLASH_COMMANDS:
+			var cmd: String = str(item.get("cmd", ""))
 			if query == "/" or cmd.begins_with(query):
-				_chat_suggestions_list.add_item(cmd + "  —  " + item["desc"])
+				_chat_suggestions_list.add_item(cmd + "  —  " + str(item.get("desc", "")))
 				_chat_suggestions_list.set_item_metadata(_chat_suggestions_list.get_item_count() - 1, cmd)
 	elif query.contains("@") or query.begins_with("open ") or query.begins_with("read "):
 		var at_idx := query.rfind("@")
@@ -995,15 +1002,15 @@ func _handle_slash(cmd: String) -> void:
 			if subcmd.begins_with("commit"):
 				_generate_smart_commit()
 			elif subcmd.begins_with("diff"):
-				var res := _execute_git_command(["diff"])
-				var diff_out := res["output"].strip_edges()
+				var res: Dictionary = _execute_git_command(["diff"])
+				var diff_out: String = str(res.get("output", "")).strip_edges()
 				if diff_out.is_empty():
 					_append_chat("GIT", "No diffs. Working tree clean.", Color("#57e389"))
 				else:
 					_append_chat("GIT", "```diff\n" + diff_out + "\n```", Color("#62a0ea"))
 			else:
-				var res := _execute_git_command(["status", "--short"])
-				var status_out := res["output"].strip_edges()
+				var res: Dictionary = _execute_git_command(["status", "--short"])
+				var status_out: String = str(res.get("output", "")).strip_edges()
 				if status_out.is_empty():
 					_append_chat("GIT", "Working tree clean. Nothing to commit.", Color("#57e389"))
 				else:
@@ -1062,15 +1069,15 @@ func _execute_git_command(args: PackedStringArray) -> Dictionary:
 
 func _generate_smart_commit() -> void:
 	# 1. Run git status
-	var status_res := _execute_git_command(["status", "--porcelain"])
-	var status_text: String = status_res["output"].strip_edges()
+	var status_res: Dictionary = _execute_git_command(["status", "--porcelain"])
+	var status_text: String = str(status_res.get("output", "")).strip_edges()
 	if status_text.is_empty():
 		_append_chat("GIT", "Working tree clean. No changes to commit.", Color("#57e389"))
 		return
 	
 	# 2. Run git diff --stat
-	var diff_stat_res := _execute_git_command(["diff", "--stat"])
-	var diff_stat: String = diff_stat_res["output"].strip_edges()
+	var diff_stat_res: Dictionary = _execute_git_command(["diff", "--stat"])
+	var diff_stat: String = str(diff_stat_res.get("output", "")).strip_edges()
 	
 	# 3. Analyze modified files
 	var lines := status_text.split("\n")
@@ -1098,14 +1105,14 @@ func _generate_smart_commit() -> void:
 		summary_msg += " and more"
 	
 	# 5. Stage & commit
-	var add_res := _execute_git_command(["add", "."])
-	if add_res["exit_code"] != 0:
-		_append_chat("GIT", "Error staging files:\n" + add_res["output"], Color("#ed333b"))
+	var add_res: Dictionary = _execute_git_command(["add", "."])
+	if int(add_res.get("exit_code", 1)) != 0:
+		_append_chat("GIT", "Error staging files:\n" + str(add_res.get("output", "")), Color("#ed333b"))
 		return
 	
-	var commit_res := _execute_git_command(["commit", "-m", summary_msg])
-	if commit_res["exit_code"] != 0:
-		_append_chat("GIT", "Git commit failed:\n" + commit_res["output"], Color("#ed333b"))
+	var commit_res: Dictionary = _execute_git_command(["commit", "-m", summary_msg])
+	if int(commit_res.get("exit_code", 1)) != 0:
+		_append_chat("GIT", "Git commit failed:\n" + str(commit_res.get("output", "")), Color("#ed333b"))
 		return
 	
 	var commit_report := "[b]Intelligent Git Commit Created:[/b]\n"
