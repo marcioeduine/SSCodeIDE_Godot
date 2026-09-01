@@ -778,8 +778,8 @@ func _markdown_to_bbcode(md: String) -> String:
 				in_code_block = false
 				var lang_label: String = ""
 				if not code_lang.is_empty():
-					lang_label = "[color=#9a9996][i]" + code_lang + "[/i][/color]\n"
-				out += lang_label + "[bgcolor=#16161b][color=#57e389][code]" + code_buffer.strip_edges() + "[/code][/color][/bgcolor]\n\n"
+					lang_label = "[color=#8b949e][i]" + code_lang.to_upper() + "[/i][/color]\n"
+				out += lang_label + "[bgcolor=#161b22][color=#7ee787][code]" + code_buffer.strip_edges() + "[/code][/color][/bgcolor]\n\n"
 			i += 1
 			continue
 
@@ -788,8 +788,18 @@ func _markdown_to_bbcode(md: String) -> String:
 			i += 1
 			continue
 
-		# Horizontal rules (---, ***, ___)
 		var stripped: String = line.strip_edges()
+
+		# Tables (| col1 | col2 |)
+		if _is_table_row(stripped):
+			var table_lines: Array[String] = []
+			while i < lines.size() and _is_table_row(lines[i]):
+				table_lines.append(lines[i])
+				i += 1
+			out += _render_preview_table(table_lines)
+			continue
+
+		# Horizontal rules (---, ***, ___)
 		if stripped.length() >= 3:
 			var is_hr: bool = true
 			var hr_ch: String = stripped[0]
@@ -801,28 +811,33 @@ func _markdown_to_bbcode(md: String) -> String:
 			else:
 				is_hr = false
 			if is_hr and stripped.length() >= 3:
-				out += "[color=#5e5c5b]────────────────────────────────[/color]\n\n"
+				out += "[color=#30363d]────────────────────────────────────────────────[/color]\n\n"
 				i += 1
 				continue
 
-		# Headings (# to ######)
+		# Headings (# to ######) - GitHub Markdown style
 		if stripped.begins_with("#"):
 			var level: int = 0
 			while level < stripped.length() and stripped[level] == "#":
 				level += 1
 			if level >= 1 and level <= 6 and level < stripped.length() and stripped[level] == " ":
 				var heading_text: String = _md_inline(stripped.substr(level + 1))
-				var sizes: Array[int] = [28, 24, 20, 17, 15, 14]
+				var sizes: Array[int] = [24, 20, 17, 15, 14, 13]
 				var sz: int = sizes[mini(level - 1, 5)]
-				if level <= 2:
-					out += "[font_size=" + str(sz) + "][b][color=#62a0ea]" + heading_text + "[/color][/b][/font_size]\n"
-					out += "[color=#5e5c5b]────────────────────────────────[/color]\n\n"
+				if level == 1:
+					out += "\n[font_size=" + str(sz) + "][b][color=#f0f6fc]" + heading_text + "[/color][/b][/font_size]\n"
+					out += "[color=#30363d]────────────────────────────────────────────────[/color]\n\n"
+				elif level == 2:
+					out += "\n[font_size=" + str(sz) + "][b][color=#58a6ff]" + heading_text + "[/color][/b][/font_size]\n"
+					out += "[color=#21262d]────────────────────────────────────────────────[/color]\n\n"
+				elif level == 3:
+					out += "\n[font_size=" + str(sz) + "][b][color=#79c0ff]" + heading_text + "[/b][/color][/font_size]\n\n"
 				else:
-					out += "[font_size=" + str(sz) + "][b]" + heading_text + "[/b][/font_size]\n\n"
+					out += "\n[font_size=" + str(sz) + "][b][color=#d2a8ff]" + heading_text + "[/b][/color][/font_size]\n\n"
 				i += 1
 				continue
 
-		# Blockquotes (>)
+		# Blockquotes (>) - GitHub style
 		if stripped.begins_with(">"):
 			var quote_lines: String = ""
 			while i < lines.size() and lines[i].strip_edges().begins_with(">"):
@@ -835,21 +850,20 @@ func _markdown_to_bbcode(md: String) -> String:
 					ql = ql.substr(1)
 				quote_lines += _md_inline(ql) + "\n"
 				i += 1
-			out += "[indent][color=#5bc8af]▎ [/color][i]" + quote_lines.strip_edges() + "[/i][/indent]\n\n"
+			out += "[indent][color=#388bfd]▎ [/color][color=#8b949e][i]" + quote_lines.strip_edges() + "[/i][/color][/indent]\n\n"
 			continue
 
-		# Unordered lists (-, *, +)
+		# Unordered lists (-, *, +) & Task lists - GitHub style
 		if stripped.begins_with("- ") or stripped.begins_with("* ") or stripped.begins_with("+ "):
 			while i < lines.size():
 				var ul_line: String = lines[i].strip_edges()
 				if ul_line.begins_with("- [ ] ") or ul_line.begins_with("- [x] ") or ul_line.begins_with("- [X] "):
-					# Task list
 					var checked: bool = ul_line.begins_with("- [x] ") or ul_line.begins_with("- [X] ")
 					var task_text: String = _md_inline(ul_line.substr(6))
-					var marker: String = "[color=#57e389]☑[/color] " if checked else "[color=#9a9996]☐[/color] "
+					var marker: String = "[color=#3fb950]☑[/color] " if checked else "[color=#8b949e]☐[/color] "
 					out += "  " + marker + task_text + "\n"
 				elif ul_line.begins_with("- ") or ul_line.begins_with("* ") or ul_line.begins_with("+ "):
-					out += "  [color=#62a0ea]•[/color] " + _md_inline(ul_line.substr(2)) + "\n"
+					out += "  [color=#58a6ff]•[/color] " + _md_inline(ul_line.substr(2)) + "\n"
 				else:
 					break
 				i += 1
@@ -865,7 +879,7 @@ func _markdown_to_bbcode(md: String) -> String:
 					var ol_line: String = lines[i].strip_edges()
 					var dp: int = ol_line.find(". ")
 					if dp > 0 and dp <= 4 and ol_line.substr(0, dp).is_valid_int():
-						out += "  [color=#62a0ea]" + str(list_num) + ".[/color] " + _md_inline(ol_line.substr(dp + 2)) + "\n"
+						out += "  [color=#58a6ff]" + str(list_num) + ".[/color] " + _md_inline(ol_line.substr(dp + 2)) + "\n"
 						list_num += 1
 					else:
 						break
@@ -880,19 +894,111 @@ func _markdown_to_bbcode(md: String) -> String:
 			continue
 
 		# Regular paragraph text with inline formatting
-		out += _md_inline(stripped) + "\n"
+		out += _md_inline(stripped) + "\n\n"
 		i += 1
 
 	return out
 
 
+func _is_table_row(line: String) -> bool:
+	var s: String = line.strip_edges()
+	return s.begins_with("|") and s.ends_with("|") and s.length() >= 3
+
+
+func _is_table_separator(line: String) -> bool:
+	var s: String = line.strip_edges()
+	if not (s.begins_with("|") and s.ends_with("|")):
+		return false
+	var inner: String = s.replace(" ", "").replace(":", "").replace("-", "").replace("|", "")
+	return inner.is_empty()
+
+
+func _render_preview_table(table_lines: Array[String]) -> String:
+	if table_lines.is_empty():
+		return ""
+	var header_cells: Array[String] = _split_table_row(table_lines[0])
+	if header_cells.is_empty():
+		return ""
+	var cols: int = header_cells.size()
+	
+	var row_start: int = 1
+	if table_lines.size() > 1 and _is_table_separator(table_lines[1]):
+		row_start = 2
+	
+	var table_out: String = "\n[table=%d]\n" % cols
+	
+	# Header Row
+	for h: String in header_cells:
+		var formatted_h: String = _md_inline(h)
+		table_out += "[cell][bgcolor=#161b22][color=#58a6ff][b]  " + formatted_h + "  [/b][/color][/bgcolor][/cell]"
+	table_out += "\n"
+	
+	# Data Rows
+	var row_count: int = 0
+	for r_idx: int in range(row_start, table_lines.size()):
+		var row_line: String = table_lines[r_idx]
+		var cells: Array[String] = _split_table_row(row_line)
+		if cells.is_empty():
+			continue
+		var row_bg: String = "#0d1117" if (row_count % 2 == 0) else "#161b22"
+		for c_idx: int in range(cols):
+			var cell_val: String = cells[c_idx] if c_idx < cells.size() else ""
+			var formatted_cell: String = _md_inline(cell_val)
+			table_out += "[cell][bgcolor=" + row_bg + "][color=#c9d1d9]  " + formatted_cell + "  [/color][/bgcolor][/cell]"
+		table_out += "\n"
+		row_count += 1
+	
+	table_out += "[/table]\n\n"
+	return table_out
+
+
+func _split_table_row(row: String) -> Array[String]:
+	var trimmed: String = row.strip_edges()
+	if trimmed.begins_with("|"):
+		trimmed = trimmed.substr(1)
+	if trimmed.ends_with("|"):
+		trimmed = trimmed.substr(0, trimmed.length() - 1)
+	var parts: PackedStringArray = trimmed.split("|")
+	var result: Array[String] = []
+	for p: String in parts:
+		result.append(p.strip_edges())
+	return result
+
+
 func _md_inline(text: String) -> String:
 	var result: String = text
+
+	# HTML <kbd>key</kbd> -> GitHub Keyboard Badge
+	var kbd_regex := RegEx.new()
+	kbd_regex.compile("(?i)<kbd>(.*?)</kbd>")
+	result = kbd_regex.sub(result, "[bgcolor=#21262d][color=#f0f6fc][b] $1 [/b][/color][/bgcolor]", true)
+
+	# HTML <code>...</code>
+	var html_code_regex := RegEx.new()
+	html_code_regex.compile("(?i)<code>(.*?)</code>")
+	result = html_code_regex.sub(result, "[bgcolor=#161b22][color=#79c0ff][code] $1 [/code][/color][/bgcolor]", true)
+
+	# HTML <b>, <strong>, <i>, <em>, <s>, <del>, <br>
+	var strong_regex := RegEx.new()
+	strong_regex.compile("(?i)<(?:b|strong)>(.*?)</(?:b|strong)>")
+	result = strong_regex.sub(result, "[b]$1[/b]", true)
+
+	var em_regex := RegEx.new()
+	em_regex.compile("(?i)<(?:i|em)>(.*?)</(?:i|em)>")
+	result = em_regex.sub(result, "[i]$1[/i]", true)
+
+	var del_regex := RegEx.new()
+	del_regex.compile("(?i)<(?:s|del|strike)>(.*?)</(?:s|del|strike)>")
+	result = del_regex.sub(result, "[s]$1[/s]", true)
+
+	var br_regex := RegEx.new()
+	br_regex.compile("(?i)<br\\s*/?>")
+	result = br_regex.sub(result, "\n", true)
 
 	# Inline code (`code`)
 	var code_regex := RegEx.new()
 	code_regex.compile("`([^`]+)`")
-	result = code_regex.sub(result, "[bgcolor=#26262e][color=#57e389][code]$1[/code][/color][/bgcolor]", true)
+	result = code_regex.sub(result, "[bgcolor=#1f242c][color=#79c0ff][code] $1 [/code][/color][/bgcolor]", true)
 
 	# Bold + Italic (***text*** or ___text___)
 	var bold_italic_regex := RegEx.new()
@@ -926,12 +1032,17 @@ func _md_inline(text: String) -> String:
 	# Links [text](url)
 	var link_regex := RegEx.new()
 	link_regex.compile("\\[([^\\]]+)\\]\\(([^)]+)\\)")
-	result = link_regex.sub(result, "[color=#62a0ea][url=$2]$1[/url][/color]", true)
+	result = link_regex.sub(result, "[color=#58a6ff][url=$2]$1[/url][/color]", true)
 
 	# Images ![alt](url) — show as labelled placeholder
 	var img_regex := RegEx.new()
 	img_regex.compile("!\\[([^\\]]*?)\\]\\(([^)]+)\\)")
-	result = img_regex.sub(result, "[color=#5bc8af][Image: $1][/color]", true)
+	result = img_regex.sub(result, "[color=#79c0ff]🖼 $1[/color]", true)
+
+	# Strip any remaining raw HTML tags
+	var tag_strip_regex := RegEx.new()
+	tag_strip_regex.compile("<[^>]+>")
+	result = tag_strip_regex.sub(result, "", true)
 
 	return result
 

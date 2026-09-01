@@ -115,3 +115,31 @@ func test_prompt_history_and_tab_switching() -> void:
 	editor_script._active_index = 0
 	
 	editor_script.free()
+
+
+func test_markdown_to_bbcode_gfm_renderer() -> void:
+	var editor_script = load("res://scripts/ui_editor.gd").new()
+	assert_not_null(editor_script)
+	
+	var md_text: String = """# Title
+## Section
+
+| Shortcut | Action |
+| :--- | :--- |
+| <kbd>Ctrl</kbd> + <kbd>N</kbd> | Create file |
+| <kbd>Ctrl</kbd> + <kbd>S</kbd> | Save file |
+
+- [x] Done task
+- [ ] Todo task
+"""
+	var bbcode: String = editor_script._markdown_to_bbcode(md_text)
+	assert_true(bbcode.contains("[table=2]"))
+	assert_true(bbcode.contains("Shortcut"))
+	assert_true(bbcode.contains("Action"))
+	assert_true(bbcode.contains("Ctrl"))
+	assert_true(bbcode.contains("☑"))
+	assert_true(bbcode.contains("☐"))
+	assert_false(bbcode.contains("<kbd>"))
+	assert_false(bbcode.contains("</kbd>"))
+	
+	editor_script.free()
