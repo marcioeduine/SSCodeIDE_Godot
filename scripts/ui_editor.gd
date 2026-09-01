@@ -367,6 +367,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 
+func _select_tab(tab_idx: int) -> void:
+	if tab_idx < 0 or tab_idx >= _open_files.size() or tab_idx == _active_index:
+		return
+	_save_editor_state_to_active()
+	_active_index = tab_idx
+	_tab_bar.current_tab = tab_idx
+	_load_active_into_editor()
+
+
 func _switch_tab(offset: int) -> void:
 	if _open_files.size() <= 1:
 		return
