@@ -73,19 +73,22 @@ func test_git_command_execution() -> void:
 	editor_script.free()
 
 
-func test_file_kind_devicons_and_colors() -> void:
-	assert_eq(FileKind.icon_for_path("dir", true), "")
-	assert_eq(FileKind.icon_for_path("main.gd"), "")
-	assert_eq(FileKind.icon_for_path("main.py"), "")
-	assert_eq(FileKind.icon_for_path("index.ts"), "")
-	assert_eq(FileKind.icon_for_path("App.tsx"), "")
-	assert_eq(FileKind.icon_for_path(".gitignore"), "")
-	assert_eq(FileKind.icon_for_path("package.json"), "")
-	assert_eq(FileKind.icon_for_path("Cargo.toml"), "")
-	assert_eq(FileKind.icon_for_path("script.sh"), "")
-	assert_eq(FileKind.icon_for_path("README.md"), "")
+func test_file_kind_icons_and_colors() -> void:
+	assert_eq(FileKind.icon_key_for_path("dir", true, false), "folder")
+	assert_eq(FileKind.icon_key_for_path("dir", true, true), "folder_open")
+	assert_eq(FileKind.icon_key_for_path("main.gd"), "godot")
+	assert_eq(FileKind.icon_key_for_path("scene.tscn"), "scene")
+	assert_eq(FileKind.icon_key_for_path("main.py"), "python")
+	assert_eq(FileKind.icon_key_for_path("index.ts"), "typescript")
+	assert_eq(FileKind.icon_key_for_path("App.tsx"), "react")
+	assert_eq(FileKind.icon_key_for_path(".gitignore"), "git")
+	assert_eq(FileKind.icon_key_for_path("package.json"), "json")
+	assert_eq(FileKind.icon_key_for_path("Cargo.toml"), "rust")
+	assert_eq(FileKind.icon_key_for_path("script.sh"), "shell")
+	assert_eq(FileKind.icon_key_for_path("README.md"), "markdown")
 	
 	assert_eq(FileKind.color_for_path("main.gd"), Color("#478cbf"))
 	assert_eq(FileKind.color_for_path("main.py"), Color("#599eff"))
 	assert_eq(FileKind.color_for_path("script.sh"), Color("#57e389"))
 	assert_eq(FileKind.color_for_path(".gitignore"), Color("#f05032"))
+	assert_eq(FileKind.label_for_path("main.gd"), "GDScript")

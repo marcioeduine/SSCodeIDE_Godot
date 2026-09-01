@@ -180,6 +180,7 @@ func _apply_split_offsets() -> void:
 func _wire_signals() -> void:
 	_file_tree.item_activated.connect(_on_tree_item_activated)
 	_file_tree.item_selected.connect(_on_tree_item_selected)
+	_file_tree.item_collapsed.connect(_on_tree_item_collapsed)
 	_tab_bar.tab_changed.connect(_on_tab_changed)
 	_tab_bar.tab_close_pressed.connect(_on_tab_close)
 	_code_edit.text_changed.connect(_on_code_changed)
@@ -659,8 +660,12 @@ func _refresh_file_tree() -> void:
 	var root_title: String = _workspace_root.get_file()
 	if root_title.is_empty():
 		root_title = "WORKSPACE"
-	root_item.set_text(0, "󰉓 " + root_title.to_upper())
-	root_item.set_custom_color(0, Color("#62a0ea"))
+	root_item.set_text(0, root_title.to_upper())
+	var folder_tex: Texture2D = FileKind.texture_for_path(_workspace_root, true, true)
+	if folder_tex:
+		root_item.set_icon(0, folder_tex)
+		root_item.set_icon_max_width(0, 16)
+	root_item.set_custom_color(0, Color("#8ec4f7"))
 	_file_tree.set_column_title(0, "Files")
 	_populate_tree_dir(root_item, _workspace_root)
 
@@ -683,19 +688,40 @@ func _populate_tree_dir(parent_item: TreeItem, dir_path: String) -> void:
 	dir.list_dir_end()
 	dirs.sort()
 	files.sort()
-	for d in dirs:
+	for d: String in dirs:
 		var item: TreeItem = _file_tree.create_item(parent_item)
-		item.set_text(0, " " + d)
-		item.set_custom_color(0, Color("#62a0ea"))
-		item.set_metadata(0, {"path": dir_path.path_join(d), "is_dir": true})
+		item.set_text(0, d)
+		var item_path: String = dir_path.path_join(d)
+		var folder_tex: Texture2D = FileKind.texture_for_path(item_path, true, false)
+		if folder_tex:
+			item.set_icon(0, folder_tex)
+			item.set_icon_max_width(0, 16)
+		item.set_custom_color(0, Color("#8ec4f7"))
+		item.set_metadata(0, {"path": item_path, "is_dir": true})
 		item.collapsed = true
-		_populate_tree_dir(item, dir_path.path_join(d))
-	for f in files:
+		_populate_tree_dir(item, item_path)
+	for f: String in files:
 		var item: TreeItem = _file_tree.create_item(parent_item)
-		var icon_glyph: String = FileKind.icon_for_path(f)
-		item.set_text(0, icon_glyph + " " + f)
+		item.set_text(0, f)
+		var item_path: String = dir_path.path_join(f)
+		var file_tex: Texture2D = FileKind.texture_for_path(item_path, false, false)
+		if file_tex:
+			item.set_icon(0, file_tex)
+			item.set_icon_max_width(0, 16)
 		item.set_custom_color(0, FileKind.color_for_path(f))
-		item.set_metadata(0, {"path": dir_path.path_join(f), "is_dir": false})
+		item.set_metadata(0, {"path": item_path, "is_dir": false})
+
+
+func _on_tree_item_collapsed(item: TreeItem) -> void:
+	if not item:
+		return
+	var meta: Variant = item.get_metadata(0)
+	if meta is Dictionary and meta.get("is_dir", false):
+		var p: String = str(meta.get("path", ""))
+		var folder_tex: Texture2D = FileKind.texture_for_path(p, true, not item.collapsed)
+		if folder_tex:
+			item.set_icon(0, folder_tex)
+			item.set_icon_max_width(0, 16)
 
 
 func _on_tree_item_activated() -> void:
