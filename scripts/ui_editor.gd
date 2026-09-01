@@ -1355,9 +1355,9 @@ func _append_user_message(prompt: String) -> void:
 func _append_ai_response(_provider: String, reply_text: String, elapsed: float, tokens_in: int = 0, tokens_out: int = 0) -> void:
 	var stats_header := ""
 	if tokens_in > 0 and tokens_out > 0:
-		stats_header = "[bgcolor=#57e389][color=#000000][b] AI [/b][/color][/bgcolor] [b]SSBot[/b] [color=#57e389]● Copilot[/color] [color=#ffa348]%.1fk in | %.1fk out[/color] [color=#9a9996](%.1fs)[/color]\n\n" % [tokens_in / 1000.0, tokens_out / 1000.0, elapsed]
+		stats_header = "[bgcolor=#57e389][color=#000000][b] AI [/b][/color][/bgcolor] [b]SSBot[/b] [color=#57e389]● Online[/color] [color=#ffa348]%.1fk in | %.1fk out[/color] [color=#9a9996](%.1fs)[/color]\n\n" % [tokens_in / 1000.0, tokens_out / 1000.0, elapsed]
 	else:
-		stats_header = "[bgcolor=#57e389][color=#000000][b] AI [/b][/color][/bgcolor] [b]SSBot[/b] [color=#57e389]● Copilot[/color] [color=#9a9996](%.1fs)[/color]\n\n" % elapsed
+		stats_header = "[bgcolor=#57e389][color=#000000][b] AI [/b][/color][/bgcolor] [b]SSBot[/b] [color=#57e389]● Online[/color] [color=#9a9996](%.1fs)[/color]\n\n" % elapsed
 
 	var formatted_body := _format_markdown_to_bbcode(reply_text)
 	_chat_log.append_text("%s%s\n\n[color=#202024]────────────────────────────────────────────────[/color]\n\n" % [stats_header, formatted_body])

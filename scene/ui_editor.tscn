@@ -183,12 +183,12 @@ theme_override_constants/separation = 8
 [node name="ChatHeader" type="Label" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "CHAT"
+text = "SSBOT"
 clip_text = true
 
 [node name="ChatContextBadge" type="Label" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
 layout_mode = 2
-text = "Local · Autopilot"
+text = "SSBot · Workspace"
 
 [node name="ChatToolsBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
 layout_mode = 2
