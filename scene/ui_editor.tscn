@@ -41,9 +41,12 @@ theme_override_constants/separation = 8
 
 [node name="MenuBar" type="MenuBar" parent="RootVBox/NavBar" unique_id=302529279]
 layout_mode = 2
+size_flags_horizontal = 3
 flat = true
 
 [node name="File" type="PopupMenu" parent="RootVBox/NavBar/MenuBar" unique_id=728694481]
+oversampling_override = 1.0
+size = Vector2i(266, 178)
 item_count = 8
 item_0/text = "Open File…	Ctrl+O"
 item_0/id = 0
@@ -125,14 +128,6 @@ item_count = 1
 item_0/text = "About SSCodeIDE"
 item_0/id = 0
 
-[node name="NavSpacer" type="Control" parent="RootVBox/NavBar" unique_id=2131835630]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="NavWorkspace" type="Label" parent="RootVBox/NavBar" unique_id=571179227]
-visible = false
-layout_mode = 2
-
 [node name="MainSplit" type="HSplitContainer" parent="RootVBox" unique_id=470791301]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -148,8 +143,8 @@ theme_override_constants/separation = 0
 [node name="ExplorerToggleBtn" type="Button" parent="RootVBox/MainSplit/ExplorerPane" unique_id=1893227218]
 custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
-text = "◂"
 tooltip_text = "Colapse/Expansão do File Explorer (Ctrl+B)"
+text = "◂"
 
 [node name="ExplorerHeader" type="Label" parent="RootVBox/MainSplit/ExplorerPane" unique_id=1893227217]
 layout_mode = 2
@@ -223,18 +218,18 @@ custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 theme_override_constants/separation = 8
 
+[node name="ChatToggleBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow" unique_id=1421141930]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+tooltip_text = "Colapse/Expansão do Chat (Ctrl+Shift+B)"
+text = "◂"
+
 [node name="ChatHeader" type="Label" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow" unique_id=1421141929]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "chat"
 clip_text = true
 uppercase = true
-
-[node name="ChatToggleBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow" unique_id=1421141930]
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 2
-text = "◂"
-tooltip_text = "Colapse/Expansão do Chat (Ctrl+Shift+B)"
 
 [node name="ChatContextBadge" type="Label" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow" unique_id=1082829237]
 layout_mode = 2
@@ -464,18 +459,16 @@ layout_mode = 2
 text = "Fechar"
 
 [node name="ToastPanel" type="PanelContainer" parent="." unique_id=1061266605]
-visible = false
 layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
+anchors_preset = 7
+anchor_left = 0.5
 anchor_top = 1.0
-anchor_right = 1.0
+anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -400.0
-offset_top = -85.0
-offset_right = -20.0
-offset_bottom = -35.0
-grow_horizontal = 0
+offset_left = -190.0
+offset_top = -50.0
+offset_right = 190.0
+grow_horizontal = 2
 grow_vertical = 0
 
 [node name="ToastMargin" type="MarginContainer" parent="ToastPanel" unique_id=2001205600]
@@ -491,6 +484,7 @@ bbcode_enabled = true
 text = "Notificação"
 fit_content = true
 scroll_active = false
+vertical_alignment = 1
 
 [node name="AIAuthHttp" type="HTTPRequest" parent="." unique_id=396402581]
 timeout = 30.0

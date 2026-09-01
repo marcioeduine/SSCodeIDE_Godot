@@ -24,7 +24,6 @@ extends Control
 @onready var _status_lang: Label = $RootVBox/StatusBar/StatusRow/StatusLang
 @onready var _status_enc: Label = $RootVBox/StatusBar/StatusRow/StatusEnc
 @onready var _status_ai: Label = $RootVBox/StatusBar/StatusRow/StatusAI
-@onready var _nav_workspace: Label = $RootVBox/NavBar/NavWorkspace
 @onready var _main_split: HSplitContainer = $RootVBox/MainSplit
 @onready var _center_split: HSplitContainer = $RootVBox/MainSplit/CenterSplit
 @onready var _file_menu: PopupMenu = $RootVBox/NavBar/MenuBar/File
@@ -57,8 +56,6 @@ extends Control
 @onready var _find_next: Button = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindNext
 @onready var _find_close: Button = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindClose
 @onready var _markdown_preview: RichTextLabel = $RootVBox/MainSplit/CenterSplit/EditorPane/MarkdownPreview
-@onready var _explorer_toggle_btn: Button = $RootVBox/MainSplit/ExplorerPane/ExplorerToggleBtn
-@onready var _chat_toggle_btn: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatToggleBtn
 
 var _dialog_action_callback: Callable = Callable()
 
@@ -260,8 +257,6 @@ func _ready() -> void:
 		_workspace_root = base_res
 	else:
 		_workspace_root = base_res.get_base_dir()
-	_nav_workspace.text = ""
-	_nav_workspace.visible = false
 	_load_ai_config()
 	_load_theme_config()
 	_apply_kitty_fish_theme()
@@ -305,14 +300,14 @@ func _toggle_explorer() -> void:
 		_explorer_collapsed = false
 		var target := _explorer_split_offset if _explorer_split_offset > 60 else int(get_viewport_rect().size.x * 0.18)
 		tween.tween_property(_main_split, "split_offset", target, 0.22)
-		_explorer_toggle_btn.visible = true
+		get_node("RootVBox/MainSplit/ExplorerPane/ExplorerToggleBtn").visible = true
 		_status_left.text = "Explorer  ▶  shown"
 	else:
 		## Collapse: save current offset then slide to 0
 		_explorer_split_offset = _main_split.split_offset
 		_explorer_collapsed = true
 		tween.tween_property(_main_split, "split_offset", 0, 0.22)
-		_explorer_toggle_btn.visible = false
+		get_node("RootVBox/MainSplit/ExplorerPane/ExplorerToggleBtn").visible = false
 		_status_left.text = "Explorer  ◀  hidden  (Ctrl+B to restore)"
 
 
@@ -327,12 +322,14 @@ func _toggle_chat() -> void:
 		_chat_collapsed = false
 		var target := _chat_split_offset if _chat_split_offset > 60 else int(full_width * 0.50)
 		tween.tween_property(_center_split, "split_offset", target, 0.22)
+		get_node("RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatToggleBtn").visible = true
 		_status_left.text = "Chat  ▶  shown"
 	else:
 		## Collapse: save current offset then push chat fully right
 		_chat_split_offset = _center_split.split_offset
 		_chat_collapsed = true
 		tween.tween_property(_center_split, "split_offset", full_width, 0.22)
+		get_node("RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatToggleBtn").visible = false
 		_status_left.text = "Chat  ◀  hidden  (Ctrl+Shift+B to restore)"
 
 
@@ -1114,7 +1111,6 @@ func _apply_kitty_fish_theme() -> void:
 	var nav_sb := StyleBoxFlat.new()
 	nav_sb.bg_color = bg_black
 	nav_bar.add_theme_stylebox_override("panel", nav_sb)
-	_nav_workspace.add_theme_color_override("font_color", blue)
 
 	## Explorer
 	var explorer_header: Label = $RootVBox/MainSplit/ExplorerPane/ExplorerHeader
@@ -1302,7 +1298,6 @@ func _apply_kitty_fish_theme() -> void:
 	if _nerd_font:
 		for node: Control in [_code_edit, _file_tree, _chat_log, _chat_input,
 				_status_left, _status_git, _status_cursor, _status_lang, _status_enc,
-				_status_ai, _nav_workspace, _chat_header, _chat_context_badge,
 				_chat_tools_btn, _chat_clear_btn, _chat_context_chip,
 				_attach_btn, _agent_mode_btn, _smart_commit_btn,
 				_provider_select, explorer_header,
