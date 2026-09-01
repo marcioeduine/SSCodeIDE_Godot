@@ -649,7 +649,11 @@ func _create_adwaita_fish_highlighter() -> CodeHighlighter:
 func _refresh_file_tree() -> void:
 	_file_tree.clear()
 	var root_item: TreeItem = _file_tree.create_item()
-	root_item.set_text(0, _workspace_root.get_file())
+	var root_title: String = _workspace_root.get_file()
+	if root_title.is_empty():
+		root_title = "WORKSPACE"
+	root_item.set_text(0, "󰉓 " + root_title.to_upper())
+	root_item.set_custom_color(0, Color("#62a0ea"))
 	_file_tree.set_column_title(0, "Files")
 	_populate_tree_dir(root_item, _workspace_root)
 
@@ -663,7 +667,7 @@ func _populate_tree_dir(parent_item: TreeItem, dir_path: String) -> void:
 	var dirs: Array[String] = []
 	var files: Array[String] = []
 	while fname != "":
-		if not fname.begins_with("."):
+		if fname not in [".", "..", ".git", ".godot", ".gemini", "android"]:
 			if dir.current_is_dir():
 				dirs.append(fname)
 			else:
@@ -674,7 +678,8 @@ func _populate_tree_dir(parent_item: TreeItem, dir_path: String) -> void:
 	files.sort()
 	for d in dirs:
 		var item: TreeItem = _file_tree.create_item(parent_item)
-		item.set_text(0, "📁 " + d)
+		item.set_text(0, " " + d)
+		item.set_custom_color(0, Color("#62a0ea"))
 		item.set_metadata(0, {"path": dir_path.path_join(d), "is_dir": true})
 		item.collapsed = true
 		_populate_tree_dir(item, dir_path.path_join(d))
@@ -682,6 +687,7 @@ func _populate_tree_dir(parent_item: TreeItem, dir_path: String) -> void:
 		var item: TreeItem = _file_tree.create_item(parent_item)
 		var icon_glyph: String = FileKind.icon_for_path(f)
 		item.set_text(0, icon_glyph + " " + f)
+		item.set_custom_color(0, FileKind.color_for_path(f))
 		item.set_metadata(0, {"path": dir_path.path_join(f), "is_dir": false})
 
 
@@ -1335,16 +1341,16 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 
 func _append_user_message(prompt: String) -> void:
 	var sanitized: String = prompt.replace("[", "[lb]")
-	_chat_log.append_text("\n[right][bgcolor=#25252e][color=#ffffff]   %s   [/color][/bgcolor][/right]\n\n" % sanitized)
+	_chat_log.append_text("\n[bgcolor=#62a0ea][color=#000000][b] SS [/b][/color][/bgcolor] [b]Ser Superior (SS)[/b]\n[bgcolor=#1e1e26][color=#deddda]  %s  [/color][/bgcolor]\n\n" % sanitized)
 	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
 
 
-func _append_ai_response(provider: String, reply_text: String, elapsed: float, tokens_in: int = 0, tokens_out: int = 0) -> void:
+func _append_ai_response(_provider: String, reply_text: String, elapsed: float, tokens_in: int = 0, tokens_out: int = 0) -> void:
 	var stats_header := ""
 	if tokens_in > 0 and tokens_out > 0:
-		stats_header = "[color=#ffa348][b]%.1fk in | %.1fk out | %.1fs[/b][/color]\n\n" % [tokens_in / 1000.0, tokens_out / 1000.0, elapsed]
+		stats_header = "[bgcolor=#57e389][color=#000000][b] AI [/b][/color][/bgcolor] [b]SSBot[/b] [color=#57e389]● Copilot[/color] [color=#ffa348]%.1fk in | %.1fk out[/color] [color=#9a9996](%.1fs)[/color]\n\n" % [tokens_in / 1000.0, tokens_out / 1000.0, elapsed]
 	else:
-		stats_header = "[color=#ffa348][b]%s[/b][/color] [color=#57e389]● Ready[/color] [color=#9a9996](%.1fs)[/color]\n\n" % [provider.to_upper(), elapsed]
+		stats_header = "[bgcolor=#57e389][color=#000000][b] AI [/b][/color][/bgcolor] [b]SSBot[/b] [color=#57e389]● Copilot[/color] [color=#9a9996](%.1fs)[/color]\n\n" % elapsed
 
 	var formatted_body := _format_markdown_to_bbcode(reply_text)
 	_chat_log.append_text("%s%s\n\n[color=#202024]────────────────────────────────────────────────[/color]\n\n" % [stats_header, formatted_body])

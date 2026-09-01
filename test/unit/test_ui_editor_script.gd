@@ -71,3 +71,21 @@ func test_git_command_execution() -> void:
 	assert_true(str(res["output"]).to_lower().contains("git version"))
 	
 	editor_script.free()
+
+
+func test_file_kind_devicons_and_colors() -> void:
+	assert_eq(FileKind.icon_for_path("dir", true), "")
+	assert_eq(FileKind.icon_for_path("main.gd"), "")
+	assert_eq(FileKind.icon_for_path("main.py"), "")
+	assert_eq(FileKind.icon_for_path("index.ts"), "")
+	assert_eq(FileKind.icon_for_path("App.tsx"), "")
+	assert_eq(FileKind.icon_for_path(".gitignore"), "")
+	assert_eq(FileKind.icon_for_path("package.json"), "")
+	assert_eq(FileKind.icon_for_path("Cargo.toml"), "")
+	assert_eq(FileKind.icon_for_path("script.sh"), "")
+	assert_eq(FileKind.icon_for_path("README.md"), "")
+	
+	assert_eq(FileKind.color_for_path("main.gd"), Color("#478cbf"))
+	assert_eq(FileKind.color_for_path("main.py"), Color("#599eff"))
+	assert_eq(FileKind.color_for_path("script.sh"), Color("#57e389"))
+	assert_eq(FileKind.color_for_path(".gitignore"), Color("#f05032"))

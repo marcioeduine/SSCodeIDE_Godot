@@ -243,10 +243,10 @@ size_flags_horizontal = 0
 text = "+ Active File"
 
 [node name="ChatInput" type="LineEdit" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox"]
-custom_minimum_size = Vector2(0, 32)
+custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "Describe what to build or ask a question…"
+placeholder_text = "Pergunte ao SSBot sobre o código, erros ou gere novas ideias…"
 
 [node name="ChatInputBottomRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox"]
 layout_mode = 2
@@ -254,14 +254,14 @@ theme_override_constants/separation = 6
 
 [node name="AttachBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
 layout_mode = 2
-text = "+"
+text = "📎"
 
 [node name="AgentModeBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
 layout_mode = 2
 text = "</> Agent"
 
 [node name="ProviderSelect" type="OptionButton" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(110, 0)
 layout_mode = 2
 item_count = 5
 popup/item_0/text = "Nemotron 3 Omni"
@@ -284,9 +284,9 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="ChatSend" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
-custom_minimum_size = Vector2(32, 24)
+custom_minimum_size = Vector2(56, 26)
 layout_mode = 2
-text = "↑"
+text = "Enviar"
 
 [node name="StatusBar" type="PanelContainer" parent="RootVBox"]
 custom_minimum_size = Vector2(0, 26)

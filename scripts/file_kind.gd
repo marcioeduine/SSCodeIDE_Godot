@@ -1,7 +1,7 @@
 class_name FileKind
 extends RefCounted
 
-## Maps paths to explorer kinds, @icons textures, and editor language labels.
+## Maps paths to LazyVim / nvim-web-devicons glyphs, colors, and editor language labels.
 
 enum Kind {
 	DIRECTORY,
@@ -16,8 +16,6 @@ enum Kind {
 	FILE,
 }
 
-const ICON_DIR := "res://addons/at-icons/node/"
-
 
 static func kind_for(path: String, is_dir: bool) -> Kind:
 	if is_dir:
@@ -26,7 +24,7 @@ static func kind_for(path: String, is_dir: bool) -> Kind:
 	match ext:
 		"gd", "py", "js", "ts", "tsx", "jsx", "c", "h", "cc", "cpp", "hpp", "rs", "go", "java", "kt", "sh", "bash", "zsh", "lua", "rb":
 			return Kind.SCRIPT
-		"tscn", "scn", "res":
+		"tscn", "scn", "res", "tres":
 			return Kind.SCENE
 		"png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "ico":
 			return Kind.IMAGE
@@ -44,60 +42,135 @@ static func kind_for(path: String, is_dir: bool) -> Kind:
 			return Kind.FILE
 
 
-static func icon_resource_path(kind: Kind) -> String:
-	match kind:
-		Kind.DIRECTORY:
-			return ICON_DIR + "folder.svg"
-		Kind.SCRIPT:
-			return ICON_DIR + "file_code.svg"
-		Kind.SCENE:
-			return ICON_DIR + "clapperboard.svg"
-		Kind.IMAGE:
-			return ICON_DIR + "file_image.svg"
-		Kind.AUDIO:
-			return ICON_DIR + "file_note.svg"
-		Kind.VIDEO:
-			return ICON_DIR + "file_video.svg"
-		Kind.ARCHIVE:
-			return ICON_DIR + "folder_zip.svg"
-		Kind.CONFIG:
-			return ICON_DIR + "file_cog.svg"
-		Kind.DOCUMENT:
-			return ICON_DIR + "file_document.svg"
+static func icon_for_path(path: String, is_dir: bool = false) -> String:
+	if is_dir:
+		return ""
+	var fname: String = path.get_file().to_lower()
+	var ext: String = path.get_extension().to_lower()
+
+	# Exact filename match (LazyVim / Devicons)
+	match fname:
+		".gitignore", ".gitmodules", ".gitattributes":
+			return ""
+		"package.json", "package-lock.json":
+			return ""
+		"cargo.toml", "cargo.lock":
+			return ""
+		"go.mod", "go.sum":
+			return ""
+		"dockerfile", "docker-compose.yml", "docker-compose.yaml":
+			return "󰡨"
+		"makefile", "gnumakefile":
+			return ""
+		"readme.md", "license", "licence":
+			return ""
+		"project.godot":
+			return ""
+
+	# Extension match
+	match ext:
+		"gd":
+			return ""
+		"tscn", "scn", "tres", "res":
+			return "󰒃"
+		"py", "pyw", "ipynb":
+			return ""
+		"js", "mjs", "cjs":
+			return ""
+		"ts":
+			return ""
+		"tsx", "jsx":
+			return ""
+		"c", "h":
+			return ""
+		"cpp", "cc", "cxx", "hpp", "hxx":
+			return ""
+		"rs":
+			return ""
+		"go":
+			return ""
+		"sh", "bash", "zsh", "fish":
+			return ""
+		"json":
+			return ""
+		"yaml", "yml":
+			return ""
+		"toml", "ini", "cfg", "conf":
+			return ""
+		"md", "markdown":
+			return ""
+		"txt", "log":
+			return ""
+		"html", "htm":
+			return ""
+		"css", "scss", "sass", "less":
+			return ""
+		"lua":
+			return ""
+		"rb":
+			return ""
+		"java", "jar":
+			return ""
+		"png", "jpg", "jpeg", "webp", "gif", "svg", "ico":
+			return "󰈟"
+		"wav", "mp3", "ogg", "flac":
+			return "󰎆"
+		"mp4", "webm", "mkv", "avi":
+			return "󰕼"
+		"zip", "tar", "gz", "tgz", "7z", "rar":
+			return ""
 		_:
-			return ICON_DIR + "file.svg"
+			return ""
 
 
-static func texture_for(kind: Kind) -> Texture2D:
-	var path: String = icon_resource_path(kind)
-	if not ResourceLoader.exists(path):
-		return null
-	return load(path) as Texture2D
+static func color_for_path(path: String, is_dir: bool = false) -> Color:
+	if is_dir:
+		return Color("#62a0ea") # Adwaita folder blue
+	var fname: String = path.get_file().to_lower()
+	var ext: String = path.get_extension().to_lower()
 
+	if fname.begins_with(".git"):
+		return Color("#f05032")
+	if fname.begins_with("package"):
+		return Color("#cb3837")
+	if fname == "makefile":
+		return Color("#ffa348")
 
-static func icon_for_path(path: String) -> String:
-	var k: Kind = kind_for(path, false)
-	match k:
-		Kind.DIRECTORY:
-			return "📁"
-		Kind.SCRIPT:
-			return "📄"
-		Kind.SCENE:
-			return "🎬"
-		Kind.IMAGE:
-			return "🖼️"
-		Kind.AUDIO:
-			return "🎵"
-		Kind.VIDEO:
-			return "🎥"
-		Kind.ARCHIVE:
-			return "📦"
-		Kind.CONFIG:
-			return "⚙️"
-		Kind.DOCUMENT:
-			return "📝"
+	match ext:
+		"py", "pyw":
+			return Color("#599eff")
+		"js", "mjs":
+			return Color("#f7df1e")
+		"ts":
+			return Color("#3178c6")
+		"tsx", "jsx":
+			return Color("#61dafb")
+		"c", "h":
+			return Color("#62a0ea")
+		"cpp", "cc", "hpp":
+			return Color("#5bc8af")
+		"rs":
+			return Color("#ffa348")
+		"go":
+			return Color("#00add8")
+		"gd", "tscn", "tres":
+			return Color("#478cbf")
+		"json":
+			return Color("#cbcb41")
+		"sh", "bash", "zsh", "fish":
+			return Color("#57e389")
+		"md", "txt":
+			return Color("#99c1f1")
+		"yaml", "yml", "toml", "cfg", "ini":
+			return Color("#dc8add")
+		"html":
+			return Color("#e34f26")
+		"css", "scss":
+			return Color("#1572b6")
+		"png", "jpg", "jpeg", "svg", "webp":
+			return Color("#dc8add")
 		_:
-			return "📄"
+			return Color("#deddda")
 
 
 static func label_for_path(path: String) -> String:
@@ -127,7 +200,7 @@ static func label_for_path(path: String) -> String:
 			return "Java"
 		"kt":
 			return "Kotlin"
-		"sh", "bash", "zsh":
+		"sh", "bash", "zsh", "fish":
 			return "Shell"
 		"lua":
 			return "Lua"
