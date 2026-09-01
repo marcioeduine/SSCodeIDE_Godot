@@ -467,7 +467,7 @@ func _apply_kitty_fish_theme() -> void:
 
 	## Action toolbar buttons
 	var btn_tool_sb := StyleBoxFlat.new()
-	btn_tool_sb.bg_color = bg_elevated
+	btn_tool_sb.bg_color = bg_lighter
 	btn_tool_sb.set_corner_radius_all(6)
 	btn_tool_sb.set_content_margin_all(4)
 	for btn: Button in [_attach_btn, _agent_mode_btn, _smart_commit_btn, _chat_context_chip]:
