@@ -143,3 +143,33 @@ func test_markdown_to_bbcode_gfm_renderer() -> void:
 	assert_false(bbcode.contains("</kbd>"))
 	
 	editor_script.free()
+
+
+func test_git_service_script_integration() -> void:
+	var git_scr: Script = load("res://scripts/git_service.gd")
+	assert_not_null(git_scr)
+	
+	var editor_script = load("res://scripts/ui_editor.gd").new()
+	assert_not_null(editor_script)
+	
+	var res: Dictionary = editor_script._execute_git_command(["--version"])
+	assert_eq(int(res.get("exit_code", -1)), 0)
+	assert_true(str(res.get("output", "")).to_lower().contains("git version"))
+	
+	# Verify CHAT_SLASH_COMMANDS includes all Git & GitHub commands
+	var cmds: Array[String] = []
+	for entry: Dictionary in editor_script.CHAT_SLASH_COMMANDS:
+		cmds.append(str(entry.get("cmd", "")))
+	assert_true(cmds.has("/git status"))
+	assert_true(cmds.has("/git diff"))
+	assert_true(cmds.has("/git log"))
+	assert_true(cmds.has("/git commit"))
+	assert_true(cmds.has("/git push"))
+	assert_true(cmds.has("/git pull"))
+	assert_true(cmds.has("/git sync"))
+	assert_true(cmds.has("/git fetch"))
+	assert_true(cmds.has("/git branch"))
+	assert_true(cmds.has("/github"))
+	
+	editor_script.free()
+

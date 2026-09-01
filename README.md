@@ -28,6 +28,13 @@
   - Hierarchical directory inspection and real-time workspace tree updates.
   - Automatic file kind recognition and dedicated visual iconography (`at-icons`) across scripts (`.gd`, `.py`, `.js`, `.ts`, `.cpp`, `.rs`, `.go`), scenes (`.tscn`, `.scn`), configurations (`.json`, `.cfg`, `.toml`, `.yaml`), images, audio, video, documents, and archives.
 
+- **Native Git & GitHub Integration (`GitService`)**:
+  - Dedicated **Git** Menu Bar with status, commits, push, pull, fetch, sync, branch management, diffs, log history, and configuration.
+  - Interactive Status Bar branch indicator (`⎇ main`) with real-time modified file counters and status modal.
+  - Full GitHub remote synchronisation (`git push`, `git pull`, `git fetch`, `git sync`) and GitHub URL parsing (SSH and HTTPS).
+  - Built-in slash commands in AI Chat: `/git status`, `/git diff`, `/git log`, `/git commit`, `/git push`, `/git pull`, `/git sync`, `/git branch`, `/git checkout`, `/git remote`, `/git config`, `/git clone`, `/github`.
+  - Automated Smart Commit generation adhering to Conventional Commits.
+
 - **Integrated AI Assistant Panel**:
   - Dedicated side-panel chat interface for code assistance, debugging, and queries.
   - Direct HTTP client communicating with **NVIDIA NIM API**, supporting:
@@ -58,6 +65,14 @@
 | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Tab</kbd> | Switch to previous tab |
 | <kbd>Ctrl</kbd> + <kbd>Q</kbd> | Quit application |
 
+### Git & GitHub Operations
+| Shortcut | Action |
+| :--- | :--- |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd> | Open Git Status & Changes dialogue |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> | Generate Smart Git Commit & Stage All |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>U</kbd> | Push local commits to GitHub repository |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd> | Pull latest changes from GitHub repository |
+
 ### Editor Operations
 | Shortcut | Action |
 | :--- | :--- |
@@ -75,7 +90,9 @@
 | <kbd>F1</kbd> | Display Help and keyboard shortcuts |
 | <kbd>Ctrl</kbd> + <kbd>,</kbd> | Display Configuration dialogue |
 | <kbd>Ctrl</kbd> + <kbd>P</kbd> | Focus File Explorer |
-| <kbd>Esc</kbd> | Cancel ongoing AI generation |
+| <kbd>Ctrl</kbd> + <kbd>B</kbd> | Toggle file explorer sidebar |
+| <kbd>Ctrl</kbd> + <kbd>J</kbd> / <kbd>K</kbd> / <kbd>`</kbd> | Focus AI chat input |
+| <kbd>Esc</kbd> | Cancel ongoing AI generation / dismiss dialogue |
 
 ---
 
@@ -90,9 +107,14 @@
 ├── scripts/            # Core GDScript modules
 │   ├── ai_service.gd   # NVIDIA NIM API integration and fallback logic
 │   ├── file_kind.gd    # File type categorisation and icon mapping
+│   ├── git_service.gd  # Native Git & GitHub version control service
 │   └── ui_editor.gd    # Primary IDE UI controller and workspace manager
 ├── test/               # Automated unit tests (GUT)
 │   └── unit/
+│       ├── test_ai_service.gd
+│       ├── test_file_kind.gd
+│       ├── test_git_service.gd
+│       └── test_ui_editor_script.gd
 ├── project.godot       # Godot project settings and engine configuration
 ├── .gutconfig.json     # GUT test runner configuration
 ├── LICENSE             # Proprietary licence agreement

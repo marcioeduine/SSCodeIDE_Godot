@@ -19,6 +19,7 @@ extends Control
 @onready var _smart_commit_btn: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow/SmartCommitBtn
 @onready var _chat_send: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow/ChatSend
 @onready var _status_left: Label = $RootVBox/StatusBar/StatusRow/StatusLeft
+@onready var _status_git: Button = $RootVBox/StatusBar/StatusRow/StatusGit
 @onready var _status_cursor: Label = $RootVBox/StatusBar/StatusRow/StatusCursor
 @onready var _status_lang: Label = $RootVBox/StatusBar/StatusRow/StatusLang
 @onready var _status_enc: Label = $RootVBox/StatusBar/StatusRow/StatusEnc
@@ -28,6 +29,7 @@ extends Control
 @onready var _center_split: HSplitContainer = $RootVBox/MainSplit/CenterSplit
 @onready var _file_menu: PopupMenu = $RootVBox/NavBar/MenuBar/File
 @onready var _edit_menu: PopupMenu = $RootVBox/NavBar/MenuBar/Edit
+@onready var _git_menu: PopupMenu = $RootVBox/NavBar/MenuBar/Git
 @onready var _config_menu: PopupMenu = $RootVBox/NavBar/MenuBar/Config
 @onready var _help_menu: PopupMenu = $RootVBox/NavBar/MenuBar/Help
 @onready var _about_menu: PopupMenu = $RootVBox/NavBar/MenuBar/About
@@ -38,6 +40,9 @@ extends Control
 @onready var _dialog_panel: PanelContainer = $Overlay/DialogPanel
 @onready var _dialog_title: Label = $Overlay/DialogPanel/DialogVBox/DialogTitle
 @onready var _dialog_body: RichTextLabel = $Overlay/DialogPanel/DialogVBox/DialogBody
+@onready var _dialog_input_row: HBoxContainer = $Overlay/DialogPanel/DialogVBox/DialogInputRow
+@onready var _dialog_input: LineEdit = $Overlay/DialogPanel/DialogVBox/DialogInputRow/DialogInput
+@onready var _dialog_action_btn: Button = $Overlay/DialogPanel/DialogVBox/DialogInputRow/DialogActionBtn
 @onready var _dialog_close: Button = $Overlay/DialogPanel/DialogVBox/DialogClose
 @onready var _toast_panel: PanelContainer = $ToastPanel
 @onready var _toast_label: RichTextLabel = $ToastPanel/ToastMargin/ToastLabel
@@ -51,6 +56,8 @@ extends Control
 @onready var _find_next: Button = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindNext
 @onready var _find_close: Button = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindClose
 @onready var _markdown_preview: RichTextLabel = $RootVBox/MainSplit/CenterSplit/EditorPane/MarkdownPreview
+
+var _dialog_action_callback: Callable = Callable()
 
 var _nerd_font: FontFile
 var _workspace_root: String = ""
@@ -75,9 +82,20 @@ const SPINNER_FRAMES: Array[String] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴",
 
 const CHAT_SLASH_COMMANDS: Array[Dictionary] = [
 	{"cmd": "/tools", "desc": "List all available AI agent tools"},
-	{"cmd": "/git commit", "desc": "Generate intelligent Git commit message and commit"},
-	{"cmd": "/git status", "desc": "Show repository status and changed files"},
-	{"cmd": "/git diff", "desc": "Show repository diff"},
+	{"cmd": "/git status", "desc": "Show repository status, branch & GitHub remote"},
+	{"cmd": "/git diff", "desc": "Show repository diff and code changes"},
+	{"cmd": "/git log", "desc": "Show recent commit history"},
+	{"cmd": "/git commit", "desc": "Generate intelligent Git commit or commit with message"},
+	{"cmd": "/git push", "desc": "Push local commits to GitHub repository"},
+	{"cmd": "/git pull", "desc": "Pull latest changes from GitHub repository"},
+	{"cmd": "/git sync", "desc": "Synchronise with GitHub (Pull & Push)"},
+	{"cmd": "/git fetch", "desc": "Fetch remote branches from GitHub"},
+	{"cmd": "/git branch", "desc": "List or switch/create branches"},
+	{"cmd": "/git checkout ", "desc": "Switch to branch (/git checkout <branch>)"},
+	{"cmd": "/git remote", "desc": "Show configured GitHub remotes & URLs"},
+	{"cmd": "/git config ", "desc": "Set Git user name and email (/git config <name> <email>)"},
+	{"cmd": "/git clone ", "desc": "Clone GitHub repository (/git clone <url>)"},
+	{"cmd": "/github", "desc": "Display GitHub repository links and details"},
 	{"cmd": "/save", "desc": "Save the active file in editor"},
 	{"cmd": "/files", "desc": "Refresh workspace file explorer"},
 	{"cmd": "/open ", "desc": "Open file by path (/open <path>)"},
@@ -131,14 +149,19 @@ const HELP_TEXT := """[b]SSCodeIDE Shortcuts[/b]
   Ctrl+D            Duplicate line
   Alt+Up / Alt+Down Move line
 
+[b]Git & GitHub[/b]
+  Ctrl+Shift+G      Git Status & Changes
+  Ctrl+Shift+C      Smart Git Commit
+  Ctrl+Shift+U      Push to GitHub
+  Ctrl+Shift+L      Pull from GitHub
+
 [b]IDE[/b]
   Ctrl+,            Settings
   F1                Help (shortcuts)
   Ctrl+P            Focus explorer
   Ctrl+B            Toggle sidebar
   Ctrl+J / K / `    Focus chat input
-  Ctrl+Shift+C      Smart Git Commit
-  Esc               Cancel AI / dismiss
+  Esc               Cancel AI / dismiss dialog
 
 [b]Markdown[/b]
   .md files auto-render with formatted preview
@@ -158,7 +181,11 @@ Automatic Toast · Multi-Turn Context Memory · Intelligent Candidate Fallback
 func _ready() -> void:
 	_nerd_font = FontFile.new()
 	_nerd_font.load_dynamic_font(ProjectSettings.globalize_path("res://fonts/FiraCodeNerdFont-Regular.ttf"))
-	_workspace_root = ProjectSettings.globalize_path("res://").get_base_dir().get_base_dir()
+	var base_res := ProjectSettings.globalize_path("res://").rstrip("/")
+	if DirAccess.dir_exists_absolute(base_res):
+		_workspace_root = base_res
+	else:
+		_workspace_root = base_res.get_base_dir()
 	_nav_workspace.text = ""
 	_nav_workspace.visible = false
 	_load_ai_config()
@@ -168,6 +195,7 @@ func _ready() -> void:
 	_refresh_file_tree()
 	_open_untitled()
 	_update_ai_status()
+	_update_git_status_bar()
 	_status_left.text = "READY"
 	_status_enc.text = "UTF-8"
 	call_deferred("_apply_split_offsets")
@@ -211,6 +239,10 @@ func _wire_signals() -> void:
 	_smart_commit_btn.pressed.connect(_generate_smart_commit)
 	_file_menu.id_pressed.connect(_on_file_menu)
 	_edit_menu.id_pressed.connect(_on_edit_menu)
+	if _git_menu:
+		_git_menu.id_pressed.connect(_on_git_menu)
+	if _status_git:
+		_status_git.pressed.connect(_show_git_status_dialog)
 	_config_menu.id_pressed.connect(_on_config_menu)
 	_help_menu.id_pressed.connect(_on_help_menu)
 	_about_menu.id_pressed.connect(_on_about_menu)
@@ -218,6 +250,10 @@ func _wire_signals() -> void:
 	_open_dir_dlg.dir_selected.connect(_on_dir_selected)
 	_save_as_dlg.file_selected.connect(_save_as_path)
 	_dialog_close.pressed.connect(_hide_overlay)
+	if _dialog_action_btn:
+		_dialog_action_btn.pressed.connect(_on_dialog_action_pressed)
+	if _dialog_input:
+		_dialog_input.text_submitted.connect(func(_t: String) -> void: _on_dialog_action_pressed())
 	_ai_chat_http.request_completed.connect(_on_ai_chat_http_completed)
 	_provider_select.item_selected.connect(_on_provider_selected)
 	_find_input.text_submitted.connect(_do_find)
@@ -267,6 +303,24 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Settings (Ctrl+,)
 	if ctrl and key.keycode == KEY_COMMA:
 		_show_config()
+		get_viewport().set_input_as_handled()
+		return
+
+	# Git & GitHub Operations (Ctrl+Shift+G / C / U / L)
+	if ctrl and shift and key.keycode == KEY_G:
+		_show_git_status_dialog()
+		get_viewport().set_input_as_handled()
+		return
+	if ctrl and shift and key.keycode == KEY_C:
+		_generate_smart_commit()
+		get_viewport().set_input_as_handled()
+		return
+	if ctrl and shift and key.keycode == KEY_U:
+		_git_push()
+		get_viewport().set_input_as_handled()
+		return
+	if ctrl and shift and key.keycode == KEY_L:
+		_git_pull()
 		get_viewport().set_input_as_handled()
 		return
 
@@ -324,12 +378,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if ctrl and key.keycode == KEY_P:
 		_file_tree.grab_focus()
-		get_viewport().set_input_as_handled()
-		return
-
-	# Smart Git Commit (Ctrl+Shift+C)
-	if ctrl and shift and key.keycode == KEY_C:
-		_generate_smart_commit()
 		get_viewport().set_input_as_handled()
 		return
 
@@ -436,6 +484,21 @@ func _on_edit_menu(id: int) -> void:
 			_find_input.grab_focus()
 
 
+func _on_git_menu(id: int) -> void:
+	match id:
+		0: _show_git_status_dialog()
+		1: _generate_smart_commit()
+		2: _git_push()
+		3: _git_pull()
+		4: _git_fetch()
+		5: _git_sync()
+		7: _prompt_git_branch()
+		8: _show_git_log_dialog()
+		9: _show_git_diff_dialog()
+		11: _show_github_info_dialog()
+		12: _prompt_git_config()
+
+
 func _on_config_menu(id: int) -> void:
 	match id:
 		0: _show_config()
@@ -453,13 +516,240 @@ func _show_overlay(title: String, body: String) -> void:
 	_dialog_title.text = title
 	_dialog_body.text = body
 	_dialog_body.visible = true
+	if _dialog_input_row:
+		_dialog_input_row.visible = false
 	_dialog_panel.visible = true
 	_overlay.visible = true
+
+
+func _show_input_dialog(title: String, body: String, placeholder: String, default_val: String, btn_label: String, callback: Callable) -> void:
+	_dialog_title.text = title
+	_dialog_body.text = body
+	_dialog_body.visible = true
+	if _dialog_input_row:
+		_dialog_input_row.visible = true
+		_dialog_input.placeholder_text = placeholder
+		_dialog_input.text = default_val
+		_dialog_action_btn.text = btn_label
+	_dialog_action_callback = callback
+	_dialog_panel.visible = true
+	_overlay.visible = true
+	if _dialog_input:
+		_dialog_input.grab_focus()
+		_dialog_input.select_all()
+
+
+func _on_dialog_action_pressed() -> void:
+	if _dialog_action_callback.is_valid():
+		var val: String = _dialog_input.text.strip_edges() if _dialog_input else ""
+		var cb: Callable = _dialog_action_callback
+		_dialog_action_callback = Callable()
+		_hide_overlay()
+		cb.call(val)
+	else:
+		_hide_overlay()
 
 
 func _hide_overlay() -> void:
 	_dialog_panel.visible = false
 	_overlay.visible = false
+	_dialog_action_callback = Callable()
+
+
+func _update_git_status_bar() -> void:
+	if not _status_git:
+		return
+	if not GitService.is_git_repository(_workspace_root):
+		_status_git.text = "⎇ no git"
+		_status_git.add_theme_color_override("font_color", Color("#9a9996"))
+		return
+	var st: Dictionary = GitService.get_status(_workspace_root)
+	var branch: String = str(st.get("branch", "main"))
+	var is_clean: bool = bool(st.get("is_clean", true))
+	if is_clean:
+		_status_git.text = "⎇ " + branch
+		_status_git.add_theme_color_override("font_color", Color("#57e389"))
+	else:
+		var staged: Array = st.get("staged", [])
+		var unstaged: Array = st.get("unstaged", [])
+		var untracked: Array = st.get("untracked", [])
+		var total: int = staged.size() + unstaged.size() + untracked.size()
+		_status_git.text = "⎇ %s *(%d)" % [branch, total]
+		_status_git.add_theme_color_override("font_color", Color("#ffa348"))
+
+
+func _show_git_status_dialog() -> void:
+	var st: Dictionary = GitService.get_status(_workspace_root)
+	var gh: Dictionary = GitService.get_github_info(_workspace_root)
+	_show_overlay("Git Repository Status", GitService.format_status_bbcode(st, gh))
+	_update_git_status_bar()
+
+
+func _show_git_log_dialog() -> void:
+	var log_entries: Array[Dictionary] = GitService.get_log(20, _workspace_root)
+	_show_overlay("Git Commit History", GitService.format_log_bbcode(log_entries))
+
+
+func _show_git_diff_dialog() -> void:
+	var diff_res: Dictionary = GitService.get_diff("", false, _workspace_root)
+	_show_overlay("Working Tree Diff", GitService.format_diff_bbcode(str(diff_res.get("output", ""))))
+
+
+func _show_github_info_dialog() -> void:
+	var gh: Dictionary = GitService.get_github_info(_workspace_root)
+	var body := "[b][color=#62a0ea]GitHub Repository Information[/color][/b]\n\n"
+	if bool(gh.get("is_github", false)):
+		body += "• [b]Repository:[/b] [color=#57e389]%s[/color]\n" % str(gh.get("full_name", ""))
+		body += "• [b]Owner:[/b] %s\n" % str(gh.get("owner", ""))
+		body += "• [b]Current Branch:[/b] %s\n" % str(gh.get("current_branch", "main"))
+		body += "• [b]Remote URL:[/b] %s\n\n" % str(gh.get("remote_url", ""))
+		body += "[b]Quick Web Links:[/b]\n"
+		body += "• [color=#62a0ea][u]%s[/u][/color]\n" % str(gh.get("web_url", ""))
+		body += "• Commits: [color=#62a0ea][u]%s[/u][/color]\n" % str(gh.get("commits_url", ""))
+		body += "• Pull Requests: [color=#62a0ea][u]%s[/u][/color]\n" % str(gh.get("pulls_url", ""))
+		body += "• Issues: [color=#62a0ea][u]%s[/u][/color]\n" % str(gh.get("issues_url", ""))
+	else:
+		body += "[color=#ffa348]No GitHub remote detected for origin.[/color]\n"
+		body += "Configured Remote URL: %s\n" % str(gh.get("remote_url", "none"))
+	_show_overlay("GitHub Repository", body)
+
+
+func _prompt_git_branch() -> void:
+	var branches: Array[Dictionary] = GitService.get_branches(_workspace_root)
+	var branch_list := ""
+	for b in branches:
+		var prefix := "● " if bool(b.get("is_current", false)) else "  "
+		branch_list += prefix + str(b.get("display_name", "")) + "\n"
+	var current: String = GitService.get_current_branch(_workspace_root)
+	_show_input_dialog(
+		"Switch / New Branch",
+		"[b]Current Branches:[/b]\n" + branch_list + "\nEnter branch name to switch or create (prefix with '+' to create a new branch):",
+		"branch-name or +new-branch",
+		current,
+		"Switch / Create",
+		func(val: String) -> void:
+			if val.is_empty():
+				return
+			var create_new := false
+			var target_b := val
+			if target_b.begins_with("+") or target_b.begins_with("-b "):
+				create_new = true
+				target_b = target_b.trim_prefix("+").trim_prefix("-b ").strip_edges()
+			var res: Dictionary = GitService.checkout_branch(target_b, create_new, _workspace_root)
+			if bool(res.get("success", false)):
+				_append_chat("GIT", "[color=#57e389]Switched to branch '%s' successfully.[/color]" % target_b, Color("#57e389"))
+				_show_toast("Switched to branch: " + target_b, false)
+			else:
+				_append_chat("GIT", "[color=#ed333b]Failed to switch branch:\n" + str(res.get("output", "")) + "[/color]", Color("#ed333b"))
+				_show_toast("Branch switch failed.", true)
+			_update_git_status_bar()
+	)
+
+
+func _prompt_git_config() -> void:
+	var cfg: Dictionary = GitService.get_user_config(_workspace_root)
+	var def_val: String = "%s <%s>" % [str(cfg.get("name", "")), str(cfg.get("email", ""))]
+	_show_input_dialog(
+		"Configure Git User",
+		"[b]Git User Configuration[/b]\nFormat: `Your Name <your.email@example.com>`",
+		"Name <email@example.com>",
+		def_val if def_val != " <>" else "",
+		"Save Config",
+		func(val: String) -> void:
+			if val.is_empty():
+				return
+			var name_part := val
+			var email_part := ""
+			if val.contains("<") and val.contains(">"):
+				var start_idx := val.find("<")
+				var end_idx := val.find(">")
+				name_part = val.substr(0, start_idx).strip_edges()
+				email_part = val.substr(start_idx + 1, end_idx - start_idx - 1).strip_edges()
+			var res: Dictionary = GitService.set_user_config(name_part, email_part, false, _workspace_root)
+			if bool(res.get("success", false)):
+				_append_chat("GIT", "[color=#57e389]Git user configured: %s <%s>[/color]" % [name_part, email_part], Color("#57e389"))
+				_show_toast("Git user configured.", false)
+			else:
+				_show_toast("Failed to configure Git user.", true)
+	)
+
+
+func _prompt_git_clone() -> void:
+	_show_input_dialog(
+		"Clone Repository",
+		"[b]Clone a GitHub Repository[/b]\nEnter the repository URL (SSH or HTTPS):",
+		"git@github.com:user/repo.git",
+		"",
+		"Clone",
+		func(url: String) -> void:
+			if url.is_empty():
+				return
+			var target_dir: String = _workspace_root.path_join(url.get_file().trim_suffix(".git"))
+			_show_toast("Clonando repositório…", false)
+			var res: Dictionary = GitService.clone_repository(url, target_dir)
+			if bool(res.get("success", false)):
+				_append_chat("GIT", "[color=#57e389]Repositório clonado com sucesso para %s[/color]" % target_dir, Color("#57e389"))
+				_refresh_file_tree()
+				_update_git_status_bar()
+			else:
+				_append_chat("GIT", "[b][color=#ed333b]Erro ao clonar repositório:[/color][/b]\n" + str(res.get("output", "")), Color("#ed333b"))
+				_show_toast("Git clone failed. Check chat for details.", true)
+	)
+
+
+func _git_push(remote: String = "origin", branch: String = "") -> void:
+	_show_toast("Pushing commits to GitHub…", false)
+	var res: Dictionary = GitService.push(remote, branch, true, _workspace_root)
+	if bool(res.get("success", false)):
+		var out_txt: String = str(res.get("output", "")).strip_edges()
+		if out_txt.is_empty():
+			out_txt = "Everything up-to-date."
+		_append_chat("GIT", "[b][color=#57e389]Push to GitHub succeeded:[/color][/b]\n" + out_txt, Color("#57e389"))
+		_show_toast("Push to GitHub completed successfully!", false)
+	else:
+		_append_chat("GIT", "[b][color=#ed333b]Git push error:[/color][/b]\n" + str(res.get("output", "")), Color("#ed333b"))
+		_show_toast("Git push failed. Check chat for details.", true)
+	_update_git_status_bar()
+
+
+func _git_pull(remote: String = "origin", branch: String = "") -> void:
+	_show_toast("Pulling changes from GitHub…", false)
+	var res: Dictionary = GitService.pull(remote, branch, false, _workspace_root)
+	if bool(res.get("success", false)):
+		var out_txt: String = str(res.get("output", "")).strip_edges()
+		if out_txt.is_empty():
+			out_txt = "Already up to date."
+		_append_chat("GIT", "[b][color=#57e389]Pull from GitHub succeeded:[/color][/b]\n" + out_txt, Color("#57e389"))
+		_show_toast("Pull from GitHub completed!", false)
+		_refresh_file_tree()
+	else:
+		_append_chat("GIT", "[b][color=#ed333b]Git pull error:[/color][/b]\n" + str(res.get("output", "")), Color("#ed333b"))
+		_show_toast("Git pull failed.", true)
+	_update_git_status_bar()
+
+
+func _git_fetch(remote: String = "origin") -> void:
+	_show_toast("Fetching from %s…" % remote, false)
+	var res: Dictionary = GitService.fetch(remote, _workspace_root)
+	if bool(res.get("success", false)):
+		_append_chat("GIT", "[color=#57e389]Fetch completed successfully.[/color]", Color("#57e389"))
+		_show_toast("Fetch completed.", false)
+	else:
+		_append_chat("GIT", "[color=#ed333b]Fetch error:\n" + str(res.get("output", "")) + "[/color]", Color("#ed333b"))
+	_update_git_status_bar()
+
+
+func _git_sync(remote: String = "origin", branch: String = "") -> void:
+	_show_toast("Synchronising with GitHub (Pull & Push)…", false)
+	var res: Dictionary = GitService.sync(remote, branch, _workspace_root)
+	if bool(res.get("success", false)):
+		_append_chat("GIT", "[b][color=#57e389]GitHub Sync Succeeded:[/color][/b]\n" + str(res.get("output", "")), Color("#57e389"))
+		_show_toast("GitHub synchronisation completed!", false)
+		_refresh_file_tree()
+	else:
+		_append_chat("GIT", "[b][color=#ed333b]GitHub Sync Error (%s):[/color][/b]\n%s" % [str(res.get("stage", "sync")), str(res.get("error", ""))], Color("#ed333b"))
+		_show_toast("Sync failed. Check chat log.", true)
+	_update_git_status_bar()
 
 
 func _show_help() -> void:
@@ -654,10 +944,50 @@ func _apply_kitty_fish_theme() -> void:
 	status_sb.bg_color = bg_surface
 	$RootVBox/StatusBar.add_theme_stylebox_override("panel", status_sb)
 	_status_left.add_theme_color_override("font_color", green)
+	if _status_git:
+		_status_git.add_theme_color_override("font_color", green)
+		_status_git.add_theme_color_override("font_hover_color", fg_bright)
+		_status_git.add_theme_color_override("font_pressed_color", blue)
 	_status_cursor.add_theme_color_override("font_color", muted)
 	_status_lang.add_theme_color_override("font_color", muted)
 	_status_enc.add_theme_color_override("font_color", muted)
 	_status_ai.add_theme_color_override("font_color", blue)
+
+	## Dialog and modal input styling
+	var dialog_sb := StyleBoxFlat.new()
+	dialog_sb.bg_color = bg_card
+	dialog_sb.border_color = Color("#2e2e38")
+	dialog_sb.set_border_width_all(1)
+	dialog_sb.set_corner_radius_all(10)
+	dialog_sb.set_content_margin_all(14)
+	_dialog_panel.add_theme_stylebox_override("panel", dialog_sb)
+	_dialog_title.add_theme_color_override("font_color", fg_bright)
+	_dialog_body.add_theme_color_override("default_color", fg)
+	
+	if _dialog_input:
+		var dlg_in_sb := StyleBoxFlat.new()
+		dlg_in_sb.bg_color = bg_surface
+		dlg_in_sb.border_color = Color("#3e3e4a")
+		dlg_in_sb.set_border_width_all(1)
+		dlg_in_sb.set_corner_radius_all(6)
+		dlg_in_sb.set_content_margin_all(6)
+		_dialog_input.add_theme_stylebox_override("normal", dlg_in_sb)
+		_dialog_input.add_theme_stylebox_override("focus", dlg_in_sb)
+		_dialog_input.add_theme_color_override("font_color", fg_bright)
+	if _dialog_action_btn:
+		var dlg_act_sb := StyleBoxFlat.new()
+		dlg_act_sb.bg_color = blue
+		dlg_act_sb.set_corner_radius_all(6)
+		dlg_act_sb.set_content_margin_all(6)
+		_dialog_action_btn.add_theme_stylebox_override("normal", dlg_act_sb)
+		_dialog_action_btn.add_theme_color_override("font_color", Color("#ffffff"))
+	if _dialog_close:
+		var dlg_cls_sb := StyleBoxFlat.new()
+		dlg_cls_sb.bg_color = bg_lighter
+		dlg_cls_sb.set_corner_radius_all(6)
+		dlg_cls_sb.set_content_margin_all(6)
+		_dialog_close.add_theme_stylebox_override("normal", dlg_cls_sb)
+		_dialog_close.add_theme_color_override("font_color", fg)
 
 	## Provider select dropdown (inside prompt capsule)
 	var provider_sb := StyleBoxFlat.new()
@@ -695,13 +1025,15 @@ func _apply_kitty_fish_theme() -> void:
 	## Apply font everywhere
 	if _nerd_font:
 		for node: Control in [_code_edit, _file_tree, _chat_log, _chat_input,
-				_status_left, _status_cursor, _status_lang, _status_enc,
+				_status_left, _status_git, _status_cursor, _status_lang, _status_enc,
 				_status_ai, _nav_workspace, _chat_header, _chat_context_badge,
 				_chat_tools_btn, _chat_clear_btn, _chat_context_chip,
 				_attach_btn, _agent_mode_btn, _smart_commit_btn,
 				_provider_select, explorer_header,
-				_chat_status_label, _chat_send, _chat_suggestions_list]:
-			node.add_theme_font_override("font", _nerd_font)
+				_chat_status_label, _chat_send, _chat_suggestions_list,
+				_dialog_title, _dialog_input, _dialog_action_btn, _dialog_close]:
+			if node:
+				node.add_theme_font_override("font", _nerd_font)
 		_code_edit.add_theme_font_size_override("font_size", 14)
 		_chat_log.add_theme_font_size_override("normal_font_size", 13)
 		_chat_input.add_theme_font_size_override("font_size", 13)
@@ -710,6 +1042,8 @@ func _apply_kitty_fish_theme() -> void:
 		_provider_select.add_theme_font_size_override("font_size", 11)
 		_smart_commit_btn.add_theme_font_size_override("font_size", 11)
 		_agent_mode_btn.add_theme_font_size_override("font_size", 11)
+		if _status_git:
+			_status_git.add_theme_font_size_override("font_size", 12)
 
 
 func _on_clear_chat_pressed() -> void:
@@ -1278,6 +1612,7 @@ func _save_active() -> void:
 	info["dirty"] = false
 	_tab_bar.set_tab_title(_active_index, info.get("title", ""))
 	_status_left.text = "SAVED: " + path.get_file()
+	_update_git_status_bar()
 
 
 func _save_as_path(path: String) -> void:
@@ -1288,12 +1623,14 @@ func _save_as_path(path: String) -> void:
 	info["title"] = path.get_file()
 	_save_active()
 	_status_lang.text = FileKind.label_for_path(path)
+	_update_git_status_bar()
 
 
 func _on_dir_selected(dir_path: String) -> void:
 	_workspace_root = dir_path
 	_refresh_file_tree()
 	_status_left.text = "WORKSPACE: " + dir_path.get_file()
+	_update_git_status_bar()
 
 
 func _on_tab_changed(tab_idx: int) -> void:
@@ -1481,24 +1818,131 @@ func _handle_slash(cmd: String) -> void:
 	match head:
 		"/tools":
 			_show_tools_list()
+		"/github":
+			_show_github_info_dialog()
 		"/git":
-			var subcmd: String = parts[1].strip_edges().to_lower() if parts.size() > 1 else "status"
-			if subcmd.begins_with("commit"):
-				_generate_smart_commit()
-			elif subcmd.begins_with("diff"):
-				var res: Dictionary = _execute_git_command(["diff"])
-				var diff_out: String = str(res.get("output", "")).strip_edges()
-				if diff_out.is_empty():
-					_append_chat("GIT", "No diffs. Working tree clean.", Color("#57e389"))
-				else:
-					_append_chat("GIT", "```diff\n" + diff_out + "\n```", Color("#62a0ea"))
-			else:
-				var res: Dictionary = _execute_git_command(["status", "--short"])
-				var status_out: String = str(res.get("output", "")).strip_edges()
-				if status_out.is_empty():
-					_append_chat("GIT", "Working tree clean. Nothing to commit.", Color("#57e389"))
-				else:
-					_append_chat("GIT", "```bash\n" + status_out + "\n```", Color("#62a0ea"))
+			var subcmd_raw: String = parts[1].strip_edges() if parts.size() > 1 else "status"
+			var sub_parts: PackedStringArray = subcmd_raw.split(" ", false, 1)
+			var subcmd: String = sub_parts[0].to_lower() if not sub_parts.is_empty() else "status"
+			var sub_arg: String = sub_parts[1].strip_edges() if sub_parts.size() > 1 else ""
+			
+			match subcmd:
+				"status":
+					var st: Dictionary = GitService.get_status(_workspace_root)
+					var gh: Dictionary = GitService.get_github_info(_workspace_root)
+					_append_chat("GIT", GitService.format_status_bbcode(st, gh), Color("#62a0ea"))
+					_update_git_status_bar()
+				"diff":
+					var res: Dictionary = GitService.get_diff(sub_arg, false, _workspace_root)
+					_append_chat("GIT", GitService.format_diff_bbcode(str(res.get("output", ""))), Color("#62a0ea"))
+				"log":
+					var count: int = sub_arg.to_int() if sub_arg.to_int() > 0 else 10
+					var log_entries: Array[Dictionary] = GitService.get_log(count, _workspace_root)
+					_append_chat("GIT", GitService.format_log_bbcode(log_entries), Color("#62a0ea"))
+				"commit":
+					if sub_arg.is_empty():
+						_generate_smart_commit()
+					else:
+						GitService.stage_all(_workspace_root)
+						var commit_res: Dictionary = GitService.commit(sub_arg, _workspace_root)
+						if bool(commit_res.get("success", false)):
+							_append_chat("GIT", "[b][color=#57e389]Commit criado com sucesso:[/color][/b]\n" + sub_arg, Color("#57e389"))
+							_show_toast("Git commit: " + sub_arg, false)
+						else:
+							_append_chat("GIT", "[color=#ed333b]Git commit failed:\n" + str(commit_res.get("output", "")) + "[/color]", Color("#ed333b"))
+						_update_git_status_bar()
+				"push":
+					var push_args: PackedStringArray = sub_arg.split(" ", false)
+					var remote_name: String = push_args[0] if push_args.size() > 0 else "origin"
+					var branch_name: String = push_args[1] if push_args.size() > 1 else ""
+					_git_push(remote_name, branch_name)
+				"pull":
+					var pull_args: PackedStringArray = sub_arg.split(" ", false)
+					var remote_name: String = pull_args[0] if pull_args.size() > 0 else "origin"
+					var branch_name: String = pull_args[1] if pull_args.size() > 1 else ""
+					_git_pull(remote_name, branch_name)
+				"sync":
+					var sync_args: PackedStringArray = sub_arg.split(" ", false)
+					var remote_name: String = sync_args[0] if sync_args.size() > 0 else "origin"
+					var branch_name: String = sync_args[1] if sync_args.size() > 1 else ""
+					_git_sync(remote_name, branch_name)
+				"fetch":
+					var remote_name: String = sub_arg if not sub_arg.is_empty() else "origin"
+					_git_fetch(remote_name)
+				"branch":
+					if sub_arg.is_empty():
+						var branches: Array[Dictionary] = GitService.get_branches(_workspace_root)
+						var b_out := "[b][color=#62a0ea]Git Branches:[/color][/b]\n"
+						for b in branches:
+							var prefix := "● " if bool(b.get("is_current", false)) else "  "
+							var col := "#57e389" if bool(b.get("is_current", false)) else "#deddda"
+							b_out += "[color=%s]%s%s[/color]\n" % [col, prefix, str(b.get("display_name", ""))]
+						_append_chat("GIT", b_out, Color("#62a0ea"))
+					else:
+						var create_res: Dictionary = GitService.create_branch(sub_arg, _workspace_root)
+						if bool(create_res.get("success", false)):
+							_append_chat("GIT", "[color=#57e389]Branch '%s' criada com sucesso.[/color]" % sub_arg, Color("#57e389"))
+						else:
+							_append_chat("GIT", "[color=#ed333b]Erro ao criar branch:\n" + str(create_res.get("output", "")) + "[/color]", Color("#ed333b"))
+						_update_git_status_bar()
+				"checkout", "switch":
+					if sub_arg.is_empty():
+						_prompt_git_branch()
+					else:
+						var create_new := sub_arg.begins_with("-b ") or sub_arg.begins_with("+")
+						var branch_target := sub_arg.trim_prefix("-b ").trim_prefix("+").strip_edges()
+						var co_res: Dictionary = GitService.checkout_branch(branch_target, create_new, _workspace_root)
+						if bool(co_res.get("success", false)):
+							_append_chat("GIT", "[color=#57e389]Mudança para o ramo '%s' efectuada com sucesso.[/color]" % branch_target, Color("#57e389"))
+							_show_toast("Branch: " + branch_target, false)
+						else:
+							_append_chat("GIT", "[color=#ed333b]Falha ao mudar de ramo:\n" + str(co_res.get("output", "")) + "[/color]", Color("#ed333b"))
+						_update_git_status_bar()
+				"remote":
+					var remotes: Array[Dictionary] = GitService.get_remotes(_workspace_root)
+					var gh: Dictionary = GitService.get_github_info(_workspace_root)
+					var r_out := "[b][color=#62a0ea]Git Remotes & GitHub:[/color][/b]\n\n"
+					for r in remotes:
+						r_out += "• [b]%s[/b] (%s): `%s`\n" % [str(r.get("name", "")), str(r.get("type", "")), str(r.get("url", ""))]
+					if bool(gh.get("is_github", false)):
+						r_out += "\n[color=#57e389]GitHub Repo:[/color] %s\n" % str(gh.get("web_url", ""))
+					_append_chat("GIT", r_out, Color("#62a0ea"))
+				"config":
+					if sub_arg.is_empty():
+						var u: Dictionary = GitService.get_user_config(_workspace_root)
+						_append_chat("GIT", "Git User: `%s <%s>`" % [str(u.get("name", "")), str(u.get("email", ""))], Color("#62a0ea"))
+					else:
+						var name_val := sub_arg
+						var email_val := ""
+						if sub_arg.contains("<") and sub_arg.contains(">"):
+							var s_idx := sub_arg.find("<")
+							var e_idx := sub_arg.find(">")
+							name_val = sub_arg.substr(0, s_idx).strip_edges()
+							email_val = sub_arg.substr(s_idx + 1, e_idx - s_idx - 1).strip_edges()
+						var cfg_res: Dictionary = GitService.set_user_config(name_val, email_val, false, _workspace_root)
+						if bool(cfg_res.get("success", false)):
+							_append_chat("GIT", "[color=#57e389]Git user configurado: %s <%s>[/color]" % [name_val, email_val], Color("#57e389"))
+						else:
+							_append_chat("GIT", "[color=#ed333b]Erro ao configurar utilizador Git.[/color]", Color("#ed333b"))
+				"clone":
+					if sub_arg.is_empty():
+						_prompt_git_clone()
+					else:
+						var target_dir: String = _workspace_root.path_join(sub_arg.get_file().trim_suffix(".git"))
+						_show_toast("Clonando repositório…", false)
+						var cl_res: Dictionary = GitService.clone_repository(sub_arg, target_dir)
+						if bool(cl_res.get("success", false)):
+							_append_chat("GIT", "[color=#57e389]Repositório clonado com sucesso para %s[/color]" % target_dir, Color("#57e389"))
+							_refresh_file_tree()
+						else:
+							_append_chat("GIT", "[color=#ed333b]Erro ao clonar repositório:\n" + str(cl_res.get("output", "")) + "[/color]", Color("#ed333b"))
+				_:
+					var res: Dictionary = _execute_git_command(subcmd_raw.split(" ", false))
+					var out_txt: String = str(res.get("output", "")).strip_edges()
+					if out_txt.is_empty():
+						out_txt = "Comando Git executado."
+					_append_chat("GIT", "```bash\n" + out_txt + "\n```", Color("#62a0ea"))
+					_update_git_status_bar()
 		"/save":
 			_save_active()
 			var p: String = _open_files[_active_index]["path"] if _active_index >= 0 else "untitled"
@@ -1527,85 +1971,45 @@ func _handle_slash(cmd: String) -> void:
 		"/quit", "/exit":
 			get_tree().quit()
 		_:
-			_append_chat("IDE", "Commands: `/tools`, `/git commit`, `/git status`, `/git diff`, `/save`, `/files`, `/open <path>`, `/goto <line>`, `/clear`, `/quit`", Color("#ffa348"))
+			_append_chat("IDE", "Commands: `/tools`, `/github`, `/git status`, `/git diff`, `/git log`, `/git commit`, `/git push`, `/git pull`, `/git sync`, `/git branch`, `/save`, `/files`, `/open <path>`, `/goto <line>`, `/clear`, `/quit`", Color("#ffa348"))
 
 
 func _show_tools_list() -> void:
-	var tools_md := """Vou sinalizar que terminei após listar as ferramentas. Em seguida marco a tarefa como concluída.
+	var tools_md := """Aqui estão as ferramentas e comandos Git disponíveis no SSCodeIDE:
 
-Aqui estão as ferramentas que posso usar:
-
-• **apply_patch**: Editar ficheiros do workspace aplicando patches (criar/atualizar/eliminar).
-• **create_file**: Criar novos ficheiros com conteúdo.
-• **read_file**: Ler conteúdo de ficheiros (intervalo de linhas).
-• **list_dir**: Listar conteúdo de directórios.
-• **file_search**: Procurar ficheiros por padrão glob.
-• **grep_search**: Pesquisa de texto/regex rápida em ficheiros do workspace.
-• **git_status**: Verificar estado do repositório Git e ficheiros alterados.
+• **git_status**: Verificar estado do repositório Git, ramo activo e ficheiros alterados.
 • **git_diff**: Inspecionar alterações de código (estatísticas de adições e remoções).
-• **git_commit**: Gerar e executar commits inteligentes automáticos.
-• **create_new_workspace**: Scaffold completo de novo projecto/directório.
-• **run_terminal**: Executar comandos na consola persistente (sync/async).
-• **manage_todo_list**: Criar e actualizar lista de tarefas de progresso (Todos).
-
-Resumo: listei as ferramentas disponíveis e posso usá-las conforme precisar."""
+• **git_log**: Consultar histórico de commits recentes.
+• **git_commit**: Gerar e executar commits inteligentes automáticos ou personalizados.
+• **git_push**: Enviar commits locais para o repositório GitHub.
+• **git_pull**: Descarregar e incorporar actualizações do repositório GitHub.
+• **git_sync**: Sincronização automática bidireccional com o GitHub (Pull & Push).
+• **git_fetch**: Obter referências de ramos remotos.
+• **git_branch**: Listar, criar ou alternar entre ramos.
+• **git_remote**: Visualizar repositórios remotos e URLs do GitHub.
+• **git_config**: Configurar nome de utilizador e e-mail para commits.
+• **git_clone**: Clonar repositório do GitHub.
+• **apply_patch**: Editar ficheiros do workspace aplicando patches.
+• **create_file / read_file**: Criar e ler ficheiros do projecto.
+• **list_dir / file_search / grep_search**: Navegar e pesquisar ficheiros no directório."""
 	_append_chat("AGENT", tools_md, Color("#62a0ea"))
 
 
 func _execute_git_command(args: PackedStringArray) -> Dictionary:
-	var output: Array = []
-	var exit_code: int = OS.execute("git", args, output, true)
-	var out_text: String = output[0] if output.size() > 0 else ""
-	return {"exit_code": exit_code, "output": out_text}
+	return GitService.execute(args, _workspace_root)
 
 
 func _generate_smart_commit() -> void:
-	# 1. Run git status
-	var status_res: Dictionary = _execute_git_command(["status", "--porcelain"])
-	var status_text: String = str(status_res.get("output", "")).strip_edges()
-	if status_text.is_empty():
-		_append_chat("GIT", "Working tree clean. No changes to commit.", Color("#57e389"))
+	var commit_res: Dictionary = GitService.smart_commit("", _workspace_root)
+	if not bool(commit_res.get("success", false)):
+		var err_msg: String = str(commit_res.get("error", "No changes to commit."))
+		_append_chat("GIT", err_msg, Color("#ffa348"))
+		_show_toast(err_msg, true)
 		return
-	
-	# 2. Run git diff --stat
-	var diff_stat_res: Dictionary = _execute_git_command(["diff", "--stat"])
+		
+	var summary_msg: String = str(commit_res.get("message", "feat: update workspace"))
+	var diff_stat_res: Dictionary = GitService.get_diff_stat(_workspace_root)
 	var diff_stat: String = str(diff_stat_res.get("output", "")).strip_edges()
-	
-	# 3. Analyze modified files
-	var lines := status_text.split("\n")
-	var modified_files: Array[String] = []
-	for l in lines:
-		var trimmed := l.strip_edges()
-		if trimmed.length() > 3:
-			modified_files.append(trimmed.substr(3).strip_edges())
-	
-	# 4. Generate intelligent conventional commit message
-	var scope: String = "workspace"
-	if not modified_files.is_empty():
-		var first_file: String = modified_files[0]
-		if first_file.begins_with("scripts/"):
-			scope = first_file.get_file().get_basename()
-		elif first_file.begins_with("scene/"):
-			scope = "ui"
-		elif first_file.begins_with("test/"):
-			scope = "test"
-		elif first_file.ends_with(".md"):
-			scope = "docs"
-	
-	var summary_msg := "feat(%s): update %s with smart tools & context" % [scope, ", ".join(modified_files.slice(0, 3))]
-	if modified_files.size() > 3:
-		summary_msg += " and more"
-	
-	# 5. Stage & commit
-	var add_res: Dictionary = _execute_git_command(["add", "."])
-	if int(add_res.get("exit_code", 1)) != 0:
-		_append_chat("GIT", "Error staging files:\n" + str(add_res.get("output", "")), Color("#ed333b"))
-		return
-	
-	var commit_res: Dictionary = _execute_git_command(["commit", "-m", summary_msg])
-	if int(commit_res.get("exit_code", 1)) != 0:
-		_append_chat("GIT", "Git commit failed:\n" + str(commit_res.get("output", "")), Color("#ed333b"))
-		return
 	
 	var commit_report := "[b]Intelligent Git Commit Created:[/b]\n"
 	commit_report += "[bgcolor=#1e1e24][color=#57e389]  " + summary_msg + "\n[/color][/bgcolor]\n\n"
@@ -1615,6 +2019,7 @@ func _generate_smart_commit() -> void:
 	
 	_append_chat("GIT", commit_report, Color("#57e389"))
 	_show_toast("Git commit completed: " + summary_msg, false)
+	_update_git_status_bar()
 
 
 func _get_workspace_files_list() -> Array[String]:

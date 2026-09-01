@@ -81,6 +81,35 @@ item_6/id = 6
 item_7/text = "Find	Ctrl+F"
 item_7/id = 7
 
+[node name="Git" type="PopupMenu" parent="RootVBox/NavBar/MenuBar"]
+item_count = 13
+item_0/text = "Status & Changes…	Ctrl+Shift+G"
+item_0/id = 0
+item_1/text = "Smart Commit	Ctrl+Shift+C"
+item_1/id = 1
+item_2/text = "Push to GitHub"
+item_2/id = 2
+item_3/text = "Pull from GitHub"
+item_3/id = 3
+item_4/text = "Fetch from Remote"
+item_4/id = 4
+item_5/text = "Sync (Pull & Push)"
+item_5/id = 5
+item_6/id = 6
+item_6/separator = true
+item_7/text = "Switch / New Branch…"
+item_7/id = 7
+item_8/text = "Commit History (Log)…"
+item_8/id = 8
+item_9/text = "View Diff…"
+item_9/id = 9
+item_10/id = 10
+item_10/separator = true
+item_11/text = "GitHub Repository Info…"
+item_11/id = 11
+item_12/text = "Configure Git & GitHub…"
+item_12/id = 12
+
 [node name="Config" type="PopupMenu" parent="RootVBox/NavBar/MenuBar"]
 item_count = 1
 item_0/text = "Settings…	Ctrl+,"
@@ -312,6 +341,11 @@ size_flags_horizontal = 3
 text = "READY"
 clip_text = true
 
+[node name="StatusGit" type="Button" parent="RootVBox/StatusBar/StatusRow"]
+layout_mode = 2
+flat = true
+text = "⎇ main"
+
 [node name="StatusCursor" type="Label" parent="RootVBox/StatusBar/StatusRow"]
 layout_mode = 2
 text = "Ln 1, Col 1"
@@ -387,6 +421,20 @@ layout_mode = 2
 size_flags_vertical = 3
 bbcode_enabled = true
 fit_content = true
+
+[node name="DialogInputRow" type="HBoxContainer" parent="Overlay/DialogPanel/DialogVBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="DialogInput" type="LineEdit" parent="Overlay/DialogPanel/DialogVBox/DialogInputRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Enter value…"
+
+[node name="DialogActionBtn" type="Button" parent="Overlay/DialogPanel/DialogVBox/DialogInputRow"]
+layout_mode = 2
+text = "Confirm"
 
 [node name="DialogClose" type="Button" parent="Overlay/DialogPanel/DialogVBox"]
 layout_mode = 2
