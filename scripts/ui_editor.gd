@@ -44,8 +44,6 @@ extends Control
 @onready var _dialog_input: LineEdit = $Overlay/DialogPanel/DialogVBox/DialogInputRow/DialogInput
 @onready var _dialog_action_btn: Button = $Overlay/DialogPanel/DialogVBox/DialogInputRow/DialogActionBtn
 @onready var _dialog_close: Button = $Overlay/DialogPanel/DialogVBox/DialogClose
-@onready var _toast_panel: PanelContainer = $ToastPanel
-@onready var _toast_label: RichTextLabel = $ToastPanel/ToastMargin/ToastLabel
 @onready var _ai_chat_http: HTTPRequest = $AIChatHttp
 @onready var _chat_status_banner: PanelContainer = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner
 @onready var _chat_status_label: RichTextLabel = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner/ChatStatusLabel
@@ -2529,26 +2527,6 @@ func _send_chat_completion() -> void:
 func _show_toast(message: String, is_warning: bool = true) -> void:
 	## Send a native OS notification, then briefly show the in-app indicator
 	_send_os_notification("SSCodeIDE", message, is_warning)
-	## In-app subtle flash (short, non-intrusive — the OS handles the real toast)
-	if _toast_tween and _toast_tween.is_valid():
-		_toast_tween.kill()
-	var icon_color: String = "#ffa348" if is_warning else "#62a0ea"
-	var prefix: String = "[!] " if is_warning else "[i] "
-	_toast_label.text = "[color=%s][b]%s[/b][/color]%s" % [icon_color, prefix, message]
-	_toast_panel.modulate = Color(1, 1, 1, 0)
-	_toast_panel.visible = true
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color("1c1c22", 0.85)
-	sb.border_color = Color(icon_color)
-	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(6)
-	_toast_panel.add_theme_stylebox_override("panel", sb)
-	_toast_tween = create_tween()
-	_toast_tween.tween_property(_toast_panel, "modulate:a", 0.9, 0.15)
-	_toast_tween.tween_interval(2.0)
-	_toast_tween.tween_property(_toast_panel, "modulate:a", 0.0, 0.3)
-	_toast_tween.tween_callback(func() -> void: _toast_panel.visible = false)
-
 
 func _send_os_notification(title: String, body: String, is_warning: bool = false) -> void:
 	## Dispatches a native OS desktop notification.

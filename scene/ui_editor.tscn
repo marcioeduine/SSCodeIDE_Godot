@@ -458,34 +458,6 @@ text = "Confirm"
 layout_mode = 2
 text = "Fechar"
 
-[node name="ToastPanel" type="PanelContainer" parent="." unique_id=1061266605]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -190.0
-offset_top = -50.0
-offset_right = 190.0
-grow_horizontal = 2
-grow_vertical = 0
-
-[node name="ToastMargin" type="MarginContainer" parent="ToastPanel" unique_id=2001205600]
-layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 8
-
-[node name="ToastLabel" type="RichTextLabel" parent="ToastPanel/ToastMargin" unique_id=1612090030]
-layout_mode = 2
-bbcode_enabled = true
-text = "Notificação"
-fit_content = true
-scroll_active = false
-vertical_alignment = 1
-
 [node name="AIAuthHttp" type="HTTPRequest" parent="." unique_id=396402581]
 timeout = 30.0
 
