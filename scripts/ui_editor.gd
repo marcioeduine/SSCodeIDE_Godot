@@ -198,7 +198,6 @@ func _wire_signals() -> void:
 	_find_close.pressed.connect(func() -> void: _find_row.visible = false)
 	_chat_suggestions_list.item_selected.connect(_on_chat_suggestion_selected)
 	_chat_suggestions_list.item_activated.connect(_on_chat_suggestion_selected)
-	_code_edit.request_code_completion.connect(_on_code_completion_requested)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -208,7 +207,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	var ctrl: bool = key.ctrl_pressed
 	var shift: bool = key.shift_pressed
 	var alt: bool = key.alt_pressed
-	if key.keycode == KEY_ESCAPE and _ai_busy:
+	if ctrl and key.keycode == KEY_SPACE:
+		_update_code_completion()
+		_code_edit.request_code_completion(true)
+		get_viewport().set_input_as_handled()
+	elif key.keycode == KEY_ESCAPE and _ai_busy:
 		_cancel_ai_request()
 		get_viewport().set_input_as_handled()
 	elif key.keycode == KEY_F1:
@@ -389,11 +392,8 @@ func _apply_kitty_fish_theme() -> void:
 	var muted := Color("#9a9996")
 	var blue := Color("#62a0ea")
 	var green := Color("#57e389")
-	var orange := Color("#ff7800")
-	var yellow := Color("#ffa348")
 	var cyan := Color("#5bc8af")
 	var red := Color("#ed333b")
-	var purple := Color("#9141ac")
 
 	## Background
 	$Background.color = bg_black
@@ -585,9 +585,10 @@ func _configure_code_edit() -> void:
 	_code_edit.auto_brace_completion_enabled = true
 	_code_edit.code_completion_enabled = true
 	_code_edit.code_completion_prefixes = [".", "(", "@", "$", " ", ":"]
+	_update_code_completion()
 
 
-func _on_code_completion_requested() -> void:
+func _update_code_completion() -> void:
 	for kw in GD_KEYWORDS:
 		_code_edit.add_code_completion_option(CodeEdit.KIND_KEYWORD, kw, kw, Color("#dc8add"))
 	for fn_name in GD_BUILTIN_FUNCS:
@@ -598,7 +599,7 @@ func _on_code_completion_requested() -> void:
 		var fname: String = file_info.get("path", "").get_file()
 		if not fname.is_empty():
 			_code_edit.add_code_completion_option(CodeEdit.KIND_FILE_PATH, fname, '"' + fname + '"', Color("#57e389"))
-	_code_edit.update_code_completion_options(true)
+	_code_edit.update_code_completion_options(false)
 
 
 func _create_adwaita_fish_highlighter() -> CodeHighlighter:
@@ -825,6 +826,7 @@ func _on_code_changed() -> void:
 		info["dirty"] = true
 		var t: String = str(info.get("title", "untitled"))
 		_tab_bar.set_tab_title(_active_index, t + " •")
+	_update_code_completion()
 
 
 func _on_caret_changed() -> void:
@@ -1001,17 +1003,17 @@ func _collect_files_recursive(base_path: String, rel_prefix: String, out_list: A
 	if not dir:
 		return
 	dir.list_dir_begin()
-	var name := dir.get_next()
-	while not name.is_empty():
-		if name not in [".", "..", ".git", ".godot", "android", ".gemini"]:
-			var full_path := base_path.path_join(name)
-			var rel_path := rel_prefix.path_join(name) if not rel_prefix.is_empty() else name
+	var file_item_name := dir.get_next()
+	while not file_item_name.is_empty():
+		if file_item_name not in [".", "..", ".git", ".godot", "android", ".gemini"]:
+			var full_path := base_path.path_join(file_item_name)
+			var rel_path := rel_prefix.path_join(file_item_name) if not rel_prefix.is_empty() else file_item_name
 			if dir.current_is_dir():
 				if out_list.size() < 120:
 					_collect_files_recursive(full_path, rel_path, out_list)
 			else:
 				out_list.append(rel_path)
-		name = dir.get_next()
+		file_item_name = dir.get_next()
 	dir.list_dir_end()
 
 
