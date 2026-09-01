@@ -81,6 +81,10 @@ var _chat_history: Array[Dictionary] = []
 var _prompt_history: Array[String] = []
 var _prompt_history_idx: int = -1
 var _prompt_draft: String = ""
+var _explorer_collapsed: bool = false  ## Whether the file explorer pane is hidden
+var _chat_collapsed: bool = false      ## Whether the chat pane is hidden
+var _explorer_split_offset: int = 0   ## Saved split offset when explorer is collapsed
+var _chat_split_offset: int = 0       ## Saved split offset when chat is collapsed
 const SPINNER_FRAMES: Array[String] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
 const THEMES: Dictionary = {
@@ -226,7 +230,8 @@ const HELP_TEXT := """[b]SSCodeIDE Shortcuts[/b]
   Ctrl+,            Settings
   F1                Help (shortcuts)
   Ctrl+P            Focus explorer
-  Ctrl+B            Toggle sidebar
+  Ctrl+B            Colapsar / expandir o File Explorer
+  Ctrl+Shift+B      Colapsar / expandir o Chat
   Ctrl+J / K / `    Focus chat input
   Esc               Cancel AI / dismiss dialog
 
@@ -285,6 +290,46 @@ func _apply_split_offsets() -> void:
 		w = get_viewport_rect().size.x
 	_main_split.split_offset = int(w * 0.18)
 	_center_split.split_offset = int(w * 0.50)
+	_explorer_split_offset = _main_split.split_offset
+	_chat_split_offset     = _center_split.split_offset
+
+
+func _toggle_explorer() -> void:
+	## Collapse or expand the File Explorer pane by animating _main_split.split_offset
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	if _explorer_collapsed:
+		## Expand: restore saved offset
+		_explorer_collapsed = false
+		var target := _explorer_split_offset if _explorer_split_offset > 60 else int(get_viewport_rect().size.x * 0.18)
+		tween.tween_property(_main_split, "split_offset", target, 0.22)
+		_status_left.text = "Explorer  ▶  shown"
+	else:
+		## Collapse: save current offset then slide to 0
+		_explorer_split_offset = _main_split.split_offset
+		_explorer_collapsed = true
+		tween.tween_property(_main_split, "split_offset", 0, 0.22)
+		_status_left.text = "Explorer  ◀  hidden  (Ctrl+B to restore)"
+
+
+func _toggle_chat() -> void:
+	## Collapse or expand the Chat pane by animating _center_split.split_offset
+	## A very large positive offset pushes the chat pane fully off-screen to the right.
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	var full_width: int = int(get_viewport_rect().size.x)
+	if _chat_collapsed:
+		## Expand: restore saved offset
+		_chat_collapsed = false
+		var target := _chat_split_offset if _chat_split_offset > 60 else int(full_width * 0.50)
+		tween.tween_property(_center_split, "split_offset", target, 0.22)
+		_status_left.text = "Chat  ▶  shown"
+	else:
+		## Collapse: save current offset then push chat fully right
+		_chat_split_offset = _center_split.split_offset
+		_chat_collapsed = true
+		tween.tween_property(_center_split, "split_offset", full_width, 0.22)
+		_status_left.text = "Chat  ◀  hidden  (Ctrl+Shift+B to restore)"
 
 
 func _wire_signals() -> void:
@@ -436,17 +481,23 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	# Panels & Focus Navigation
-	if ctrl and key.keycode == KEY_B:
-		var explorer_pane: Control = $RootVBox/MainSplit/ExplorerPane
-		if explorer_pane:
-			explorer_pane.visible = not explorer_pane.visible
+	if ctrl and not shift and key.keycode == KEY_B:
+		_toggle_explorer()
+		get_viewport().set_input_as_handled()
+		return
+	if ctrl and shift and key.keycode == KEY_B:
+		_toggle_chat()
 		get_viewport().set_input_as_handled()
 		return
 	if ctrl and (key.keycode == KEY_J or key.keycode == KEY_K or key.keycode == KEY_QUOTELEFT):
+		if _chat_collapsed:
+			_toggle_chat()
 		_chat_input.grab_focus()
 		get_viewport().set_input_as_handled()
 		return
 	if ctrl and key.keycode == KEY_P:
+		if _explorer_collapsed:
+			_toggle_explorer()
 		_file_tree.grab_focus()
 		get_viewport().set_input_as_handled()
 		return
@@ -2234,26 +2285,100 @@ func _execute_git_command(args: PackedStringArray) -> Dictionary:
 
 
 func _generate_smart_commit() -> void:
-	var commit_res: Dictionary = GitService.smart_commit("", _workspace_root)
-	if not bool(commit_res.get("success", false)):
-		var err_msg: String = str(commit_res.get("error", "No changes to commit."))
-		_append_chat("GIT", err_msg, Color("#ffa348"))
-		_show_toast(err_msg, true)
+	## Stage all changes first
+	if not GitService.is_git_repository(_workspace_root):
+		_append_chat("GIT", "[color=#ffa348]Não é um repositório Git.[/color]", Color("#ffa348"))
+		_show_toast("Not a Git repository.", true)
 		return
-		
-	var summary_msg: String = str(commit_res.get("message", "feat: update workspace"))
+
+	var st: Dictionary = GitService.get_status(_workspace_root)
+	var staged: Array   = st.get("staged",    [])
+	var unstaged: Array = st.get("unstaged",  [])
+	var untracked: Array= st.get("untracked", [])
+	if staged.is_empty() and unstaged.is_empty() and untracked.is_empty():
+		_append_chat("GIT", "[color=#9a9996]Sem alterações para commitar.[/color]", Color("#9a9996"))
+		_show_toast("Git: nothing to commit.", false)
+		return
+
+	## Stage everything (git add -A)
+	var stage_res: Dictionary = GitService.stage_all(_workspace_root)
+	if not bool(stage_res.get("success", false)):
+		_append_chat("GIT", "[color=#ed333b]Erro ao efectuar git add -A:[/color]\n" + str(stage_res.get("output", "")), Color("#ed333b"))
+		return
+
+	## Gather diff stat for context
 	var diff_stat_res: Dictionary = GitService.get_diff_stat(_workspace_root)
 	var diff_stat: String = str(diff_stat_res.get("output", "")).strip_edges()
-	
-	var commit_report := "[b]Intelligent Git Commit Created:[/b]\n"
-	commit_report += "[bgcolor=#1e1e24][color=#57e389]  " + summary_msg + "\n[/color][/bgcolor]\n\n"
-	if not diff_stat.is_empty():
-		commit_report += "[color=#9a9996]Changes Summary:\n" + diff_stat + "[/color]\n"
-	commit_report += "\n[color=#57e389]● Git[/color] [color=#62a0ea]committed successfully[/color]"
-	
-	_append_chat("GIT", commit_report, Color("#57e389"))
-	_show_toast("Git commit completed: " + summary_msg, false)
-	_update_git_status_bar()
+
+	## Gather a compact diff (limit to ~3000 chars to fit model context)
+	var diff_res: Dictionary = GitService.get_diff("--cached", false, _workspace_root)
+	var diff_text: String = str(diff_res.get("output", "")).strip_edges()
+	if diff_text.length() > 3000:
+		diff_text = diff_text.substr(0, 3000) + "\n... [diff truncated]"
+
+	if diff_text.is_empty():
+		diff_text = diff_stat
+
+	## Show spinner while AI generates the commit message
+	_show_toast("A gerar mensagem de commit com IA…", false)
+	_append_chat("GIT", "[color=#62a0ea]⠙ A gerar mensagem de commit com IA…[/color]", Color("#62a0ea"))
+
+	## Build AI prompt for Conventional Commits
+	var commit_prompt := (
+		"You are an expert software engineer. Analyse the following `git diff --cached` output " +
+		"and produce ONE concise Git commit message following the Conventional Commits specification " +
+		"(https://www.conventionalcommits.org).\n\n" +
+		"Rules:\n" +
+		"- Use one of: feat, fix, docs, style, refactor, perf, test, chore, build, ci\n" +
+		"- First line: type(scope): short summary in imperative mood, max 72 chars\n" +
+		"- Optionally add a blank line then a short body (max 3 lines) describing WHY\n" +
+		"- Output ONLY the commit message — no explanation, no markdown fences\n\n" +
+		"Git diff:\n```\n" + diff_text + "\n```"
+	)
+
+	## Send one-shot request to the AI (bypassing chat history)
+	_ai_smart_commit_request(commit_prompt, diff_stat)
+
+
+func _ai_smart_commit_request(prompt: String, diff_stat: String) -> void:
+	## Fires a dedicated one-shot HTTPRequest to NVIDIA NIM to generate the commit message.
+	## We reuse _ai_chat_http; if a chat request is already running we queue with a small delay.
+	if _ai_busy:
+		_append_chat("GIT", "[color=#ffa348]IA ocupada. Tenta novamente em breve.[/color]", Color("#ffa348"))
+		return
+
+	_ai_busy = true
+	_request_start_time = Time.get_ticks_msec() / 1000.0
+	_spinner_time = 0.0
+	_chat_status_banner.visible = true
+	_chat_send.text = "■"
+	_status_left.text = "Smart Commit: generating AI message…"
+
+	var model_name: String = AIService.get_candidate_models(_ai_provider)[0]
+	var headers := PackedStringArray([
+		"Content-Type: application/json",
+		"Authorization: Bearer " + AIService.NVIDIA_API_KEY,
+		"Accept: application/json"
+	])
+	var messages_payload: Array[Dictionary] = [
+		{"role": "system", "content": "You are an expert Git commit message writer. Output ONLY the commit message with no extra text or markdown."},
+		{"role": "user",   "content": prompt}
+	]
+	var payload_dict: Dictionary = {
+		"model": model_name,
+		"messages": messages_payload,
+		"temperature": 0.2,
+		"top_p": 0.9,
+		"max_tokens": 256,
+		"stream": false
+	}
+	var payload_json := JSON.stringify(payload_dict)
+
+	## Tag this as a smart-commit request so _on_ai_chat_http_completed can handle it
+	_current_prompt = "__SMART_COMMIT__:" + diff_stat
+	_model_candidates = AIService.get_candidate_models(_ai_provider)
+	_model_candidate_index = 0
+	_ai_chat_http.request(AIService.NVIDIA_BASE_URL, headers, HTTPClient.METHOD_POST, payload_json)
 
 
 func _get_workspace_files_list() -> Array[String]:
@@ -2403,27 +2528,59 @@ func _send_chat_completion() -> void:
 
 
 func _show_toast(message: String, is_warning: bool = true) -> void:
+	## Send a native OS notification, then briefly show the in-app indicator
+	_send_os_notification("SSCodeIDE", message, is_warning)
+	## In-app subtle flash (short, non-intrusive — the OS handles the real toast)
 	if _toast_tween and _toast_tween.is_valid():
 		_toast_tween.kill()
-
 	var icon_color: String = "#ffa348" if is_warning else "#62a0ea"
 	var prefix: String = "[!] " if is_warning else "[i] "
 	_toast_label.text = "[color=%s][b]%s[/b][/color]%s" % [icon_color, prefix, message]
 	_toast_panel.modulate = Color(1, 1, 1, 0)
 	_toast_panel.visible = true
-
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color("#1c1c22")
+	sb.bg_color = Color("1c1c22", 0.85)
 	sb.border_color = Color(icon_color)
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(6)
 	_toast_panel.add_theme_stylebox_override("panel", sb)
-
 	_toast_tween = create_tween()
-	_toast_tween.tween_property(_toast_panel, "modulate:a", 1.0, 0.2)
-	_toast_tween.tween_interval(3.5)
-	_toast_tween.tween_property(_toast_panel, "modulate:a", 0.0, 0.4)
+	_toast_tween.tween_property(_toast_panel, "modulate:a", 0.9, 0.15)
+	_toast_tween.tween_interval(2.0)
+	_toast_tween.tween_property(_toast_panel, "modulate:a", 0.0, 0.3)
 	_toast_tween.tween_callback(func() -> void: _toast_panel.visible = false)
+
+
+func _send_os_notification(title: String, body: String, is_warning: bool = false) -> void:
+	## Dispatches a native OS desktop notification.
+	## Linux  — notify-send (libnotify)
+	## macOS  — osascript (AppleScript)
+	## Windows — PowerShell BurntToast / Shell.Application
+	var urgency := "normal" if not is_warning else "critical"
+	var icon    := "dialog-information" if not is_warning else "dialog-warning"
+	match OS.get_name():
+		"Linux", "FreeBSD", "OpenBSD", "NetBSD":
+			OS.execute("notify-send", [
+				"--urgency=" + urgency,
+				"--icon=" + icon,
+				"--app-name=SSCodeIDE",
+				"--expire-time=4000",
+				title, body
+			])
+		"macOS":
+			var script := "display notification \"%s\" with title \"%s\" sound name \"Submarine\"" % [
+				body.replace("\"", "'"), title.replace("\"", "'")
+			]
+			OS.execute("osascript", ["-e", script])
+		"Windows":
+			var ps_cmd := (
+				"[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType=WindowsRuntime] | Out-Null;" +
+				"$xml = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02);" +
+				"$xml.GetElementsByTagName('text')[0].InnerText = '%s';" % title.replace("'", "`'") +
+				"$xml.GetElementsByTagName('text')[1].InnerText = '%s';" % body.replace("'", "`'") +
+				"[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('SSCodeIDE').Show((New-Object Windows.UI.Notifications.ToastNotification($xml)))"
+			)
+			OS.execute("powershell", ["-WindowStyle", "Hidden", "-Command", ps_cmd])
 
 
 func _on_ai_chat_http_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
@@ -2471,6 +2628,31 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 			var msg: Dictionary = choices[0].get("message", {})
 			var reply_text: String = str(msg.get("content", "")).strip_edges()
 			if not reply_text.is_empty():
+
+				## ── Smart Commit intercept ──────────────────────────────────────
+				if _current_prompt.begins_with("__SMART_COMMIT__:"):
+					var diff_stat: String = _current_prompt.trim_prefix("__SMART_COMMIT__:")
+					_current_prompt = ""
+					## Strip accidental markdown fences the model may add
+					var commit_msg := reply_text.strip_edges()
+					commit_msg = commit_msg.trim_prefix("```").trim_suffix("```").strip_edges()
+					## Commit with the AI-generated message
+					var commit_res: Dictionary = GitService.commit(commit_msg, _workspace_root)
+					if bool(commit_res.get("success", false)):
+						var commit_report := "[b]Smart Commit (IA) realizado:[/b]\n"
+						commit_report += "[bgcolor=#0d1a0d][color=#57e389]  " + commit_msg.split("\n")[0] + "\n[/color][/bgcolor]\n\n"
+						if not diff_stat.is_empty():
+							commit_report += "[color=#9a9996]Resumo das alterações:\n" + diff_stat + "[/color]\n"
+						commit_report += "\n[color=#57e389]● Git[/color] [color=#62a0ea]commit com mensagem gerada pela IA[/color]"
+						_append_chat("GIT", commit_report, Color("#57e389"))
+						_show_toast("Smart Commit: " + commit_msg.split("\n")[0], false)
+					else:
+						_append_chat("GIT", "[color=#ed333b]Erro no commit:[/color]\n" + str(commit_res.get("output", "")), Color("#ed333b"))
+						_show_toast("Smart Commit failed.", true)
+					_update_git_status_bar()
+					return
+				## ── End smart commit ────────────────────────────────────────────
+
 				_chat_history.append({"role": "assistant", "content": reply_text})
 				var usage: Dictionary = parsed.get("usage", {})
 				var prompt_tokens: int = int(usage.get("prompt_tokens", float(_current_prompt.length()) / 4.0))
