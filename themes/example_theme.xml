@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SSCodeIDE Custom Theme — XML Format
+  ====================================
+  Instructions:
+    1. Copy this file and rename it (e.g. my_theme.xml)
+    2. Set a unique `name` (slug, no spaces) and a human-readable `label`
+    3. Customise any colour values (hex #RRGGBB)
+    4. In SSCodeIDE, type: /theme import
+    5. Once imported, activate it with: /theme my_theme_name
+
+  All 22 colour keys and their purpose are documented below.
+-->
+<theme name="solarized_dark" label="Solarized Dark">
+
+  <!-- Backgrounds -->
+  <colour key="bg_black"   value="#001e26"/>
+  <colour key="bg_darker"  value="#002731"/>
+  <colour key="bg_surface" value="#002b36"/>
+  <colour key="bg_card"    value="#073642"/>
+  <colour key="bg_lighter" value="#0e4a5a"/>
+
+  <!-- Text -->
+  <colour key="fg"         value="#839496"/>
+  <colour key="fg_bright"  value="#fdf6e3"/>
+  <colour key="muted"      value="#586e75"/>
+
+  <!-- Accent -->
+  <colour key="blue"       value="#268bd2"/>
+  <colour key="green"      value="#859900"/>
+  <colour key="cyan"       value="#2aa198"/>
+  <colour key="red"        value="#dc322f"/>
+
+  <!-- Syntax highlighting -->
+  <colour key="hl_number"  value="#d33682"/>
+  <colour key="hl_symbol"  value="#657b83"/>
+  <colour key="hl_func"    value="#268bd2"/>
+  <colour key="hl_member"  value="#b58900"/>
+  <colour key="hl_comment" value="#586e75"/>
+  <colour key="hl_string"  value="#859900"/>
+  <colour key="hl_keyword" value="#cb4b16"/>
+  <colour key="hl_type"    value="#2aa198"/>
+  <colour key="hl_const"   value="#6c71c4"/>
+
+</theme>

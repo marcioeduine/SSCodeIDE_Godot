@@ -36,10 +36,11 @@ extends Control
 @onready var _open_file_dlg: FileDialog = $OpenFileDialog
 @onready var _open_dir_dlg: FileDialog = $OpenDirDialog
 @onready var _save_as_dlg: FileDialog = $SaveAsDialog
+@onready var _open_theme_xml_dlg: FileDialog = $OpenThemeXmlDialog
 @onready var _overlay: ColorRect = $Overlay
 @onready var _dialog_panel: PanelContainer = $Overlay/DialogPanel
 @onready var _dialog_title: Label = $Overlay/DialogPanel/DialogVBox/DialogTitle
-@onready var _dialog_body: RichTextLabel = $Overlay/DialogPanel/DialogVBox/DialogBody
+@onready var _dialog_body: RichTextLabel = $Overlay/DialogPanel/DialogVBox/DialogScroll/DialogBody
 @onready var _dialog_input_row: HBoxContainer = $Overlay/DialogPanel/DialogVBox/DialogInputRow
 @onready var _dialog_input: LineEdit = $Overlay/DialogPanel/DialogVBox/DialogInputRow/DialogInput
 @onready var _dialog_action_btn: Button = $Overlay/DialogPanel/DialogVBox/DialogInputRow/DialogActionBtn
@@ -61,6 +62,7 @@ var _dialog_action_callback: Callable = Callable()
 
 var _nerd_font: FontFile
 var _workspace_root: String = ""
+var _custom_themes: Dictionary = {}  ## User-installed themes loaded from XML files
 var _open_files: Array[Dictionary] = []
 var _active_index: int = -1
 var _suppress_tab: bool = false
@@ -69,6 +71,7 @@ var _agent_mode: bool = true
 var _ai_busy: bool = false
 var _toast_tween: Tween = null
 var _ai_provider: String = "nemotron"
+var _active_theme: String = "adwaita_darker"
 var _current_prompt: String = ""
 var _model_candidates: Array[String] = []
 var _model_candidate_index: int = 0
@@ -79,6 +82,69 @@ var _prompt_history: Array[String] = []
 var _prompt_history_idx: int = -1
 var _prompt_draft: String = ""
 const SPINNER_FRAMES: Array[String] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+
+const THEMES: Dictionary = {
+	"adwaita_darker": {
+		"label": "Adwaita Darker",
+		"bg_black":   "#000000", "bg_darker":  "#0e0e11", "bg_surface": "#16161b",
+		"bg_card":    "#1c1c22", "bg_lighter": "#26262e",
+		"fg":         "#deddda", "fg_bright":  "#f6f5f4", "muted":      "#9a9996",
+		"blue":       "#62a0ea", "green":      "#57e389", "cyan":       "#5bc8af", "red": "#ed333b",
+		"hl_number":  "#ffa348", "hl_symbol":  "#5bc8af", "hl_func":    "#62a0ea",
+		"hl_member":  "#99c1f1", "hl_comment": "#9a9996", "hl_string":  "#57e389",
+		"hl_keyword": "#dc8add", "hl_type":    "#93ddc2", "hl_const":   "#ffa348",
+	},
+	"monokai": {
+		"label": "Monokai",
+		"bg_black":   "#1a1a1a", "bg_darker":  "#1e1e1e", "bg_surface": "#272822",
+		"bg_card":    "#2d2e27", "bg_lighter": "#383830",
+		"fg":         "#f8f8f2", "fg_bright":  "#ffffff", "muted":      "#75715e",
+		"blue":       "#66d9e8", "green":      "#a6e22e", "cyan":       "#66d9e8", "red": "#f92672",
+		"hl_number":  "#ae81ff", "hl_symbol":  "#f8f8f2", "hl_func":    "#a6e22e",
+		"hl_member":  "#fd971f", "hl_comment": "#75715e", "hl_string":  "#e6db74",
+		"hl_keyword": "#f92672", "hl_type":    "#66d9e8", "hl_const":   "#ae81ff",
+	},
+	"tokyo_night": {
+		"label": "Tokyo Night",
+		"bg_black":   "#13131e", "bg_darker":  "#16161f", "bg_surface": "#1a1b26",
+		"bg_card":    "#1f2035", "bg_lighter": "#292e42",
+		"fg":         "#a9b1d6", "fg_bright":  "#c0caf5", "muted":      "#565f89",
+		"blue":       "#7aa2f7", "green":      "#9ece6a", "cyan":       "#2ac3de", "red": "#f7768e",
+		"hl_number":  "#ff9e64", "hl_symbol":  "#89ddff", "hl_func":    "#7aa2f7",
+		"hl_member":  "#73daca", "hl_comment": "#565f89", "hl_string":  "#9ece6a",
+		"hl_keyword": "#bb9af7", "hl_type":    "#2ac3de", "hl_const":   "#ff9e64",
+	},
+	"dracula": {
+		"label": "Dracula",
+		"bg_black":   "#1a1a2e", "bg_darker":  "#1e1f29", "bg_surface": "#282a36",
+		"bg_card":    "#2e3040", "bg_lighter": "#3d3f4e",
+		"fg":         "#f8f8f2", "fg_bright":  "#ffffff", "muted":      "#6272a4",
+		"blue":       "#8be9fd", "green":      "#50fa7b", "cyan":       "#8be9fd", "red": "#ff5555",
+		"hl_number":  "#bd93f9", "hl_symbol":  "#ff79c6", "hl_func":    "#50fa7b",
+		"hl_member":  "#ffb86c", "hl_comment": "#6272a4", "hl_string":  "#f1fa8c",
+		"hl_keyword": "#ff79c6", "hl_type":    "#8be9fd", "hl_const":   "#bd93f9",
+	},
+	"catppuccin": {
+		"label": "Catppuccin Mocha",
+		"bg_black":   "#0e0e14", "bg_darker":  "#11111b", "bg_surface": "#1e1e2e",
+		"bg_card":    "#181825", "bg_lighter": "#313244",
+		"fg":         "#cdd6f4", "fg_bright":  "#ffffff", "muted":      "#585b70",
+		"blue":       "#89b4fa", "green":      "#a6e3a1", "cyan":       "#94e2d5", "red": "#f38ba8",
+		"hl_number":  "#fab387", "hl_symbol":  "#89dceb", "hl_func":    "#89b4fa",
+		"hl_member":  "#cba6f7", "hl_comment": "#585b70", "hl_string":  "#a6e3a1",
+		"hl_keyword": "#cba6f7", "hl_type":    "#94e2d5", "hl_const":   "#fab387",
+	},
+	"nord": {
+		"label": "Nord",
+		"bg_black":   "#191d24", "bg_darker":  "#1e2430", "bg_surface": "#2e3440",
+		"bg_card":    "#3b4252", "bg_lighter": "#434c5e",
+		"fg":         "#d8dee9", "fg_bright":  "#eceff4", "muted":      "#616e88",
+		"blue":       "#88c0d0", "green":      "#a3be8c", "cyan":       "#8fbcbb", "red": "#bf616a",
+		"hl_number":  "#b48ead", "hl_symbol":  "#81a1c1", "hl_func":    "#88c0d0",
+		"hl_member":  "#81a1c1", "hl_comment": "#616e88", "hl_string":  "#a3be8c",
+		"hl_keyword": "#81a1c1", "hl_type":    "#8fbcbb", "hl_const":   "#b48ead",
+	},
+}
 
 const CHAT_SLASH_COMMANDS: Array[Dictionary] = [
 	{"cmd": "/tools", "desc": "List all available AI agent tools"},
@@ -102,6 +168,7 @@ const CHAT_SLASH_COMMANDS: Array[Dictionary] = [
 	{"cmd": "/goto ", "desc": "Go to line number (/goto <line>)"},
 	{"cmd": "/clear", "desc": "Clear conversation history & chat context"},
 	{"cmd": "/cancel", "desc": "Abort running AI request"},
+	{"cmd": "/theme", "desc": "Select or import IDE colour theme (/theme list | /theme <name> | /theme import)"},
 	{"cmd": "/quit", "desc": "Quit SSCodeIDE"},
 ]
 
@@ -189,6 +256,7 @@ func _ready() -> void:
 	_nav_workspace.text = ""
 	_nav_workspace.visible = false
 	_load_ai_config()
+	_load_theme_config()
 	_apply_kitty_fish_theme()
 	_wire_signals()
 	_configure_code_edit()
@@ -249,6 +317,8 @@ func _wire_signals() -> void:
 	_open_file_dlg.file_selected.connect(_open_path)
 	_open_dir_dlg.dir_selected.connect(_on_dir_selected)
 	_save_as_dlg.file_selected.connect(_save_as_path)
+	if _open_theme_xml_dlg:
+		_open_theme_xml_dlg.file_selected.connect(_import_theme_from_xml)
 	_dialog_close.pressed.connect(_hide_overlay)
 	if _dialog_action_btn:
 		_dialog_action_btn.pressed.connect(_on_dialog_action_pressed)
@@ -806,6 +876,151 @@ func _save_ai_config() -> void:
 	cfg.save("user://ai_config.cfg")
 
 
+func _all_themes() -> Dictionary:
+	## Returns built-in themes merged with any user-installed XML themes
+	var merged := THEMES.duplicate()
+	for key in _custom_themes:
+		merged[key] = _custom_themes[key]
+	return merged
+
+
+func _load_theme_config() -> void:
+	_load_custom_themes()
+	var cfg := ConfigFile.new()
+	if cfg.load("user://ui_config.cfg") == OK:
+		_active_theme = str(cfg.get_value("theme", "name", "adwaita_darker"))
+	if not _all_themes().has(_active_theme):
+		_active_theme = "adwaita_darker"
+
+
+func _save_theme_config() -> void:
+	var cfg := ConfigFile.new()
+	cfg.load("user://ui_config.cfg")
+	cfg.set_value("theme", "name", _active_theme)
+	cfg.save("user://ui_config.cfg")
+
+
+func _apply_theme_by_name(name: String) -> void:
+	_active_theme = name
+	_save_theme_config()
+	_apply_kitty_fish_theme()
+	var label: String = str(_all_themes().get(name, {}).get("label", name))
+	_append_chat("IDE", "[color=#57e389]Tema aplicado:[/color] [b]" + label + "[/b]", Color("#57e389"))
+	_show_toast("Theme: " + label, false)
+
+
+func _show_theme_picker() -> void:
+	var all := _all_themes()
+	var body := "[b][color=#62a0ea]Temas Disponíveis:[/color][/b]\n\n"
+	for key: String in all.keys():
+		var t: Dictionary = all[key]
+		var active_mark := "  [color=#57e389]✓ activo[/color]" if key == _active_theme else ""
+		var custom_mark := "  [color=#ffa348]⬡ XML[/color]" if _custom_themes.has(key) else ""
+		body += "• [b]%s[/b]%s%s\n  [color=#9a9996]/theme %s[/color]\n\n" % [str(t.get("label", key)), active_mark, custom_mark, key]
+	body += "[color=#9a9996]Utilização: /theme <nome>   ex: /theme dracula\n"
+	body += "/theme import — instalar tema via ficheiro .xml[/color]"
+	_show_overlay("Seleccionar Tema", body)
+
+
+func _load_custom_themes() -> void:
+	## Scans user://themes/ and loads all valid .xml theme files into _custom_themes
+	_custom_themes.clear()
+	var dir := DirAccess.open("user://themes")
+	if dir == null:
+		DirAccess.make_dir_absolute(ProjectSettings.globalize_path("user://themes"))
+		return
+	dir.list_dir_begin()
+	var fname := dir.get_next()
+	while not fname.is_empty():
+		if not dir.current_is_dir() and fname.ends_with(".xml"):
+			var path := "user://themes/" + fname
+			var result := _parse_theme_xml(path)
+			if not result.is_empty():
+				var key: String = str(result.get("key", fname.trim_suffix(".xml")))
+				_custom_themes[key] = result
+		fname = dir.get_next()
+	dir.list_dir_end()
+
+
+func _parse_theme_xml(path: String) -> Dictionary:
+	## Parses an XML theme file and returns a theme Dictionary, or empty if invalid.
+	## Expected format:
+	##   <theme name="my_theme" label="My Theme Label">
+	##     <colour key="bg_black" value="#1a1a2e"/>
+	##     ...
+	##   </theme>
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return {}
+	var xml_text := file.get_as_text()
+	file.close()
+	var parser := XMLParser.new()
+	if parser.open_buffer(xml_text.to_utf8_buffer()) != OK:
+		return {}
+	var result: Dictionary = {}
+	while parser.read() == OK:
+		if parser.get_node_type() == XMLParser.NODE_ELEMENT:
+			var tag := parser.get_node_name()
+			if tag == "theme":
+				result["key"] = parser.get_named_attribute_value_safe("name")
+				result["label"] = parser.get_named_attribute_value_safe("label")
+				if result["key"].is_empty():
+					result["key"] = path.get_file().trim_suffix(".xml")
+				if result["label"].is_empty():
+					result["label"] = result["key"]
+			elif tag == "colour" or tag == "color":
+				var k := parser.get_named_attribute_value_safe("key")
+				var v := parser.get_named_attribute_value_safe("value")
+				if not k.is_empty() and not v.is_empty():
+					result[k] = v
+	## Validate that the minimum required keys are present
+	var required := ["bg_surface", "fg", "blue", "green"]
+	for req in required:
+		if not result.has(req):
+			return {}
+	return result
+
+
+func _import_theme_xml_dialog() -> void:
+	## Opens a file picker to select a .xml theme file for import
+	if _open_theme_xml_dlg:
+		_open_theme_xml_dlg.popup_centered(Vector2i(800, 500))
+	else:
+		_append_chat("IDE", "[color=#ed333b]Diálogo de importação não disponível.[/color]", Color("#ed333b"))
+
+
+func _import_theme_from_xml(xml_path: String) -> void:
+	## Imports a theme from the given .xml path into user://themes/
+	var parsed := _parse_theme_xml(xml_path)
+	if parsed.is_empty():
+		_append_chat("IDE", "[color=#ed333b]Ficheiro XML inválido ou tema incompleto.[/color]\nVerifique o formato: [color=#9a9996]<theme name=\"id\" label=\"Nome\">[/color]", Color("#ed333b"))
+		_show_toast("Theme XML: formato inválido.", true)
+		return
+	## Copy file into user://themes/
+	var dest_name: String = str(parsed.get("key", "custom")) + ".xml"
+	var dest_path := "user://themes/" + dest_name
+	DirAccess.make_dir_absolute(ProjectSettings.globalize_path("user://themes"))
+	var src := FileAccess.open(xml_path, FileAccess.READ)
+	if src == null:
+		_append_chat("IDE", "[color=#ed333b]Não foi possível ler o ficheiro XML.[/color]", Color("#ed333b"))
+		return
+	var content := src.get_as_text()
+	src.close()
+	var dst := FileAccess.open(dest_path, FileAccess.WRITE)
+	if dst == null:
+		_append_chat("IDE", "[color=#ed333b]Não foi possível guardar o tema em user://themes/.[/color]", Color("#ed333b"))
+		return
+	dst.store_string(content)
+	dst.close()
+	## Reload and apply
+	_load_custom_themes()
+	var key: String = str(parsed.get("key", "custom"))
+	var label: String = str(parsed.get("label", key))
+	_apply_theme_by_name(key)
+	_append_chat("IDE", "[color=#57e389]Tema importado com sucesso:[/color] [b]" + label + "[/b]\nGuardado em: [color=#9a9996]" + dest_path + "[/color]", Color("#57e389"))
+	_show_toast("Tema instalado: " + label, false)
+
+
 func _update_ai_status() -> void:
 	var titles := {
 		"nemotron": "Nemotron 3 Omni",
@@ -821,19 +1036,20 @@ func _update_ai_status() -> void:
 
 
 func _apply_kitty_fish_theme() -> void:
-	## Kitty Adwaita Darker + Fish Shell Palette
-	var bg_black := Color("#000000")
-	var bg_darker := Color("#0e0e11")
-	var bg_surface := Color("#16161b")
-	var bg_card := Color("#1c1c22")
-	var bg_lighter := Color("#26262e")
-	var fg := Color("#deddda")
-	var fg_bright := Color("#f6f5f4")
-	var muted := Color("#9a9996")
-	var blue := Color("#62a0ea")
-	var green := Color("#57e389")
-	var cyan := Color("#5bc8af")
-	var red := Color("#ed333b")
+	## Resolve active palette from THEMES dict
+	var p: Dictionary = THEMES.get(_active_theme, THEMES["adwaita_darker"])
+	var bg_black   := Color(str(p.get("bg_black",   "#000000")))
+	var bg_darker  := Color(str(p.get("bg_darker",  "#0e0e11")))
+	var bg_surface := Color(str(p.get("bg_surface", "#16161b")))
+	var bg_card    := Color(str(p.get("bg_card",    "#1c1c22")))
+	var bg_lighter := Color(str(p.get("bg_lighter", "#26262e")))
+	var fg         := Color(str(p.get("fg",         "#deddda")))
+	var fg_bright  := Color(str(p.get("fg_bright",  "#f6f5f4")))
+	var muted      := Color(str(p.get("muted",      "#9a9996")))
+	var blue       := Color(str(p.get("blue",       "#62a0ea")))
+	var green      := Color(str(p.get("green",      "#57e389")))
+	var cyan       := Color(str(p.get("cyan",       "#5bc8af")))
+	var red        := Color(str(p.get("red",        "#ed333b")))
 
 	## Background
 	$Background.color = bg_black
@@ -857,17 +1073,18 @@ func _apply_kitty_fish_theme() -> void:
 	tree_bg_sb.bg_color = bg_surface
 	_file_tree.add_theme_stylebox_override("panel", tree_bg_sb)
 
-	## CodeEdit — Kitty terminal / Adwaita Darker editor
+	## CodeEdit — palette-driven colours
 	_code_edit.add_theme_color_override("background_color", bg_black)
 	_code_edit.add_theme_color_override("font_color", fg)
-	_code_edit.add_theme_color_override("current_line_color", Color("#16161c"))
-	_code_edit.add_theme_color_override("selection_color", Color("#1c1c1c"))
-	_code_edit.add_theme_color_override("line_number_color", Color("#5e5c5b"))
+	_code_edit.add_theme_color_override("current_line_color", bg_surface)
+	_code_edit.add_theme_color_override("selection_color", bg_lighter)
+	_code_edit.add_theme_color_override("line_number_color", muted.darkened(0.2))
 	_code_edit.add_theme_color_override("caret_color", fg_bright)
-	_code_edit.add_theme_color_override("word_highlighted_color", Color("#26262e"))
+	_code_edit.add_theme_color_override("word_highlighted_color", bg_lighter)
 	_code_edit.add_theme_color_override("brace_mismatch_color", red)
+	_code_edit.syntax_highlighter = _create_adwaita_fish_highlighter()
 
-	## Markdown Preview — clean reading surface
+	## Markdown Preview
 	var md_sb := StyleBoxFlat.new()
 	md_sb.bg_color = bg_black
 	md_sb.set_content_margin_all(24)
@@ -881,17 +1098,17 @@ func _apply_kitty_fish_theme() -> void:
 	_tab_bar.add_theme_color_override("font_selected_color", fg_bright)
 	_tab_bar.add_theme_color_override("font_unselected_color", muted)
 
-	## Chat pane — Modern DeepSeek/ChatGPT style on Adwaita Darker
+	## Chat pane
 	_chat_log.add_theme_color_override("default_color", fg)
 	var chat_log_sb := StyleBoxFlat.new()
 	chat_log_sb.bg_color = bg_darker
 	chat_log_sb.set_content_margin_all(10)
 	_chat_log.add_theme_stylebox_override("normal", chat_log_sb)
 
-	## Chat Input Card (Floating capsule container)
+	## Chat Input Card
 	var input_card_sb := StyleBoxFlat.new()
 	input_card_sb.bg_color = bg_card
-	input_card_sb.border_color = Color("#2e2e38")
+	input_card_sb.border_color = bg_lighter
 	input_card_sb.set_border_width_all(1)
 	input_card_sb.set_corner_radius_all(14)
 	input_card_sb.set_content_margin_all(8)
@@ -914,7 +1131,7 @@ func _apply_kitty_fish_theme() -> void:
 			btn.add_theme_stylebox_override("normal", btn_tool_sb)
 			btn.add_theme_color_override("font_color", fg_bright)
 
-	## Send button (Circular / pill button with Adwaita blue accent)
+	## Send button
 	var send_sb := StyleBoxFlat.new()
 	send_sb.bg_color = blue
 	send_sb.set_corner_radius_all(12)
@@ -929,7 +1146,7 @@ func _apply_kitty_fish_theme() -> void:
 	## Chat header & actions
 	_chat_header.add_theme_color_override("font_color", fg_bright)
 	_chat_context_badge.add_theme_color_override("font_color", cyan)
-	
+
 	var btn_pill_sb := StyleBoxFlat.new()
 	btn_pill_sb.bg_color = bg_lighter
 	btn_pill_sb.set_corner_radius_all(6)
@@ -939,7 +1156,7 @@ func _apply_kitty_fish_theme() -> void:
 		btn.add_theme_stylebox_override("hover", btn_pill_sb)
 		btn.add_theme_color_override("font_color", fg)
 
-	## Status bar — Adwaita Darker
+	## Status bar
 	var status_sb := StyleBoxFlat.new()
 	status_sb.bg_color = bg_surface
 	$RootVBox/StatusBar.add_theme_stylebox_override("panel", status_sb)
@@ -956,18 +1173,22 @@ func _apply_kitty_fish_theme() -> void:
 	## Dialog and modal input styling
 	var dialog_sb := StyleBoxFlat.new()
 	dialog_sb.bg_color = bg_card
-	dialog_sb.border_color = Color("#2e2e38")
+	dialog_sb.border_color = bg_lighter
 	dialog_sb.set_border_width_all(1)
 	dialog_sb.set_corner_radius_all(10)
 	dialog_sb.set_content_margin_all(14)
 	_dialog_panel.add_theme_stylebox_override("panel", dialog_sb)
 	_dialog_title.add_theme_color_override("font_color", fg_bright)
 	_dialog_body.add_theme_color_override("default_color", fg)
-	
+	var dlg_body_sb := StyleBoxEmpty.new()
+	_dialog_body.add_theme_stylebox_override("normal", dlg_body_sb)
+	var dlg_scroll_node: ScrollContainer = _dialog_body.get_parent() as ScrollContainer
+	if dlg_scroll_node:
+		dlg_scroll_node.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	if _dialog_input:
 		var dlg_in_sb := StyleBoxFlat.new()
 		dlg_in_sb.bg_color = bg_surface
-		dlg_in_sb.border_color = Color("#3e3e4a")
+		dlg_in_sb.border_color = bg_lighter
 		dlg_in_sb.set_border_width_all(1)
 		dlg_in_sb.set_corner_radius_all(6)
 		dlg_in_sb.set_content_margin_all(6)
@@ -989,10 +1210,10 @@ func _apply_kitty_fish_theme() -> void:
 		_dialog_close.add_theme_stylebox_override("normal", dlg_cls_sb)
 		_dialog_close.add_theme_color_override("font_color", fg)
 
-	## Provider select dropdown (inside prompt capsule)
+	## Provider select dropdown
 	var provider_sb := StyleBoxFlat.new()
 	provider_sb.bg_color = bg_card
-	provider_sb.border_color = Color("#282832")
+	provider_sb.border_color = bg_lighter
 	provider_sb.set_border_width_all(1)
 	provider_sb.set_corner_radius_all(6)
 	provider_sb.set_content_margin_all(4)
@@ -1002,7 +1223,7 @@ func _apply_kitty_fish_theme() -> void:
 	## Chat status banner
 	var status_banner_sb := StyleBoxFlat.new()
 	status_banner_sb.bg_color = bg_card
-	status_banner_sb.border_color = Color("#2e2e38")
+	status_banner_sb.border_color = bg_lighter
 	status_banner_sb.set_border_width_all(1)
 	status_banner_sb.set_corner_radius_all(8)
 	status_banner_sb.set_content_margin_all(8)
@@ -1011,7 +1232,7 @@ func _apply_kitty_fish_theme() -> void:
 	## Chat suggestions popup & list
 	var suggestions_sb := StyleBoxFlat.new()
 	suggestions_sb.bg_color = bg_card
-	suggestions_sb.border_color = Color("#2e2e38")
+	suggestions_sb.border_color = bg_lighter
 	suggestions_sb.set_border_width_all(1)
 	suggestions_sb.set_corner_radius_all(8)
 	suggestions_sb.set_content_margin_all(4)
@@ -1044,7 +1265,6 @@ func _apply_kitty_fish_theme() -> void:
 		_agent_mode_btn.add_theme_font_size_override("font_size", 11)
 		if _status_git:
 			_status_git.add_theme_font_size_override("font_size", 12)
-
 
 func _on_clear_chat_pressed() -> void:
 	_chat_history.clear()
@@ -1408,16 +1628,21 @@ func _update_code_completion() -> void:
 
 
 func _create_adwaita_fish_highlighter() -> CodeHighlighter:
+	var p: Dictionary = THEMES.get(_active_theme, THEMES["adwaita_darker"])
 	var hl := CodeHighlighter.new()
-	## Kitty Adwaita Darker + Fish Shell Syntax Palette
-	hl.number_color = Color("#ffa348")         # Orange/Yellow — numbers & literals
-	hl.symbol_color = Color("#5bc8af")         # Cyan — operators & symbols (Fish operator)
-	hl.function_color = Color("#62a0ea")       # Blue — functions & commands (Fish command)
-	hl.member_variable_color = Color("#99c1f1") # Light blue — parameters & member variables
-	hl.add_color_region("#", "", Color("#9a9996"), true)  # Comments (Adwaita muted gray)
-	hl.add_color_region('"', '"', Color("#57e389"))       # Strings — Green (Fish cwd)
-	hl.add_color_region("'", "'", Color("#57e389"))
-	hl.add_color_region('"""', '"""', Color("#57e389"))
+	hl.number_color = Color(str(p.get("hl_number", "#ffa348")))
+	hl.symbol_color = Color(str(p.get("hl_symbol", "#5bc8af")))
+	hl.function_color = Color(str(p.get("hl_func", "#62a0ea")))
+	hl.member_variable_color = Color(str(p.get("hl_member", "#99c1f1")))
+	var comment_col := Color(str(p.get("hl_comment", "#9a9996")))
+	var string_col  := Color(str(p.get("hl_string",  "#57e389")))
+	var kw_col      := Color(str(p.get("hl_keyword", "#dc8add")))
+	var type_col    := Color(str(p.get("hl_type",    "#93ddc2")))
+	var const_col   := Color(str(p.get("hl_const",   "#ffa348")))
+	hl.add_color_region("#", "", comment_col, true)
+	hl.add_color_region('"', '"', string_col)
+	hl.add_color_region("'", "'", string_col)
+	hl.add_color_region('"""', '"""', string_col)
 	var kws := [
 		"extends", "class_name", "var", "const", "func", "static", "signal", "enum",
 		"if", "elif", "else", "for", "while", "match", "return", "pass", "break",
@@ -1427,16 +1652,14 @@ func _create_adwaita_fish_highlighter() -> CodeHighlighter:
 		"and", "or", "is", "as", "class", "super", "get", "set",
 	]
 	for kw in kws:
-		hl.add_keyword_color(kw, Color("#dc8add"))  # Magenta/Purple — keywords
-	## Type keywords in bright cyan/blue
+		hl.add_keyword_color(kw, kw_col)
 	var types := ["int", "float", "bool", "String", "Vector2", "Vector3", "Color",
 		"Array", "Dictionary", "void", "PackedStringArray", "PackedByteArray",
 		"Variant", "Error", "NodePath", "StringName"]
 	for t in types:
-		hl.add_keyword_color(t, Color("#93ddc2"))
-	## Built-in constants in orange/amber
+		hl.add_keyword_color(t, type_col)
 	for c in ["true", "false", "null", "self", "PI", "TAU", "INF", "NAN"]:
-		hl.add_keyword_color(c, Color("#ffa348"))
+		hl.add_keyword_color(c, const_col)
 	return hl
 
 
@@ -1943,6 +2166,17 @@ func _handle_slash(cmd: String) -> void:
 						out_txt = "Comando Git executado."
 					_append_chat("GIT", "```bash\n" + out_txt + "\n```", Color("#62a0ea"))
 					_update_git_status_bar()
+		"/theme":
+			var theme_arg: String = parts[1].strip_edges().to_lower() if parts.size() > 1 else ""
+			if theme_arg.is_empty() or theme_arg == "list":
+				_show_theme_picker()
+			elif theme_arg == "import":
+				_import_theme_xml_dialog()
+			elif _all_themes().has(theme_arg):
+				_apply_theme_by_name(theme_arg)
+			else:
+				var names := ", ".join(_all_themes().keys())
+				_append_chat("IDE", "[color=#ffa348]Tema não encontrado:[/color] " + theme_arg + "\nTemas disponíveis: " + names, Color("#ffa348"))
 		"/save":
 			_save_active()
 			var p: String = _open_files[_active_index]["path"] if _active_index >= 0 else "untitled"

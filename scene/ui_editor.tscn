@@ -383,6 +383,14 @@ access = 2
 file_mode = 4
 use_native_dialog = true
 
+[node name="OpenThemeXmlDialog" type="FileDialog" parent="."]
+title = "Importar Tema (.xml)"
+size = Vector2i(800, 520)
+access = 2
+file_mode = 0
+use_native_dialog = true
+filters = PackedStringArray("*.xml ; Ficheiros XML de Tema")
+
 [node name="Overlay" type="ColorRect" parent="."]
 visible = false
 layout_mode = 1
@@ -395,32 +403,35 @@ color = Color(0, 0, 0, 0.55)
 
 [node name="DialogPanel" type="PanelContainer" parent="Overlay"]
 layout_mode = 1
-anchors_preset = 8
+anchors_preset = -1
 anchor_left = 0.5
-anchor_top = 0.5
+anchor_top = 0.05
 anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -280.0
-offset_top = -220.0
-offset_right = 280.0
-offset_bottom = 220.0
+anchor_bottom = 0.95
+offset_left = -300.0
+offset_right = 300.0
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="DialogVBox" type="VBoxContainer" parent="Overlay/DialogPanel"]
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/separation = 8
 
 [node name="DialogTitle" type="Label" parent="Overlay/DialogPanel/DialogVBox"]
 layout_mode = 2
 text = "Config"
 
-[node name="DialogBody" type="RichTextLabel" parent="Overlay/DialogPanel/DialogVBox"]
-custom_minimum_size = Vector2(0, 180)
+[node name="DialogScroll" type="ScrollContainer" parent="Overlay/DialogPanel/DialogVBox"]
 layout_mode = 2
 size_flags_vertical = 3
+
+[node name="DialogBody" type="RichTextLabel" parent="Overlay/DialogPanel/DialogVBox/DialogScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
 bbcode_enabled = true
 fit_content = true
+scroll_active = false
 
 [node name="DialogInputRow" type="HBoxContainer" parent="Overlay/DialogPanel/DialogVBox"]
 visible = false
