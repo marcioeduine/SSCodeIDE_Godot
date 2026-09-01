@@ -3,11 +3,11 @@
   SSCodeIDE Custom Theme — XML Format
   ====================================
   Instructions:
-    1. Copy this file and rename it (e.g. my_theme.xml)
-    2. Set a unique `name` (slug, no spaces) and a human-readable `label`
-    3. Customise any colour values (hex #RRGGBB)
-    4. In SSCodeIDE, type: /theme import
-    5. Once imported, activate it with: /theme my_theme_name
+	1. Copy this file and rename it (e.g. my_theme.xml)
+	2. Set a unique `name` (slug, no spaces) and a human-readable `label`
+	3. Customise any colour values (hex #RRGGBB)
+	4. In SSCodeIDE, type: /theme import
+	5. Once imported, activate it with: /theme my_theme_name
 
   All 22 colour keys and their purpose are documented below.
 -->

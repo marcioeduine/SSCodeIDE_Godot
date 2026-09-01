@@ -900,11 +900,11 @@ func _save_theme_config() -> void:
 	cfg.save("user://ui_config.cfg")
 
 
-func _apply_theme_by_name(name: String) -> void:
-	_active_theme = name
+func _apply_theme_by_name(_name: String) -> void:
+	_active_theme = _name
 	_save_theme_config()
 	_apply_kitty_fish_theme()
-	var label: String = str(_all_themes().get(name, {}).get("label", name))
+	var label: String = str(_all_themes().get(_name, {}).get("label", _name))
 	_append_chat("IDE", "[color=#57e389]Tema aplicado:[/color] [b]" + label + "[/b]", Color("#57e389"))
 	_show_toast("Theme: " + label, false)
 

@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://b6s1hdqcbjksc"]
+[gd_scene format=3 uid="uid://b6s1hdqcbjksc"]
 
-[ext_resource type="Script" path="res://scripts/ui_editor.gd" id="1_editor"]
+[ext_resource type="Script" uid="uid://dm57wbc3c6m76" path="res://scripts/ui_editor.gd" id="1_editor"]
 
-[node name="UI_Editor" type="Control"]
+[node name="UI_Editor" type="Control" unique_id=1791161152]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -13,7 +13,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_editor")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=970540564]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -23,7 +23,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 1)
 
-[node name="RootVBox" type="VBoxContainer" parent="."]
+[node name="RootVBox" type="VBoxContainer" parent="." unique_id=502389437]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -34,16 +34,16 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 0
 
-[node name="NavBar" type="HBoxContainer" parent="RootVBox"]
+[node name="NavBar" type="HBoxContainer" parent="RootVBox" unique_id=1955057909]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="MenuBar" type="MenuBar" parent="RootVBox/NavBar"]
+[node name="MenuBar" type="MenuBar" parent="RootVBox/NavBar" unique_id=302529279]
 layout_mode = 2
 flat = true
 
-[node name="File" type="PopupMenu" parent="RootVBox/NavBar/MenuBar"]
+[node name="File" type="PopupMenu" parent="RootVBox/NavBar/MenuBar" unique_id=728694481]
 item_count = 8
 item_0/text = "Open File…	Ctrl+O"
 item_0/id = 0
@@ -62,7 +62,7 @@ item_6/separator = true
 item_7/text = "Quit	Ctrl+Q"
 item_7/id = 7
 
-[node name="Edit" type="PopupMenu" parent="RootVBox/NavBar/MenuBar"]
+[node name="Edit" type="PopupMenu" parent="RootVBox/NavBar/MenuBar" unique_id=1755527386]
 item_count = 8
 item_0/text = "Undo	Ctrl+Z"
 item_0/id = 0
@@ -81,7 +81,7 @@ item_6/id = 6
 item_7/text = "Find	Ctrl+F"
 item_7/id = 7
 
-[node name="Git" type="PopupMenu" parent="RootVBox/NavBar/MenuBar"]
+[node name="Git" type="PopupMenu" parent="RootVBox/NavBar/MenuBar" unique_id=1482456375]
 item_count = 13
 item_0/text = "Status & Changes…	Ctrl+Shift+G"
 item_0/id = 0
@@ -110,195 +110,197 @@ item_11/id = 11
 item_12/text = "Configure Git & GitHub…"
 item_12/id = 12
 
-[node name="Config" type="PopupMenu" parent="RootVBox/NavBar/MenuBar"]
+[node name="Config" type="PopupMenu" parent="RootVBox/NavBar/MenuBar" unique_id=739621716]
 item_count = 1
 item_0/text = "Settings…	Ctrl+,"
 item_0/id = 0
 
-[node name="Help" type="PopupMenu" parent="RootVBox/NavBar/MenuBar"]
+[node name="Help" type="PopupMenu" parent="RootVBox/NavBar/MenuBar" unique_id=515346578]
 item_count = 1
 item_0/text = "Keyboard Shortcuts	F1"
 item_0/id = 0
 
-[node name="About" type="PopupMenu" parent="RootVBox/NavBar/MenuBar"]
+[node name="About" type="PopupMenu" parent="RootVBox/NavBar/MenuBar" unique_id=935818175]
 item_count = 1
 item_0/text = "About SSCodeIDE"
 item_0/id = 0
 
-[node name="NavSpacer" type="Control" parent="RootVBox/NavBar"]
+[node name="NavSpacer" type="Control" parent="RootVBox/NavBar" unique_id=2131835630]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="NavWorkspace" type="Label" parent="RootVBox/NavBar"]
+[node name="NavWorkspace" type="Label" parent="RootVBox/NavBar" unique_id=571179227]
 visible = false
 layout_mode = 2
-text = ""
 
-[node name="MainSplit" type="HSplitContainer" parent="RootVBox"]
+[node name="MainSplit" type="HSplitContainer" parent="RootVBox" unique_id=470791301]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+split_offsets = PackedInt32Array(260)
 split_offset = 260
 
-[node name="ExplorerPane" type="VBoxContainer" parent="RootVBox/MainSplit"]
+[node name="ExplorerPane" type="VBoxContainer" parent="RootVBox/MainSplit" unique_id=1429488087]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 0
 
-[node name="ExplorerHeader" type="Label" parent="RootVBox/MainSplit/ExplorerPane"]
+[node name="ExplorerHeader" type="Label" parent="RootVBox/MainSplit/ExplorerPane" unique_id=1893227217]
 layout_mode = 2
 text = "  EXPLORER"
 
-[node name="FileTree" type="Tree" parent="RootVBox/MainSplit/ExplorerPane"]
+[node name="FileTree" type="Tree" parent="RootVBox/MainSplit/ExplorerPane" unique_id=1514428791]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-hide_root = false
 
-[node name="CenterSplit" type="HSplitContainer" parent="RootVBox/MainSplit"]
+[node name="CenterSplit" type="HSplitContainer" parent="RootVBox/MainSplit" unique_id=270599731]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+split_offsets = PackedInt32Array(720)
 split_offset = 720
 
-[node name="EditorPane" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit"]
+[node name="EditorPane" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit" unique_id=301077544]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 0
 
-[node name="TabBar" type="TabBar" parent="RootVBox/MainSplit/CenterSplit/EditorPane"]
+[node name="TabBar" type="TabBar" parent="RootVBox/MainSplit/CenterSplit/EditorPane" unique_id=256136646]
 layout_mode = 2
 size_flags_horizontal = 3
 tab_close_display_policy = 1
 
-[node name="FindRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/EditorPane"]
+[node name="FindRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/EditorPane" unique_id=1655727780]
 visible = false
 custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 
-[node name="FindInput" type="LineEdit" parent="RootVBox/MainSplit/CenterSplit/EditorPane/FindRow"]
+[node name="FindInput" type="LineEdit" parent="RootVBox/MainSplit/CenterSplit/EditorPane/FindRow" unique_id=1760361776]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Find…"
 
-[node name="FindNext" type="Button" parent="RootVBox/MainSplit/CenterSplit/EditorPane/FindRow"]
+[node name="FindNext" type="Button" parent="RootVBox/MainSplit/CenterSplit/EditorPane/FindRow" unique_id=2119594804]
 layout_mode = 2
 text = "Next"
 
-[node name="FindClose" type="Button" parent="RootVBox/MainSplit/CenterSplit/EditorPane/FindRow"]
+[node name="FindClose" type="Button" parent="RootVBox/MainSplit/CenterSplit/EditorPane/FindRow" unique_id=1962445891]
 layout_mode = 2
 text = "×"
 
-[node name="CodeEdit" type="CodeEdit" parent="RootVBox/MainSplit/CenterSplit/EditorPane"]
+[node name="CodeEdit" type="CodeEdit" parent="RootVBox/MainSplit/CenterSplit/EditorPane" unique_id=411562642]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-gutters_draw_line_numbers = true
-highlight_current_line = true
 minimap_draw = true
+highlight_current_line = true
+gutters_draw_line_numbers = true
 
-[node name="MarkdownPreview" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/EditorPane"]
+[node name="MarkdownPreview" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/EditorPane" unique_id=1429657402]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+focus_mode = 2
 bbcode_enabled = true
 selection_enabled = true
 
-[node name="ChatPane" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit"]
+[node name="ChatPane" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit" unique_id=1200057739]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 4
 
-[node name="ChatHeaderRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane"]
+[node name="ChatHeaderRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane" unique_id=440622983]
 custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="ChatHeader" type="Label" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
+[node name="ChatHeader" type="Label" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow" unique_id=1421141929]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "SSBOT"
+text = "chat"
 clip_text = true
+uppercase = true
 
-[node name="ChatContextBadge" type="Label" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
+[node name="ChatContextBadge" type="Label" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow" unique_id=1082829237]
 layout_mode = 2
 text = "SSBot · Workspace"
 
-[node name="ChatToolsBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
+[node name="ChatToolsBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow" unique_id=275914698]
 layout_mode = 2
 text = "Tools"
 
-[node name="ChatClearBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow"]
+[node name="ChatClearBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow" unique_id=1412368040]
 layout_mode = 2
 text = "+"
 
-[node name="ChatLog" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/ChatPane"]
+[node name="ChatLog" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/ChatPane" unique_id=1541749788]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+focus_mode = 2
 bbcode_enabled = true
 scroll_following = true
 selection_enabled = true
 
-[node name="ChatStatusBanner" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane"]
+[node name="ChatStatusBanner" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane" unique_id=896163620]
 visible = false
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 
-[node name="ChatStatusLabel" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner"]
+[node name="ChatStatusLabel" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner" unique_id=1868283993]
 layout_mode = 2
 bbcode_enabled = true
 fit_content = true
 scroll_active = false
 
-[node name="ChatSuggestionsPopup" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane"]
+[node name="ChatSuggestionsPopup" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane" unique_id=705864052]
 visible = false
 custom_minimum_size = Vector2(0, 110)
 layout_mode = 2
 
-[node name="ChatSuggestionsList" type="ItemList" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatSuggestionsPopup"]
+[node name="ChatSuggestionsList" type="ItemList" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatSuggestionsPopup" unique_id=1315998758]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 allow_reselect = true
-item_count = 0
 
-[node name="ChatInputCard" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane"]
+[node name="ChatInputCard" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane" unique_id=1363750561]
 custom_minimum_size = Vector2(0, 78)
 layout_mode = 2
 
-[node name="ChatInputVBox" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard"]
+[node name="ChatInputVBox" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard" unique_id=1761679636]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="ChatContextChip" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox"]
+[node name="ChatContextChip" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox" unique_id=740238814]
 layout_mode = 2
 size_flags_horizontal = 0
 text = "+ Active File"
 
-[node name="ChatInput" type="LineEdit" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox"]
+[node name="ChatInput" type="LineEdit" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox" unique_id=1160227838]
 custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Pergunte ao SSBot sobre o código, erros ou gere novas ideias…"
 
-[node name="ChatInputBottomRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox"]
+[node name="ChatInputBottomRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox" unique_id=742355465]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="AttachBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
+[node name="AttachBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=637576685]
 layout_mode = 2
 text = "📎"
 
-[node name="AgentModeBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
+[node name="AgentModeBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=274574760]
 layout_mode = 2
 text = "</> Agent"
 
-[node name="ProviderSelect" type="OptionButton" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
+[node name="ProviderSelect" type="OptionButton" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=656410950]
 custom_minimum_size = Vector2(110, 0)
 layout_mode = 2
 item_count = 5
@@ -313,85 +315,85 @@ popup/item_3/id = 3
 popup/item_4/text = "Laguna Code"
 popup/item_4/id = 4
 
-[node name="SmartCommitBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
+[node name="SmartCommitBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=772031202]
 layout_mode = 2
 text = "⎇ Commit"
 
-[node name="InputSpacer" type="Control" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
+[node name="InputSpacer" type="Control" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=1877726678]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ChatSend" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow"]
+[node name="ChatSend" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=748177452]
 custom_minimum_size = Vector2(56, 26)
 layout_mode = 2
 text = "Enviar"
 
-[node name="StatusBar" type="PanelContainer" parent="RootVBox"]
+[node name="StatusBar" type="PanelContainer" parent="RootVBox" unique_id=374397806]
 custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
 
-[node name="StatusRow" type="HBoxContainer" parent="RootVBox/StatusBar"]
+[node name="StatusRow" type="HBoxContainer" parent="RootVBox/StatusBar" unique_id=976935217]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 16
 
-[node name="StatusLeft" type="Label" parent="RootVBox/StatusBar/StatusRow"]
+[node name="StatusLeft" type="Label" parent="RootVBox/StatusBar/StatusRow" unique_id=1079174229]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "READY"
 clip_text = true
 
-[node name="StatusGit" type="Button" parent="RootVBox/StatusBar/StatusRow"]
+[node name="StatusGit" type="Button" parent="RootVBox/StatusBar/StatusRow" unique_id=1936752626]
 layout_mode = 2
-flat = true
 text = "⎇ main"
+flat = true
 
-[node name="StatusCursor" type="Label" parent="RootVBox/StatusBar/StatusRow"]
+[node name="StatusCursor" type="Label" parent="RootVBox/StatusBar/StatusRow" unique_id=1248834476]
 layout_mode = 2
 text = "Ln 1, Col 1"
 
-[node name="StatusLang" type="Label" parent="RootVBox/StatusBar/StatusRow"]
+[node name="StatusLang" type="Label" parent="RootVBox/StatusBar/StatusRow" unique_id=279194814]
 layout_mode = 2
 text = "Plain Text"
 
-[node name="StatusEnc" type="Label" parent="RootVBox/StatusBar/StatusRow"]
+[node name="StatusEnc" type="Label" parent="RootVBox/StatusBar/StatusRow" unique_id=1839436809]
 layout_mode = 2
 text = "UTF-8"
 
-[node name="StatusAI" type="Label" parent="RootVBox/StatusBar/StatusRow"]
+[node name="StatusAI" type="Label" parent="RootVBox/StatusBar/StatusRow" unique_id=745361571]
 layout_mode = 2
 text = "AI: offline"
 
-[node name="OpenFileDialog" type="FileDialog" parent="."]
-title = "Open File"
+[node name="OpenFileDialog" type="FileDialog" parent="." unique_id=769801889]
+oversampling_override = 1.0
+title = "Open a File"
 size = Vector2i(800, 520)
-access = 2
 file_mode = 0
-use_native_dialog = true
-
-[node name="OpenDirDialog" type="FileDialog" parent="."]
-title = "Open Directory"
-size = Vector2i(800, 520)
 access = 2
-file_mode = 2
 use_native_dialog = true
 
-[node name="SaveAsDialog" type="FileDialog" parent="."]
+[node name="OpenDirDialog" type="FileDialog" parent="." unique_id=1020381893]
+title = "Open a Directory"
+size = Vector2i(800, 520)
+file_mode = 2
+access = 2
+use_native_dialog = true
+
+[node name="SaveAsDialog" type="FileDialog" parent="." unique_id=1940201679]
 title = "Save As"
 size = Vector2i(800, 520)
 access = 2
-file_mode = 4
 use_native_dialog = true
 
-[node name="OpenThemeXmlDialog" type="FileDialog" parent="."]
-title = "Importar Tema (.xml)"
+[node name="OpenThemeXmlDialog" type="FileDialog" parent="." unique_id=237338479]
+title = "Open a File"
 size = Vector2i(800, 520)
-access = 2
 file_mode = 0
-use_native_dialog = true
+access = 2
 filters = PackedStringArray("*.xml ; Ficheiros XML de Tema")
+use_native_dialog = true
 
-[node name="Overlay" type="ColorRect" parent="."]
+[node name="Overlay" type="ColorRect" parent="." unique_id=1597586422]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -401,7 +403,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.55)
 
-[node name="DialogPanel" type="PanelContainer" parent="Overlay"]
+[node name="DialogPanel" type="PanelContainer" parent="Overlay" unique_id=577446710]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.5
@@ -413,45 +415,45 @@ offset_right = 300.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="DialogVBox" type="VBoxContainer" parent="Overlay/DialogPanel"]
+[node name="DialogVBox" type="VBoxContainer" parent="Overlay/DialogPanel" unique_id=645996350]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 8
 
-[node name="DialogTitle" type="Label" parent="Overlay/DialogPanel/DialogVBox"]
+[node name="DialogTitle" type="Label" parent="Overlay/DialogPanel/DialogVBox" unique_id=103020267]
 layout_mode = 2
 text = "Config"
 
-[node name="DialogScroll" type="ScrollContainer" parent="Overlay/DialogPanel/DialogVBox"]
+[node name="DialogScroll" type="ScrollContainer" parent="Overlay/DialogPanel/DialogVBox" unique_id=2027436511]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="DialogBody" type="RichTextLabel" parent="Overlay/DialogPanel/DialogVBox/DialogScroll"]
+[node name="DialogBody" type="RichTextLabel" parent="Overlay/DialogPanel/DialogVBox/DialogScroll" unique_id=1552620331]
 layout_mode = 2
 size_flags_horizontal = 3
 bbcode_enabled = true
 fit_content = true
 scroll_active = false
 
-[node name="DialogInputRow" type="HBoxContainer" parent="Overlay/DialogPanel/DialogVBox"]
+[node name="DialogInputRow" type="HBoxContainer" parent="Overlay/DialogPanel/DialogVBox" unique_id=967005192]
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="DialogInput" type="LineEdit" parent="Overlay/DialogPanel/DialogVBox/DialogInputRow"]
+[node name="DialogInput" type="LineEdit" parent="Overlay/DialogPanel/DialogVBox/DialogInputRow" unique_id=1870914228]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Enter value…"
 
-[node name="DialogActionBtn" type="Button" parent="Overlay/DialogPanel/DialogVBox/DialogInputRow"]
+[node name="DialogActionBtn" type="Button" parent="Overlay/DialogPanel/DialogVBox/DialogInputRow" unique_id=1417236175]
 layout_mode = 2
 text = "Confirm"
 
-[node name="DialogClose" type="Button" parent="Overlay/DialogPanel/DialogVBox"]
+[node name="DialogClose" type="Button" parent="Overlay/DialogPanel/DialogVBox" unique_id=630712506]
 layout_mode = 2
 text = "Fechar"
 
-[node name="ToastPanel" type="PanelContainer" parent="."]
+[node name="ToastPanel" type="PanelContainer" parent="." unique_id=1061266605]
 visible = false
 layout_mode = 1
 anchors_preset = 3
@@ -466,23 +468,22 @@ offset_bottom = -35.0
 grow_horizontal = 0
 grow_vertical = 0
 
-[node name="ToastMargin" type="MarginContainer" parent="ToastPanel"]
+[node name="ToastMargin" type="MarginContainer" parent="ToastPanel" unique_id=2001205600]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 8
 
-[node name="ToastLabel" type="RichTextLabel" parent="ToastPanel/ToastMargin"]
+[node name="ToastLabel" type="RichTextLabel" parent="ToastPanel/ToastMargin" unique_id=1612090030]
 layout_mode = 2
 bbcode_enabled = true
+text = "Notificação"
 fit_content = true
 scroll_active = false
-text = "Notificação"
 
-[node name="AIAuthHttp" type="HTTPRequest" parent="."]
+[node name="AIAuthHttp" type="HTTPRequest" parent="." unique_id=396402581]
 timeout = 30.0
 
-[node name="AIChatHttp" type="HTTPRequest" parent="."]
+[node name="AIChatHttp" type="HTTPRequest" parent="." unique_id=1786510434]
 timeout = 25.0
-
