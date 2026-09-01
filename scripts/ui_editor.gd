@@ -57,6 +57,8 @@ extends Control
 @onready var _find_next: Button = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindNext
 @onready var _find_close: Button = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindClose
 @onready var _markdown_preview: RichTextLabel = $RootVBox/MainSplit/CenterSplit/EditorPane/MarkdownPreview
+@onready var _explorer_toggle_btn: Button = $RootVBox/MainSplit/ExplorerPane/ExplorerToggleBtn
+@onready var _chat_toggle_btn: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatToggleBtn
 
 var _dialog_action_callback: Callable = Callable()
 
@@ -303,12 +305,14 @@ func _toggle_explorer() -> void:
 		_explorer_collapsed = false
 		var target := _explorer_split_offset if _explorer_split_offset > 60 else int(get_viewport_rect().size.x * 0.18)
 		tween.tween_property(_main_split, "split_offset", target, 0.22)
+		_explorer_toggle_btn.visible = true
 		_status_left.text = "Explorer  ▶  shown"
 	else:
 		## Collapse: save current offset then slide to 0
 		_explorer_split_offset = _main_split.split_offset
 		_explorer_collapsed = true
 		tween.tween_property(_main_split, "split_offset", 0, 0.22)
+		_explorer_toggle_btn.visible = false
 		_status_left.text = "Explorer  ◀  hidden  (Ctrl+B to restore)"
 
 
