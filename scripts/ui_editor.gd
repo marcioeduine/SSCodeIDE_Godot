@@ -50,12 +50,15 @@ extends Control
 @onready var _find_input: LineEdit = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindInput
 @onready var _find_next: Button = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindNext
 @onready var _find_close: Button = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindClose
+@onready var _markdown_preview: RichTextLabel = $RootVBox/MainSplit/CenterSplit/EditorPane/MarkdownPreview
 
 var _nerd_font: FontFile
 var _workspace_root: String = ""
 var _open_files: Array[Dictionary] = []
 var _active_index: int = -1
 var _suppress_tab: bool = false
+var _md_preview_active: bool = false
+var _agent_mode: bool = true
 var _ai_busy: bool = false
 var _toast_tween: Tween = null
 var _ai_provider: String = "nemotron"
@@ -78,6 +81,7 @@ const CHAT_SLASH_COMMANDS: Array[Dictionary] = [
 	{"cmd": "/save", "desc": "Save the active file in editor"},
 	{"cmd": "/files", "desc": "Refresh workspace file explorer"},
 	{"cmd": "/open ", "desc": "Open file by path (/open <path>)"},
+	{"cmd": "/goto ", "desc": "Go to line number (/goto <line>)"},
 	{"cmd": "/clear", "desc": "Clear conversation history & chat context"},
 	{"cmd": "/cancel", "desc": "Abort running AI request"},
 	{"cmd": "/quit", "desc": "Quit SSCodeIDE"},
@@ -125,13 +129,19 @@ const HELP_TEXT := """[b]SSCodeIDE Shortcuts[/b]
   Ctrl+G            Go to line
   Ctrl+/            Toggle line comment
   Ctrl+D            Duplicate line
-  Alt+↑ / Alt+↓     Move line
+  Alt+Up / Alt+Down Move line
 
 [b]IDE[/b]
   Ctrl+,            Settings
   F1                Help (shortcuts)
   Ctrl+P            Focus explorer
-  Esc               Cancel AI generation
+  Ctrl+B            Toggle sidebar
+  Ctrl+J / K / `    Focus chat input
+  Ctrl+Shift+C      Smart Git Commit
+  Esc               Cancel AI / dismiss
+
+[b]Markdown[/b]
+  .md files auto-render with formatted preview
 """
 
 const ABOUT_TEXT := """[b]SSCodeIDE[/b]
@@ -558,6 +568,16 @@ func _apply_kitty_fish_theme() -> void:
 	_code_edit.add_theme_color_override("word_highlighted_color", Color("#26262e"))
 	_code_edit.add_theme_color_override("brace_mismatch_color", red)
 
+	## Markdown Preview — clean reading surface
+	var md_sb := StyleBoxFlat.new()
+	md_sb.bg_color = bg_black
+	md_sb.set_content_margin_all(24)
+	_markdown_preview.add_theme_stylebox_override("normal", md_sb)
+	_markdown_preview.add_theme_color_override("default_color", fg)
+	_markdown_preview.add_theme_font_size_override("normal_font_size", 15)
+	_markdown_preview.add_theme_font_size_override("bold_font_size", 15)
+	_markdown_preview.add_theme_font_size_override("italics_font_size", 15)
+
 	## TabBar
 	_tab_bar.add_theme_color_override("font_selected_color", fg_bright)
 	_tab_bar.add_theme_color_override("font_unselected_color", muted)
@@ -706,12 +726,205 @@ func _on_attach_btn_pressed() -> void:
 
 
 func _on_agent_mode_pressed() -> void:
-	if _agent_mode_btn.text == "</> Agent":
-		_agent_mode_btn.text = "💬 Chat"
-		_chat_context_badge.text = "Local · Chat"
-	else:
+	_agent_mode = not _agent_mode
+	if _agent_mode:
 		_agent_mode_btn.text = "</> Agent"
 		_chat_context_badge.text = "Local · Autopilot"
+	else:
+		_agent_mode_btn.text = "Chat"
+		_chat_context_badge.text = "Local · Chat"
+
+
+func _set_markdown_preview(enabled: bool, raw_md: String) -> void:
+	_md_preview_active = enabled
+	if enabled:
+		_code_edit.visible = false
+		_markdown_preview.visible = true
+		_markdown_preview.clear()
+		_markdown_preview.text = ""
+		var bbcode: String = _markdown_to_bbcode(raw_md)
+		_markdown_preview.append_text(bbcode)
+	else:
+		_markdown_preview.visible = false
+		_code_edit.visible = true
+
+
+func _markdown_to_bbcode(md: String) -> String:
+	var lines: PackedStringArray = md.replace("\r\n", "\n").split("\n")
+	var out: String = ""
+	var in_code_block: bool = false
+	var code_lang: String = ""
+	var code_buffer: String = ""
+	var i: int = 0
+	while i < lines.size():
+		var line: String = lines[i]
+
+		# Fenced code blocks (``` or ~~~)
+		if line.strip_edges().begins_with("```") or line.strip_edges().begins_with("~~~"):
+			if not in_code_block:
+				in_code_block = true
+				code_lang = line.strip_edges().substr(3).strip_edges()
+				code_buffer = ""
+			else:
+				in_code_block = false
+				var lang_label: String = ""
+				if not code_lang.is_empty():
+					lang_label = "[color=#9a9996][i]" + code_lang + "[/i][/color]\n"
+				out += lang_label + "[bgcolor=#16161b][color=#57e389][code]" + code_buffer.strip_edges() + "[/code][/color][/bgcolor]\n\n"
+			i += 1
+			continue
+
+		if in_code_block:
+			code_buffer += line + "\n"
+			i += 1
+			continue
+
+		# Horizontal rules (---, ***, ___)
+		var stripped: String = line.strip_edges()
+		if stripped.length() >= 3:
+			var is_hr: bool = true
+			var hr_ch: String = stripped[0]
+			if hr_ch in ["-", "*", "_"]:
+				for c_idx in range(stripped.length()):
+					if stripped[c_idx] != hr_ch:
+						is_hr = false
+						break
+			else:
+				is_hr = false
+			if is_hr and stripped.length() >= 3:
+				out += "[color=#5e5c5b]────────────────────────────────[/color]\n\n"
+				i += 1
+				continue
+
+		# Headings (# to ######)
+		if stripped.begins_with("#"):
+			var level: int = 0
+			while level < stripped.length() and stripped[level] == "#":
+				level += 1
+			if level >= 1 and level <= 6 and level < stripped.length() and stripped[level] == " ":
+				var heading_text: String = _md_inline(stripped.substr(level + 1))
+				var sizes: Array[int] = [28, 24, 20, 17, 15, 14]
+				var sz: int = sizes[mini(level - 1, 5)]
+				if level <= 2:
+					out += "[font_size=" + str(sz) + "][b][color=#62a0ea]" + heading_text + "[/color][/b][/font_size]\n"
+					out += "[color=#5e5c5b]────────────────────────────────[/color]\n\n"
+				else:
+					out += "[font_size=" + str(sz) + "][b]" + heading_text + "[/b][/font_size]\n\n"
+				i += 1
+				continue
+
+		# Blockquotes (>)
+		if stripped.begins_with(">"):
+			var quote_lines: String = ""
+			while i < lines.size() and lines[i].strip_edges().begins_with(">"):
+				var ql: String = lines[i].strip_edges()
+				if ql.begins_with("> "):
+					ql = ql.substr(2)
+				elif ql == ">":
+					ql = ""
+				else:
+					ql = ql.substr(1)
+				quote_lines += _md_inline(ql) + "\n"
+				i += 1
+			out += "[indent][color=#5bc8af]▎ [/color][i]" + quote_lines.strip_edges() + "[/i][/indent]\n\n"
+			continue
+
+		# Unordered lists (-, *, +)
+		if stripped.begins_with("- ") or stripped.begins_with("* ") or stripped.begins_with("+ "):
+			while i < lines.size():
+				var ul_line: String = lines[i].strip_edges()
+				if ul_line.begins_with("- [ ] ") or ul_line.begins_with("- [x] ") or ul_line.begins_with("- [X] "):
+					# Task list
+					var checked: bool = ul_line.begins_with("- [x] ") or ul_line.begins_with("- [X] ")
+					var task_text: String = _md_inline(ul_line.substr(6))
+					var marker: String = "[color=#57e389]☑[/color] " if checked else "[color=#9a9996]☐[/color] "
+					out += "  " + marker + task_text + "\n"
+				elif ul_line.begins_with("- ") or ul_line.begins_with("* ") or ul_line.begins_with("+ "):
+					out += "  [color=#62a0ea]•[/color] " + _md_inline(ul_line.substr(2)) + "\n"
+				else:
+					break
+				i += 1
+			out += "\n"
+			continue
+
+		# Ordered lists (1. 2. etc)
+		if stripped.length() > 2:
+			var dot_pos: int = stripped.find(". ")
+			if dot_pos > 0 and dot_pos <= 4 and stripped.substr(0, dot_pos).is_valid_int():
+				var list_num: int = 1
+				while i < lines.size():
+					var ol_line: String = lines[i].strip_edges()
+					var dp: int = ol_line.find(". ")
+					if dp > 0 and dp <= 4 and ol_line.substr(0, dp).is_valid_int():
+						out += "  [color=#62a0ea]" + str(list_num) + ".[/color] " + _md_inline(ol_line.substr(dp + 2)) + "\n"
+						list_num += 1
+					else:
+						break
+					i += 1
+				out += "\n"
+				continue
+
+		# Empty line = paragraph break
+		if stripped.is_empty():
+			out += "\n"
+			i += 1
+			continue
+
+		# Regular paragraph text with inline formatting
+		out += _md_inline(stripped) + "\n"
+		i += 1
+
+	return out
+
+
+func _md_inline(text: String) -> String:
+	var result: String = text
+
+	# Inline code (`code`)
+	var code_regex := RegEx.new()
+	code_regex.compile("`([^`]+)`")
+	result = code_regex.sub(result, "[bgcolor=#26262e][color=#57e389][code]$1[/code][/color][/bgcolor]", true)
+
+	# Bold + Italic (***text*** or ___text___)
+	var bold_italic_regex := RegEx.new()
+	bold_italic_regex.compile("\\*\\*\\*(.+?)\\*\\*\\*")
+	result = bold_italic_regex.sub(result, "[b][i]$1[/i][/b]", true)
+	var bold_italic_regex2 := RegEx.new()
+	bold_italic_regex2.compile("___(.+?)___")
+	result = bold_italic_regex2.sub(result, "[b][i]$1[/i][/b]", true)
+
+	# Bold (**text** or __text__)
+	var bold_regex := RegEx.new()
+	bold_regex.compile("\\*\\*(.+?)\\*\\*")
+	result = bold_regex.sub(result, "[b]$1[/b]", true)
+	var bold_regex2 := RegEx.new()
+	bold_regex2.compile("__(.+?)__")
+	result = bold_regex2.sub(result, "[b]$1[/b]", true)
+
+	# Italic (*text* or _text_)
+	var italic_regex := RegEx.new()
+	italic_regex.compile("\\*(.+?)\\*")
+	result = italic_regex.sub(result, "[i]$1[/i]", true)
+	var italic_regex2 := RegEx.new()
+	italic_regex2.compile("(?<![\\w])_(.+?)_(?![\\w])")
+	result = italic_regex2.sub(result, "[i]$1[/i]", true)
+
+	# Strikethrough (~~text~~)
+	var strike_regex := RegEx.new()
+	strike_regex.compile("~~(.+?)~~")
+	result = strike_regex.sub(result, "[s]$1[/s]", true)
+
+	# Links [text](url)
+	var link_regex := RegEx.new()
+	link_regex.compile("\\[([^\\]]+)\\]\\(([^)]+)\\)")
+	result = link_regex.sub(result, "[color=#62a0ea][url=$2]$1[/url][/color]", true)
+
+	# Images ![alt](url) — show as labelled placeholder
+	var img_regex := RegEx.new()
+	img_regex.compile("!\\[([^\\]]*?)\\]\\(([^)]+)\\)")
+	result = img_regex.sub(result, "[color=#5bc8af][Image: $1][/color]", true)
+
+	return result
 
 
 func _configure_code_edit() -> void:
@@ -923,6 +1136,9 @@ func _load_active_into_editor() -> void:
 		_chat_context_chip.text = "+ " + path.get_file()
 	else:
 		_chat_context_chip.text = "+ Untitled"
+	# Markdown preview toggle
+	var is_md: bool = path.to_lower().ends_with(".md")
+	_set_markdown_preview(is_md, str(info.get("content", "")))
 
 
 func _save_active() -> void:
@@ -956,7 +1172,6 @@ func _save_as_path(path: String) -> void:
 
 func _on_dir_selected(dir_path: String) -> void:
 	_workspace_root = dir_path
-	_nav_workspace.text = "SSCodeIDE  ·  %s" % dir_path.get_file()
 	_refresh_file_tree()
 	_status_left.text = "WORKSPACE: " + dir_path.get_file()
 
@@ -1369,27 +1584,37 @@ func _send_chat_completion() -> void:
 	])
 	
 	var workspace_info: String = _get_workspace_context()
-	var system_role_content: String = (
-		"You are SSBot, an elite autonomous AI programming agent integrated directly into SSCodeIDE.\n" +
-		"You have direct access and visibility to the project workspace files, directory tree, and active file.\n\n" +
-		"=== WORKSPACE CONTEXT ===\n" +
-		workspace_info + "\n" +
-		"=========================\n\n" +
-		"You can provide guidance, plan development tasks with Todos, list files, and format code clearly with British English technical explanations."
-	)
+	var system_role_content: String = ""
+	if _agent_mode:
+		system_role_content = (
+			"You are SSBot, an elite autonomous AI programming agent integrated directly into SSCodeIDE.\n" +
+			"You have direct access and visibility to the project workspace files, directory tree, and active file.\n\n" +
+			"=== WORKSPACE CONTEXT ===\n" +
+			workspace_info + "\n" +
+			"=========================\n\n" +
+			"Provide detailed technical guidance, generate code, plan development tasks, review code, and format responses clearly with British English technical explanations.\n" +
+			"Always consider the full workspace context and active file contents when responding."
+		)
+	else:
+		system_role_content = (
+			"You are SSBot, a helpful AI programming assistant embedded in SSCodeIDE.\n" +
+			"Respond concisely and helpfully to general programming questions.\n" +
+			"Use British English technical explanations."
+		)
 	
 	var messages_payload: Array[Dictionary] = [
 		{"role": "system", "content": system_role_content}
 	]
 	
-	var start_idx: int = maxi(0, _chat_history.size() - 60)
+	var history_limit: int = 60 if _agent_mode else 30
+	var start_idx: int = maxi(0, _chat_history.size() - history_limit)
 	for i in range(start_idx, _chat_history.size()):
 		messages_payload.append(_chat_history[i])
 
 	var payload_dict: Dictionary = {
 		"model": model_name,
 		"messages": messages_payload,
-		"temperature": 0.7,
+		"temperature": 0.7 if _agent_mode else 0.5,
 		"top_p": 0.95,
 		"max_tokens": 4096,
 		"stream": false

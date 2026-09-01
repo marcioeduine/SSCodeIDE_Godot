@@ -170,6 +170,14 @@ gutters_draw_line_numbers = true
 highlight_current_line = true
 minimap_draw = true
 
+[node name="MarkdownPreview" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/EditorPane"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
+selection_enabled = true
+
 [node name="ChatPane" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit"]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
