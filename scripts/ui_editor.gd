@@ -2354,7 +2354,7 @@ func _ai_smart_commit_request(prompt: String, diff_stat: String) -> void:
 	var model_name: String = AIService.get_candidate_models(_ai_provider)[0]
 	var headers := PackedStringArray([
 		"Content-Type: application/json",
-		"Authorization: Bearer " + AIService.NVIDIA_API_KEY,
+		"Authorization: Bearer " + AIService.get_nvidia_api_key(),
 		"Accept: application/json"
 	])
 	var messages_payload: Array[Dictionary] = [
@@ -2460,7 +2460,7 @@ func _send_chat_completion() -> void:
 	var target_url: String = AIService.NVIDIA_BASE_URL
 	var headers := PackedStringArray([
 		"Content-Type: application/json",
-		"Authorization: Bearer " + AIService.NVIDIA_API_KEY,
+		"Authorization: Bearer " + AIService.get_nvidia_api_key(),
 		"Accept: application/json"
 	])
 	

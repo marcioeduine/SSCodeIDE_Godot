@@ -4,4 +4,6 @@
 
 # Credentials & secrets
 client_secret*.json
+.env
 *.env
+!.env.example

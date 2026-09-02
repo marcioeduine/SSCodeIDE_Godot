@@ -37,3 +37,11 @@ func test_fallback_always_includes_nemotron() -> void:
 	for provider: String in ["deepseek_v4", "kimi_k3", "laguna"]:
 		var models: Array[String] = AIService.get_candidate_models(provider)
 		assert_true(models.has("nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"), "Provider '%s' should fallback to nemotron" % provider)
+
+
+func test_api_key_prefers_environment_variable() -> void:
+	AIService._cached_api_key = ""
+	OS.set_environment("NVIDIA_NIM_API_KEY", "test-env-key")
+	assert_eq(AIService.get_nvidia_api_key(), "test-env-key")
+	AIService._cached_api_key = ""
+	OS.set_environment("NVIDIA_NIM_API_KEY", "")

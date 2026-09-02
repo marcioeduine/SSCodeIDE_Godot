@@ -43,6 +43,7 @@
     - `DeepSeek V4` (`deepseek-ai/deepseek-v4-pro-0813`)
     - `Laguna Code` (`poolside/laguna-xs-2.1`)
   - Intelligent multi-model candidate fallback mechanism to mitigate transient service errors.
+  - API credentials are loaded from the `NVIDIA_NIM_API_KEY` environment variable or a local `.env` file (see `.env.example`). Never commit real keys.
   - Non-blocking asynchronous requests with cancellation support (<kbd>Esc</kbd>) and animated toast notifications.
 
 - **Automated Test Suite**:
