@@ -4,15 +4,15 @@
 [ext_resource type="Script" uid="uid://dm57wbc3c6m76" path="res://scripts/ui_editor.gd" id="1_editor"]
 [ext_resource type="Shader" uid="uid://crhc3gwj4ct3f" path="res://themes/glass_backdrop.gdshader" id="2_backdrop"]
 [ext_resource type="Texture2D" uid="uid://coxctd2h6bsq5" path="res://favicon.svg" id="3_favicon"]
-[ext_resource type="Texture2D" path="res://icons/nav_explorer.svg" id="4_nav_explorer"]
-[ext_resource type="Texture2D" path="res://icons/nav_search.svg" id="5_nav_search"]
-[ext_resource type="Texture2D" path="res://icons/nav_github.svg" id="6_nav_github"]
-[ext_resource type="Texture2D" path="res://icons/nav_chat.svg" id="7_nav_chat"]
-[ext_resource type="Texture2D" path="res://icons/nav_themes.svg" id="8_nav_themes"]
-[ext_resource type="Texture2D" path="res://icons/nav_settings.svg" id="9_nav_settings"]
-[ext_resource type="Texture2D" path="res://icons/nav_help.svg" id="10_nav_help"]
-[ext_resource type="Texture2D" path="res://icons/nav_sun.svg" id="11_nav_sun"]
-[ext_resource type="Texture2D" path="res://icons/nav_moon.svg" id="12_nav_moon"]
+[ext_resource type="Texture2D" uid="uid://djktporhvrp26" path="res://icons/nav_explorer.svg" id="4_nav_explorer"]
+[ext_resource type="Texture2D" uid="uid://deijdrbbsi7us" path="res://icons/nav_search.svg" id="5_nav_search"]
+[ext_resource type="Texture2D" uid="uid://cdspcwkxso7nw" path="res://icons/nav_github.svg" id="6_nav_github"]
+[ext_resource type="Texture2D" uid="uid://jnvgumwu0age" path="res://icons/nav_chat.svg" id="7_nav_chat"]
+[ext_resource type="Texture2D" uid="uid://dy2vr0ghy01ds" path="res://icons/nav_themes.svg" id="8_nav_themes"]
+[ext_resource type="Texture2D" uid="uid://bhmmg2p4eq0lw" path="res://icons/nav_settings.svg" id="9_nav_settings"]
+[ext_resource type="Texture2D" uid="uid://lweabxd0tqlv" path="res://icons/nav_help.svg" id="10_nav_help"]
+[ext_resource type="Texture2D" uid="uid://bvru54cisp7ec" path="res://icons/nav_sun.svg" id="11_nav_sun"]
+[ext_resource type="FontFile" uid="uid://bm1xevc15hlqh" path="res://fonts/FiraCodeNerdFont-Regular.ttf" id="13_r0xch"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_backdrop"]
 shader = ExtResource("2_backdrop")
@@ -21,6 +21,9 @@ shader_parameter/ambient_colour = Color(0.145, 0.122, 0.18, 1)
 shader_parameter/accent_colour = Color(0.19, 0.145, 0.23, 1)
 shader_parameter/glow_strength = 0.12
 shader_parameter/motion_speed = 0.008
+
+[sub_resource type="LabelSettings" id="LabelSettings_r8agn"]
+font = ExtResource("13_r0xch")
 
 [node name="UI_Editor" type="Control" unique_id=1791161152]
 layout_mode = 3
@@ -66,46 +69,27 @@ theme_type_variation = &"M3NavRail"
 
 [node name="NavRailContent" type="VBoxContainer" parent="AppHBox/NavRail" unique_id=300101001]
 layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="WindowDots" type="HBoxContainer" parent="AppHBox/NavRail/NavRailContent" unique_id=300101030]
-custom_minimum_size = Vector2(0, 14)
-layout_mode = 2
-alignment = 1
-theme_override_constants/separation = 4
-
-[node name="DotClose" type="ColorRect" parent="AppHBox/NavRail/NavRailContent/WindowDots" unique_id=300101031]
-custom_minimum_size = Vector2(8, 8)
-layout_mode = 2
-size_flags_vertical = 4
-color = Color(0.98, 0.36, 0.34, 0.9)
-
-[node name="DotMin" type="ColorRect" parent="AppHBox/NavRail/NavRailContent/WindowDots" unique_id=300101032]
-custom_minimum_size = Vector2(8, 8)
-layout_mode = 2
-size_flags_vertical = 4
-color = Color(0.98, 0.74, 0.18, 0.9)
-
-[node name="DotMax" type="ColorRect" parent="AppHBox/NavRail/NavRailContent/WindowDots" unique_id=300101033]
-custom_minimum_size = Vector2(8, 8)
-layout_mode = 2
-size_flags_vertical = 4
-color = Color(0.15, 0.78, 0.25, 0.9)
 
 [node name="AppBrand" type="MenuButton" parent="AppHBox/NavRail/NavRailContent" unique_id=300101002]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
 tooltip_text = "SSCodeIDE App Menu"
-theme_type_variation = &"M3AppBrandButton"
 icon = ExtResource("3_favicon")
-flat = true
+icon_alignment = 1
 expand_icon = true
 
 [node name="RailDivider1" type="HSeparator" parent="AppHBox/NavRail/NavRailContent" unique_id=300101010]
 layout_mode = 2
+size_flags_vertical = 2
+size_flags_stretch_ratio = 0.05
 
-[node name="ExplorerRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101011]
+[node name="GridContainer" type="GridContainer" parent="AppHBox/NavRail/NavRailContent" unique_id=408513914]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/v_separation = 40
+
+[node name="ExplorerRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent/GridContainer" unique_id=300101011]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
@@ -115,7 +99,7 @@ icon = ExtResource("4_nav_explorer")
 flat = true
 expand_icon = true
 
-[node name="EditRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101012]
+[node name="EditRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent/GridContainer" unique_id=300101012]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
@@ -125,7 +109,7 @@ icon = ExtResource("5_nav_search")
 flat = true
 expand_icon = true
 
-[node name="GitRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101013]
+[node name="GitRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent/GridContainer" unique_id=300101013]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
@@ -135,7 +119,7 @@ icon = ExtResource("6_nav_github")
 flat = true
 expand_icon = true
 
-[node name="ThemesRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101014]
+[node name="ThemesRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent/GridContainer" unique_id=300101014]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
@@ -145,7 +129,7 @@ icon = ExtResource("8_nav_themes")
 flat = true
 expand_icon = true
 
-[node name="ChatRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101015]
+[node name="ChatRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent/GridContainer" unique_id=300101015]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
@@ -154,10 +138,6 @@ theme_type_variation = &"M3RailButton"
 icon = ExtResource("7_nav_chat")
 flat = true
 expand_icon = true
-
-[node name="RailSpacer" type="Control" parent="AppHBox/NavRail/NavRailContent" unique_id=300101003]
-layout_mode = 2
-size_flags_vertical = 3
 
 [node name="ThemeToggleBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101005]
 unique_name_in_owner = true
@@ -209,55 +189,39 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"M3SidePanel"
 
-[node name="ExplorerContent" type="VBoxContainer" parent="AppHBox/MainLayout/MainSplit/ExplorerPane" unique_id=300101005]
+[node name="ExplorerContent" type="VBoxContainer" parent="AppHBox/MainLayout/MainSplit/ExplorerPane" unique_id=1294062821]
 layout_mode = 2
-theme_override_constants/separation = 4
+
+[node name="DrawerCollapseBtn" type="Label" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent" unique_id=1924330637]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_vertical = 1
+text = "SS - Code IDE"
+label_settings = SubResource("LabelSettings_r8agn")
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="DrawerHeader" type="HBoxContainer" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent" unique_id=300101020]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
-theme_override_constants/separation = 4
 
-[node name="WorkspaceTitleVBox" type="VBoxContainer" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent/DrawerHeader" unique_id=300101021]
+[node name="ExplorerHeader" type="Label" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent/DrawerHeader" unique_id=1893227217]
+custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 0
-
-[node name="AppTitleLabel" type="Label" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent/DrawerHeader/WorkspaceTitleVBox" unique_id=300101022]
-layout_mode = 2
+size_flags_vertical = 1
 theme_type_variation = &"M3SidebarHeader"
-text = "SSCodeIDE"
+text = "EXPLORER"
+vertical_alignment = 1
 
-[node name="WorkspaceState" type="Label" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent/DrawerHeader/WorkspaceTitleVBox" unique_id=300101004]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"M3StatusText"
-text = "WORKSPACE"
-clip_text = true
-
-[node name="DrawerCollapseBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent/DrawerHeader" unique_id=300101023]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 2
-tooltip_text = "Collapse Sidebar (Ctrl+B)"
-text = "◀"
-flat = true
-
-[node name="SwitchWorkspaceBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent" unique_id=300101024]
+[node name="SwitchWorkspaceBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent/DrawerHeader" unique_id=300101024]
 unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "Open different project folder"
 theme_type_variation = &"M3NavPillButton"
-text = "⇄ Switch Workspace…"
+text = "⇄"
 flat = true
 alignment = 0
-
-[node name="ExplorerHeader" type="Label" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent" unique_id=1893227217]
-custom_minimum_size = Vector2(0, 24)
-layout_mode = 2
-theme_type_variation = &"M3SidebarHeader"
-text = "EXPLORER"
-vertical_alignment = 1
 
 [node name="FileTree" type="Tree" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent" unique_id=1514428791]
 unique_name_in_owner = true
@@ -521,6 +485,7 @@ popup/item_4/id = 4
 
 [node name="SmartCommitBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=772031202]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 text = "⎇ Commit"
 
