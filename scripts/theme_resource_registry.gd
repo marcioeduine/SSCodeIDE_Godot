@@ -220,6 +220,9 @@ static func _build_material3_theme(palette: Dictionary) -> Theme:
 	theme.set_stylebox("focus", &"M3ThemeToggle", transparent_nav)
 	theme.set_color("font_color", &"M3ThemeToggle", on_surface)
 	theme.set_color("font_hover_color", &"M3ThemeToggle", primary)
+	theme.set_color("icon_normal_color", &"M3ThemeToggle", on_variant)
+	theme.set_color("icon_hover_color", &"M3ThemeToggle", primary if is_light else Color.WHITE)
+	theme.set_color("icon_pressed_color", &"M3ThemeToggle", primary)
 	theme.set_font_size("font_size", &"M3ThemeToggle", 14)
 
 	# Minimal Collapsible NavRail panel (Untitled UI style slim vertical bar)
@@ -247,6 +250,9 @@ static func _build_material3_theme(palette: Dictionary) -> Theme:
 	theme.set_color("font_color", &"M3RailButton", on_variant)
 	theme.set_color("font_hover_color", &"M3RailButton", primary if is_light else Color.WHITE)
 	theme.set_color("font_pressed_color", &"M3RailButton", primary)
+	theme.set_color("icon_normal_color", &"M3RailButton", on_variant)
+	theme.set_color("icon_hover_color", &"M3RailButton", primary if is_light else Color.WHITE)
+	theme.set_color("icon_pressed_color", &"M3RailButton", primary)
 	theme.set_font_size("font_size", &"M3RailButton", 14)
 
 	# NavDrawer pill items (e.g. Analytics, Explorer, Git)

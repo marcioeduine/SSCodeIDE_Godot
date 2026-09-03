@@ -4,6 +4,15 @@
 [ext_resource type="Script" uid="uid://dm57wbc3c6m76" path="res://scripts/ui_editor.gd" id="1_editor"]
 [ext_resource type="Shader" uid="uid://crhc3gwj4ct3f" path="res://themes/glass_backdrop.gdshader" id="2_backdrop"]
 [ext_resource type="Texture2D" uid="uid://coxctd2h6bsq5" path="res://favicon.svg" id="3_favicon"]
+[ext_resource type="Texture2D" path="res://icons/nav_explorer.svg" id="4_nav_explorer"]
+[ext_resource type="Texture2D" path="res://icons/nav_search.svg" id="5_nav_search"]
+[ext_resource type="Texture2D" path="res://icons/nav_github.svg" id="6_nav_github"]
+[ext_resource type="Texture2D" path="res://icons/nav_chat.svg" id="7_nav_chat"]
+[ext_resource type="Texture2D" path="res://icons/nav_themes.svg" id="8_nav_themes"]
+[ext_resource type="Texture2D" path="res://icons/nav_settings.svg" id="9_nav_settings"]
+[ext_resource type="Texture2D" path="res://icons/nav_help.svg" id="10_nav_help"]
+[ext_resource type="Texture2D" path="res://icons/nav_sun.svg" id="11_nav_sun"]
+[ext_resource type="Texture2D" path="res://icons/nav_moon.svg" id="12_nav_moon"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_backdrop"]
 shader = ExtResource("2_backdrop")
@@ -102,17 +111,19 @@ custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
 tooltip_text = "Files / Explorer (Ctrl+B)"
 theme_type_variation = &"M3RailButton"
-text = "📁"
+icon = ExtResource("4_nav_explorer")
 flat = true
+expand_icon = true
 
 [node name="EditRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101012]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
-tooltip_text = "Edit Actions (Ctrl+F)"
+tooltip_text = "Find & Search (Ctrl+F)"
 theme_type_variation = &"M3RailButton"
-text = "✏️"
+icon = ExtResource("5_nav_search")
 flat = true
+expand_icon = true
 
 [node name="GitRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101013]
 unique_name_in_owner = true
@@ -120,8 +131,9 @@ custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
 tooltip_text = "Source Control & GitHub (Ctrl+Shift+G)"
 theme_type_variation = &"M3RailButton"
-text = "⎇"
+icon = ExtResource("6_nav_github")
 flat = true
+expand_icon = true
 
 [node name="ThemesRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101014]
 unique_name_in_owner = true
@@ -129,8 +141,9 @@ custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
 tooltip_text = "Themes Selector & Import"
 theme_type_variation = &"M3RailButton"
-text = "🎨"
+icon = ExtResource("8_nav_themes")
 flat = true
+expand_icon = true
 
 [node name="ChatRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101015]
 unique_name_in_owner = true
@@ -138,8 +151,9 @@ custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
 tooltip_text = "AI Assistant Chat (Ctrl+Shift+B)"
 theme_type_variation = &"M3RailButton"
-text = "💬"
+icon = ExtResource("7_nav_chat")
 flat = true
+expand_icon = true
 
 [node name="RailSpacer" type="Control" parent="AppHBox/NavRail/NavRailContent" unique_id=300101003]
 layout_mode = 2
@@ -151,8 +165,9 @@ custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
 tooltip_text = "Toggle Light / Dark Mode"
 theme_type_variation = &"M3ThemeToggle"
-text = "☀️"
+icon = ExtResource("11_nav_sun")
 flat = true
+expand_icon = true
 
 [node name="ConfigRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101016]
 unique_name_in_owner = true
@@ -160,8 +175,9 @@ custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
 tooltip_text = "Settings & Configuration (Ctrl+,)"
 theme_type_variation = &"M3RailButton"
-text = "⚙️"
+icon = ExtResource("9_nav_settings")
 flat = true
+expand_icon = true
 
 [node name="HelpRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101017]
 unique_name_in_owner = true
@@ -169,8 +185,9 @@ custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
 tooltip_text = "Keyboard Shortcuts & Help (F1)"
 theme_type_variation = &"M3RailButton"
-text = "❓"
+icon = ExtResource("10_nav_help")
 flat = true
+expand_icon = true
 
 [node name="MainLayout" type="VBoxContainer" parent="AppHBox" unique_id=300101040]
 layout_mode = 2

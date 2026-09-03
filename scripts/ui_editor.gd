@@ -951,8 +951,9 @@ func _update_theme_toggle_btn() -> void:
 	if _theme_toggle_btn == null:
 		return
 	var is_light := ThemeColorScheme.is_light(_active_theme)
-	# In light mode, show moon 🌙 to switch to dark; in dark mode, show sun ☀️ to switch to light
-	_theme_toggle_btn.text = "🌙" if is_light else "☀️"
+	# In light mode, show moon icon to switch to dark; in dark mode, show sun icon to switch to light
+	_theme_toggle_btn.icon = preload("res://icons/nav_moon.svg") if is_light else preload("res://icons/nav_sun.svg")
+	_theme_toggle_btn.text = ""
 	_theme_toggle_btn.tooltip_text = "Switch to Dark Mode" if is_light else "Switch to Light Mode"
 
 

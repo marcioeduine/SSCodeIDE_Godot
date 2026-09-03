@@ -222,23 +222,24 @@ func test_app_brand_menu_and_theme_toggle_btn() -> void:
 	assert_eq(popup.get_item_text(0), "About SSCodeIDE")
 	assert_true(popup.get_item_text(1).begins_with("Close"))
 	
-	# Verify ThemeToggleBtn is present and toggles between Sun/Moon and light/dark themes
+	# Verify ThemeToggleBtn is present and toggles between Sun/Moon SVG icons and light/dark themes
 	assert_not_null(editor._theme_toggle_btn)
+	assert_not_null(editor._theme_toggle_btn.icon)
 	var initial_is_light: bool = ThemeColorScheme.is_light(editor._active_theme)
-	var expected_icon: String = "🌙" if initial_is_light else "☀️"
-	assert_eq(editor._theme_toggle_btn.text, expected_icon)
+	var initial_icon_path: String = (editor._theme_toggle_btn.icon as Texture2D).resource_path
+	assert_true(initial_icon_path.ends_with("nav_moon.svg") if initial_is_light else initial_icon_path.ends_with("nav_sun.svg"))
 	
 	# Toggle theme
 	editor._toggle_light_dark_theme()
 	var new_is_light: bool = ThemeColorScheme.is_light(editor._active_theme)
 	assert_ne(new_is_light, initial_is_light)
-	var toggled_icon: String = "🌙" if new_is_light else "☀️"
-	assert_eq(editor._theme_toggle_btn.text, toggled_icon)
+	var toggled_icon_path: String = (editor._theme_toggle_btn.icon as Texture2D).resource_path
+	assert_true(toggled_icon_path.ends_with("nav_moon.svg") if new_is_light else toggled_icon_path.ends_with("nav_sun.svg"))
 	
 	# Toggle back
 	editor._toggle_light_dark_theme()
 	assert_eq(ThemeColorScheme.is_light(editor._active_theme), initial_is_light)
-	assert_eq(editor._theme_toggle_btn.text, expected_icon)
+	assert_eq((editor._theme_toggle_btn.icon as Texture2D).resource_path, initial_icon_path)
 
 
 func test_minimal_collapsible_sidebar_navigation() -> void:
@@ -252,15 +253,37 @@ func test_minimal_collapsible_sidebar_navigation() -> void:
 	assert_not_null(nav_rail)
 	assert_eq(nav_rail.theme_type_variation, &"M3NavRail")
 	
-	# Verify Rail buttons
+	# Verify Rail buttons and Material Design 3 / GitHub SVG icons
 	assert_not_null(editor._explorer_rail_btn)
+	assert_not_null(editor._explorer_rail_btn.icon)
+	assert_true((editor._explorer_rail_btn.icon as Texture2D).resource_path.ends_with("nav_explorer.svg"))
+	
 	assert_not_null(editor._edit_rail_btn)
+	assert_not_null(editor._edit_rail_btn.icon)
+	assert_true((editor._edit_rail_btn.icon as Texture2D).resource_path.ends_with("nav_search.svg"))
+	
 	assert_not_null(editor._git_rail_btn)
+	assert_not_null(editor._git_rail_btn.icon)
+	assert_true((editor._git_rail_btn.icon as Texture2D).resource_path.ends_with("nav_github.svg"))
+	
 	assert_not_null(editor._themes_rail_btn)
+	assert_not_null(editor._themes_rail_btn.icon)
+	assert_true((editor._themes_rail_btn.icon as Texture2D).resource_path.ends_with("nav_themes.svg"))
+	
 	assert_not_null(editor._chat_rail_btn)
+	assert_not_null(editor._chat_rail_btn.icon)
+	assert_true((editor._chat_rail_btn.icon as Texture2D).resource_path.ends_with("nav_chat.svg"))
+	
 	assert_not_null(editor._config_rail_btn)
+	assert_not_null(editor._config_rail_btn.icon)
+	assert_true((editor._config_rail_btn.icon as Texture2D).resource_path.ends_with("nav_settings.svg"))
+	
 	assert_not_null(editor._help_rail_btn)
+	assert_not_null(editor._help_rail_btn.icon)
+	assert_true((editor._help_rail_btn.icon as Texture2D).resource_path.ends_with("nav_help.svg"))
+	
 	assert_not_null(editor._theme_toggle_btn)
+	assert_not_null(editor._theme_toggle_btn.icon)
 	
 	# Verify Drawer & Collapse interaction
 	assert_not_null(editor._explorer_pane)
