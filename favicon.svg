@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&amp;display=swap');
+      text {
+        font-family: 'Orbitron', system-ui, sans-serif;
+        font-weight: 900;
+        font-size: 38px;
+        fill: #00d4ff;
+        text-anchor: middle;
+        dominant-baseline: central;
+      }
+    </style>
+  </defs>
+  <path d="M 4 4 L 80 4 L 96 20 L 96 96 L 20 96 L 4 80 Z" fill="#00d4ff" fill-opacity="0.1" stroke="#00d4ff" stroke-width="4" />
+  <text x="50" y="50" filter="url(#glow)">SS</text>
+  <text x="50" y="50">SS</text>
+</svg>

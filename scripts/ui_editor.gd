@@ -508,6 +508,8 @@ func _expand_explorer() -> void:
 	_explorer_pane.visible = true
 	var target := _explorer_split_offset if _explorer_split_offset > SPLIT_COLLAPSE_PX else int(get_viewport_rect().size.x * 0.18)
 	_main_split.split_offset = target
+	if _explorer_toggle_btn:
+		_explorer_toggle_btn.text = "◀"
 	_status_left.text = "Explorer  ▶  shown"
 
 
@@ -518,6 +520,8 @@ func _collapse_explorer(save_offset: bool) -> void:
 		_explorer_split_offset = _main_split.split_offset
 	_explorer_collapsed = true
 	_explorer_pane.visible = false
+	if _explorer_toggle_btn:
+		_explorer_toggle_btn.text = "▶"
 	_status_left.text = "Explorer  ◀  hidden  (Ctrl+B to restore)"
 
 
@@ -526,6 +530,8 @@ func _expand_chat() -> void:
 	_chat_pane.visible = true
 	var target := _chat_split_offset if _chat_split_offset > SPLIT_COLLAPSE_PX else int(get_viewport_rect().size.x * 0.50)
 	_center_split.split_offset = target
+	if _chat_toggle_btn:
+		_chat_toggle_btn.text = "▶"
 	_status_left.text = "Chat  ▶  shown"
 
 
@@ -536,6 +542,8 @@ func _collapse_chat(save_offset: bool) -> void:
 		_chat_split_offset = _center_split.split_offset
 	_chat_collapsed = true
 	_chat_pane.visible = false
+	if _chat_toggle_btn:
+		_chat_toggle_btn.text = "◀"
 	_status_left.text = "Chat  ◀  hidden  (Ctrl+Shift+B to restore)"
 
 func _on_main_split_dragged(offset: int) -> void:

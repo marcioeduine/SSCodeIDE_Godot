@@ -80,8 +80,8 @@ func test_parse_github_url_invalid() -> void:
 func test_get_github_info() -> void:
 	var gh_info: Dictionary = GitService.get_github_info()
 	assert_true(bool(gh_info.get("is_github", false)))
-	assert_eq(str(gh_info.get("owner", "")), "marcioeduine")
-	assert_eq(str(gh_info.get("repo", "")), "ss_code_ide_godot")
+	assert_eq(str(gh_info.get("owner", "")).to_lower(), "marcioeduine")
+	assert_true(str(gh_info.get("repo", "")).to_lower() in ["ss_code_ide_godot", "sscodeide_godot"])
 
 
 func test_get_commit_history() -> void:

@@ -252,10 +252,10 @@ static func _build_material3_theme(palette: Dictionary) -> Theme:
 	theme.set_stylebox("tab_selected", &"TabBar", tab_sel)
 	theme.set_stylebox("tab_unselected", &"TabBar", tab_unsel)
 	theme.set_stylebox("tab_hovered", &"TabBar", tab_hov)
-	theme.set_color("font_selected_color", &"TabBar", primary if is_light else Color.WHITE)
+	theme.set_color("font_selected_color", &"TabBar", on_surface)
 	theme.set_color("font_unselected_color", &"TabBar", on_variant)
 	theme.set_color("font_hovered_color", &"TabBar", on_surface)
-	theme.set_constant("tab_separation", &"TabBar", 2)
+	theme.set_constant("tab_separation", &"TabBar", 0)
 
 	# Global fonts and typography
 	theme.set_color("font_color", &"Label", on_surface)

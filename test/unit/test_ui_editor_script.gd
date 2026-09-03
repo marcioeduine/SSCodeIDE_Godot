@@ -82,7 +82,7 @@ func test_workspace_context_generation() -> void:
 	var editor_script = load("res://scripts/ui_editor.gd").new()
 	assert_not_null(editor_script)
 	
-	editor_script._workspace_root = "/home/mcaquart/sgoinfre/.ss/SSDevTools/SSCodeIDE - Godot"
+	editor_script._workspace_root = ProjectSettings.globalize_path("res://")
 	var files: Array[String] = editor_script._get_workspace_files_list()
 	assert_gt(files.size(), 0)
 	

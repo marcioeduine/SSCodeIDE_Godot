@@ -234,7 +234,7 @@ static func icon_for_path(path: String) -> String:
 		"jsx":
 			return "⚛️"
 		"gd":
-			return "🎮"
+			return "📄"
 		"c", "h":
 			return "🔤"
 		"cpp", "cc", "cxx", "hpp", "hxx":

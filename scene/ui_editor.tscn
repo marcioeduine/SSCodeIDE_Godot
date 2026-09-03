@@ -226,7 +226,8 @@ layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 3
 tooltip_text = "Collapse or expand the File Explorer (Ctrl+B)"
-text = "◂"
+text = "◀"
+flat = true
 
 [node name="TabBar" type="TabBar" parent="RootVBox/MainSplit/CenterSplit/EditorPane/EditorContent/GridContainer" unique_id=256136646]
 unique_name_in_owner = true
@@ -242,7 +243,8 @@ layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 3
 tooltip_text = "Collapse or expand Chat (Ctrl+Shift+B)"
-text = "◂"
+text = "▶"
+flat = true
 
 [node name="FindRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=1655727780]
 unique_name_in_owner = true
