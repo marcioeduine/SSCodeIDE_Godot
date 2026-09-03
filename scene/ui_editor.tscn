@@ -305,7 +305,10 @@ text = "+ Active File"
 custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "Pergunte ao SSBot sobre o código, erros ou gere novas ideias…"
+placeholder_text = "Pergunta ao SSBot sobre o código, erros ou gere novas ideias…"
+keep_editing_on_text_submit = true
+clear_button_enabled = true
+caret_blink = true
 
 [node name="ChatInputBottomRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox" unique_id=742355465]
 layout_mode = 2
@@ -405,6 +408,7 @@ access = 2
 use_native_dialog = true
 
 [node name="OpenThemeXmlDialog" type="FileDialog" parent="." unique_id=237338479]
+oversampling_override = 1.0
 title = "Open a File"
 size = Vector2i(800, 520)
 file_mode = 0

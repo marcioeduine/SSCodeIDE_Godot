@@ -348,7 +348,6 @@ func _collapse_chat(save_offset: bool) -> void:
 	_chat_pane.visible = false
 	_status_left.text = "Chat  ◀  hidden  (Ctrl+Shift+B to restore)"
 
-
 func _on_main_split_dragged(offset: int) -> void:
 	if _explorer_collapsed:
 		return
