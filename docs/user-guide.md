@@ -34,7 +34,9 @@ The Git menu also exposes fetch, sync, branch, checkout, remotes, config, clone,
 
 ### Chat slash commands
 
-In the AI panel: `/git status`, `/git diff`, `/git log`, `/git commit`, `/git push`, `/git pull`, `/git sync`, `/git branch`, `/git checkout`, `/git remote`, `/git config`, `/git clone`, `/github`.
+In the AI panel: `/git status`, `/git diff`, `/git log`, `/git commit`, `/git push`, `/git pull`, `/git sync`, `/git branch`, `/git checkout`, `/git remote`, `/git config`, `/git clone`, `/github`, `/compact`.
+
+`/compact` summarises older conversation context locally and preserves the most recent messages, reducing the amount of history sent to the AI.
 
 ## AI assistant
 

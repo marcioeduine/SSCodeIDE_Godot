@@ -2,6 +2,26 @@
 
 [ext_resource type="Script" uid="uid://dm57wbc3c6m76" path="res://scripts/ui_editor.gd" id="1_editor"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q2u7n"]
+draw_center = false
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 1)
+border_blend = true
+corner_detail = 1
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0cx3e"]
+draw_center = false
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 1)
+border_blend = true
+corner_detail = 1
+
 [node name="UI_Editor" type="Control" unique_id=1791161152]
 layout_mode = 3
 anchors_preset = 15
@@ -150,6 +170,7 @@ text = "  EXPLORER"
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+theme_override_styles/focus = SubResource("StyleBoxFlat_q2u7n")
 
 [node name="CenterSplit" type="HSplitContainer" parent="RootVBox/MainSplit" unique_id=270599731]
 layout_mode = 2
@@ -174,7 +195,7 @@ custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 3
-tooltip_text = "Colapse/Expansão do File Explorer (Ctrl+B)"
+tooltip_text = "Collapse or expand the File Explorer (Ctrl+B)"
 text = "◂"
 
 [node name="TabBar" type="TabBar" parent="RootVBox/MainSplit/CenterSplit/EditorPane/GridContainer" unique_id=256136646]
@@ -190,7 +211,7 @@ custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 3
-tooltip_text = "Colapse/Expansão do Chat (Ctrl+Shift+B)"
+tooltip_text = "Collapse or expand Chat (Ctrl+Shift+B)"
 text = "◂"
 
 [node name="FindRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/EditorPane" unique_id=1655727780]
@@ -215,9 +236,16 @@ text = "×"
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+theme_override_styles/focus = SubResource("StyleBoxFlat_0cx3e")
+wrap_mode = 1
+indent_wrapped_lines = true
 minimap_draw = true
+caret_blink = true
+highlight_all_occurrences = true
 highlight_current_line = true
 gutters_draw_line_numbers = true
+code_completion_enabled = true
+indent_automatic = true
 
 [node name="MarkdownPreview" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/EditorPane" unique_id=1429657402]
 visible = false
@@ -231,7 +259,6 @@ selection_enabled = true
 [node name="ChatPane" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit" unique_id=1200057739]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 4
 
 [node name="ChatHeaderRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane" unique_id=440622983]
 custom_minimum_size = Vector2(0, 28)
@@ -249,14 +276,6 @@ uppercase = true
 layout_mode = 2
 text = "SSBot · Workspace"
 
-[node name="ChatToolsBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow" unique_id=275914698]
-layout_mode = 2
-text = "Tools"
-
-[node name="ChatClearBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow" unique_id=1412368040]
-layout_mode = 2
-text = "+"
-
 [node name="ChatLog" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/ChatPane" unique_id=1541749788]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -268,14 +287,27 @@ selection_enabled = true
 
 [node name="ChatStatusBanner" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane" unique_id=896163620]
 visible = false
-custom_minimum_size = Vector2(0, 36)
+custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 
-[node name="ChatStatusLabel" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner" unique_id=1868283993]
+[node name="ChatStatusVBox" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner" unique_id=896163621]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ChatStatusLabel" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner/ChatStatusVBox" unique_id=1868283993]
 layout_mode = 2
 bbcode_enabled = true
 fit_content = true
 scroll_active = false
+
+[node name="ChatThinkingLabel" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner/ChatStatusVBox" unique_id=1868283994]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_vertical = 3
+focus_mode = 2
+bbcode_enabled = true
+scroll_following = true
+selection_enabled = true
 
 [node name="ChatSuggestionsPopup" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane" unique_id=705864052]
 visible = false
@@ -305,7 +337,7 @@ text = "+ Active File"
 custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "Pergunta ao SSBot sobre o código, erros ou gere novas ideias…"
+placeholder_text = "Ask SSBot about the code, errors, or new ideas…"
 keep_editing_on_text_submit = true
 clear_button_enabled = true
 caret_blink = true
@@ -348,7 +380,7 @@ size_flags_horizontal = 3
 [node name="ChatSend" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=748177452]
 custom_minimum_size = Vector2(56, 26)
 layout_mode = 2
-text = "Enviar"
+text = "Send"
 
 [node name="StatusBar" type="PanelContainer" parent="RootVBox" unique_id=374397806]
 custom_minimum_size = Vector2(0, 26)
@@ -413,7 +445,7 @@ title = "Open a File"
 size = Vector2i(800, 520)
 file_mode = 0
 access = 2
-filters = PackedStringArray("*.xml ; Ficheiros XML de Tema")
+filters = PackedStringArray("*.xml ; Theme XML files")
 use_native_dialog = true
 
 [node name="Overlay" type="ColorRect" parent="." unique_id=1597586422]
@@ -474,7 +506,7 @@ text = "Confirm"
 
 [node name="DialogClose" type="Button" parent="Overlay/DialogPanel/DialogVBox" unique_id=630712506]
 layout_mode = 2
-text = "Fechar"
+text = "Close"
 
 [node name="AIAuthHttp" type="HTTPRequest" parent="." unique_id=396402581]
 timeout = 30.0

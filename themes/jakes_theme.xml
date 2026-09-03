@@ -7,12 +7,12 @@
 
 <theme name="jakes_theme" label="Jake's Theme">
 
-  <!-- Backgrounds -->
-  <colour key="bg_black"   value="#1a1a1a"/>
-  <colour key="bg_darker"  value="#252526"/>
-  <colour key="bg_surface" value="#313131"/>
-  <colour key="bg_card"    value="#3c3c3c"/>
-  <colour key="bg_lighter" value="#454545"/>
+  <!-- Backgrounds — true black chrome (JetBrains Jake's Theme is near-black) -->
+  <colour key="bg_black"   value="#000000"/>
+  <colour key="bg_darker"  value="#000000"/>
+  <colour key="bg_surface" value="#000000"/>
+  <colour key="bg_card"    value="#0a0a0a"/>
+  <colour key="bg_lighter" value="#080808"/>
 
   <!-- Text -->
   <colour key="fg"         value="#e0e0e0"/>

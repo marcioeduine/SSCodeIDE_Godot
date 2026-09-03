@@ -8,8 +8,6 @@ extends Control
 @onready var _chat_log: RichTextLabel = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatLog
 @onready var _chat_header: Label = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatHeader
 @onready var _chat_context_badge: Label = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatContextBadge
-@onready var _chat_tools_btn: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatToolsBtn
-@onready var _chat_clear_btn: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatClearBtn
 @onready var _chat_input_card: PanelContainer = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard
 @onready var _chat_context_chip: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatContextChip
 @onready var _chat_input: LineEdit = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInput
@@ -50,7 +48,8 @@ extends Control
 @onready var _dialog_close: Button = $Overlay/DialogPanel/DialogVBox/DialogClose
 @onready var _ai_chat_http: HTTPRequest = $AIChatHttp
 @onready var _chat_status_banner: PanelContainer = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner
-@onready var _chat_status_label: RichTextLabel = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner/ChatStatusLabel
+@onready var _chat_status_label: RichTextLabel = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner/ChatStatusVBox/ChatStatusLabel
+@onready var _chat_thinking_label: RichTextLabel = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner/ChatStatusVBox/ChatThinkingLabel
 @onready var _chat_suggestions_popup: PanelContainer = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatSuggestionsPopup
 @onready var _chat_suggestions_list: ItemList = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatSuggestionsPopup/ChatSuggestionsList
 @onready var _find_row: HBoxContainer = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow
@@ -87,6 +86,11 @@ var _chat_collapsed: bool = false      ## Whether the chat pane is hidden
 var _explorer_split_offset: int = 0   ## Saved split offset when explorer is collapsed
 var _chat_split_offset: int = 0       ## Saved split offset when chat is collapsed
 var _os_notify_generation: int = 0    ## Invalidates pending auto-dismiss timers
+var _thinking_text: String = ""
+var _stream_http: HTTPClient = HTTPClient.new()
+var _stream_active: bool = false
+var _sse_buf: String = ""
+var _stream_reply: String = ""
 const SPINNER_FRAMES: Array[String] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 const OS_NOTIFY_EXPIRE_MS: int = 4000
 const OS_NOTIFY_REPLACE_ID: int = 424242
@@ -176,6 +180,7 @@ const CHAT_SLASH_COMMANDS: Array[Dictionary] = [
 	{"cmd": "/open ", "desc": "Open file by path (/open <path>)"},
 	{"cmd": "/goto ", "desc": "Go to line number (/goto <line>)"},
 	{"cmd": "/clear", "desc": "Clear conversation history & chat context"},
+	{"cmd": "/compact", "desc": "Compact older conversation context while preserving recent messages"},
 	{"cmd": "/cancel", "desc": "Abort running AI request"},
 	{"cmd": "/theme", "desc": "Select or import IDE colour theme (/theme list | /theme <name> | /theme import)"},
 	{"cmd": "/quit", "desc": "Quit SSCodeIDE"},
@@ -235,8 +240,8 @@ const HELP_TEXT := """[b]SSCodeIDE Shortcuts[/b]
   Ctrl+,            Settings
   F1                Help (shortcuts)
   Ctrl+P            Focus explorer
-  Ctrl+B            Colapsar / expandir o File Explorer
-  Ctrl+Shift+B      Colapsar / expandir o Chat
+  Ctrl+B            Collapse / expand the File Explorer
+  Ctrl+Shift+B      Collapse / expand Chat
   Ctrl+J / K / `    Focus chat input
   Esc               Cancel AI / dismiss dialog
 
@@ -278,13 +283,152 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if _stream_active:
+		_poll_chat_stream()
 	if _ai_busy:
 		_spinner_time += delta
 		var frame_idx: int = int(_spinner_time * 10.0) % SPINNER_FRAMES.size()
 		var elapsed: float = (Time.get_ticks_msec() / 1000.0) - _request_start_time
 		var frame: String = SPINNER_FRAMES[frame_idx]
-		_chat_status_label.text = "[color=#ffa348]%s[/color] [b]Generating…[/b] [color=#9a9996](%.1fs)[/color]\n[color=#727072]Tip: Use /save, /files, /open, /cancel, /clear[/color]" % [frame, elapsed]
-		_status_left.text = "%s Generating · %s (%.1fs) · esc to cancel" % [frame, _ai_provider, elapsed]
+		_chat_status_label.text = "[color=#ffa348]%s[/color] [b]Thinking…[/b] [color=#858585](%.1fs)[/color]\n[color=#858585]AI thoughts (live) · Tip: Use /save, /files, /open, /cancel, /clear[/color]" % [frame, elapsed]
+		_status_left.text = "%s Thinking · %s (%.1fs) · esc to cancel" % [frame, _ai_provider, elapsed]
+		_refresh_thinking_panel()
+
+
+func _refresh_thinking_panel() -> void:
+	if _chat_thinking_label == null:
+		return
+	var body: String = _thinking_text.strip_edges()
+	if body.is_empty():
+		body = "Waiting for the model’s reasoning tokens…"
+	_chat_thinking_label.text = "[color=#9a9996][i]%s[/i][/color]" % body.replace("[", "[lb]")
+
+
+func _extract_reasoning(msg: Dictionary) -> String:
+	for key in ["reasoning_content", "reasoning", "thinking", "reasoning_text"]:
+		if msg.has(key) and str(msg[key]).strip_edges() != "":
+			return str(msg[key]).strip_edges()
+	var content := str(msg.get("content", ""))
+	var start := content.find("<think>")
+	var end := content.find("</think>")
+	if start >= 0 and end > start:
+		return content.substr(start + 7, end - start - 7).strip_edges()
+	return ""
+
+
+func _start_chat_stream(payload_json: String) -> bool:
+	_stop_chat_stream()
+	var err := _stream_http.connect_to_host("integrate.api.nvidia.com", 443, TLSOptions.client())
+	if err != OK:
+		return false
+	_stream_active = true
+	_sse_buf = ""
+	_stream_reply = ""
+	_thinking_text = ""
+	## Handshake is completed in _poll_chat_stream; stash payload on the client via meta.
+	_stream_http.set_meta("payload", payload_json)
+	_stream_http.set_meta("sent", false)
+	return true
+
+
+func _stop_chat_stream() -> void:
+	_stream_active = false
+	if _stream_http.get_status() != HTTPClient.STATUS_DISCONNECTED:
+		_stream_http.close()
+	_sse_buf = ""
+
+
+func _poll_chat_stream() -> void:
+	_stream_http.poll()
+	var st := _stream_http.get_status()
+	if st == HTTPClient.STATUS_CONNECTING or st == HTTPClient.STATUS_RESOLVING:
+		return
+	if st == HTTPClient.STATUS_CONNECTED and not bool(_stream_http.get_meta("sent", false)):
+		var headers := PackedStringArray([
+			"Content-Type: application/json",
+			"Authorization: Bearer " + AIService.get_nvidia_api_key(),
+			"Accept: text/event-stream",
+		])
+		var payload: String = str(_stream_http.get_meta("payload", ""))
+		var req_err := _stream_http.request(HTTPClient.METHOD_POST, "/v1/chat/completions", headers, payload)
+		_stream_http.set_meta("sent", true)
+		if req_err != OK:
+			_stop_chat_stream()
+			_on_ai_chat_http_completed(HTTPRequest.RESULT_CONNECTION_ERROR, 0, PackedStringArray(), PackedByteArray())
+		return
+	if st == HTTPClient.STATUS_BODY:
+		var chunk := _stream_http.read_response_body_chunk()
+		if chunk.size() > 0:
+			_sse_buf += chunk.get_string_from_utf8()
+			_consume_sse_buffer()
+		if not _stream_http.has_response() or _stream_http.get_status() == HTTPClient.STATUS_DISCONNECTED:
+			_finish_chat_stream()
+		return
+	if st == HTTPClient.STATUS_DISCONNECTED or st == HTTPClient.STATUS_CONNECTION_ERROR or st == HTTPClient.STATUS_TLS_HANDSHAKE_ERROR:
+		if not _stream_reply.is_empty() or not _thinking_text.is_empty():
+			_finish_chat_stream()
+		else:
+			_stop_chat_stream()
+			_on_ai_chat_http_completed(HTTPRequest.RESULT_CANT_CONNECT, 0, PackedStringArray(), PackedByteArray())
+
+
+func _consume_sse_buffer() -> void:
+	while true:
+		var nl := _sse_buf.find("\n")
+		if nl < 0:
+			break
+		var line := _sse_buf.substr(0, nl).strip_edges()
+		_sse_buf = _sse_buf.substr(nl + 1)
+		if line.is_empty() or not line.begins_with("data:"):
+			continue
+		var data := line.substr(5).strip_edges()
+		if data == "[DONE]":
+			_finish_chat_stream()
+			return
+		var json := JSON.new()
+		if json.parse(data) != OK or not (json.data is Dictionary):
+			continue
+		var parsed: Dictionary = json.data
+		var choices: Array = parsed.get("choices", [])
+		if choices.is_empty() or not (choices[0] is Dictionary):
+			continue
+		var choice: Dictionary = choices[0]
+		var delta: Dictionary = choice.get("delta", {}) if choice.get("delta", {}) is Dictionary else {}
+		var msg: Dictionary = choice.get("message", {}) if choice.get("message", {}) is Dictionary else {}
+		for src in [delta, msg]:
+			var thought := _extract_reasoning(src)
+			if not thought.is_empty():
+				if thought.begins_with(_thinking_text):
+					_thinking_text = thought
+				else:
+					_thinking_text += thought
+			var piece := str(src.get("content", ""))
+			if not piece.is_empty() and piece != "<null>":
+				_stream_reply += piece
+
+
+func _finish_chat_stream() -> void:
+	if not _stream_active and _stream_reply.is_empty() and _thinking_text.is_empty():
+		return
+	_stop_chat_stream()
+	var elapsed: float = maxf(0.1, (Time.get_ticks_msec() / 1000.0) - _request_start_time)
+	if _current_prompt.begins_with("__SMART_COMMIT__:"):
+		if _stream_reply.strip_edges().is_empty():
+			_fallback_smart_commit("Empty AI reply.")
+			return
+		_finish_smart_commit(_stream_reply.strip_edges(), true)
+		return
+	var reply := _stream_reply.strip_edges()
+	if reply.is_empty() and not _thinking_text.is_empty():
+		reply = _thinking_text.strip_edges()
+	if reply.is_empty():
+		if _try_next_ai_candidate("Empty stream. Attempting candidate model…"):
+			return
+		_append_chat(_ai_provider.to_upper(), "Empty server response. Please retry.", Color("#ed333b"))
+		return
+	_chat_history.append({"role": "assistant", "content": reply})
+	_clear_ai_busy()
+	_append_ai_response(_ai_provider, reply, elapsed)
 
 
 func _apply_split_offsets() -> void:
@@ -379,8 +523,6 @@ func _wire_signals() -> void:
 	_chat_input.text_changed.connect(_on_chat_input_text_changed)
 	_chat_input.gui_input.connect(_on_chat_input_gui_input)
 	_chat_send.pressed.connect(_on_chat_send_pressed)
-	_chat_tools_btn.pressed.connect(_show_tools_list)
-	_chat_clear_btn.pressed.connect(_on_clear_chat_pressed)
 	_chat_context_chip.pressed.connect(_on_context_chip_pressed)
 	_attach_btn.pressed.connect(_on_attach_btn_pressed)
 	_agent_mode_btn.pressed.connect(_on_agent_mode_pressed)
@@ -862,14 +1004,14 @@ func _prompt_git_clone() -> void:
 			if url.is_empty():
 				return
 			var target_dir: String = _workspace_root.path_join(url.get_file().trim_suffix(".git"))
-			_show_toast("Clonando repositório…", false)
+			_show_toast("Cloning repository…", false)
 			var res: Dictionary = GitService.clone_repository(url, target_dir)
 			if bool(res.get("success", false)):
-				_append_chat("GIT", "[color=#57e389]Repositório clonado com sucesso para %s[/color]" % target_dir, Color("#57e389"))
+				_append_chat("GIT", "[color=#57e389]Repository cloned to %s[/color]" % target_dir, Color("#57e389"))
 				_refresh_file_tree()
 				_update_git_status_bar()
 			else:
-				_append_chat("GIT", "[b][color=#ed333b]Erro ao clonar repositório:[/color][/b]\n" + str(res.get("output", "")), Color("#ed333b"))
+				_append_chat("GIT", "[b][color=#ed333b]Failed to clone repository:[/color][/b]\n" + str(res.get("output", "")), Color("#ed333b"))
 				_show_toast("Git clone failed. Check chat for details.", true)
 	)
 
@@ -1050,21 +1192,21 @@ func _apply_theme_by_name(_name: String) -> void:
 	_save_theme_config()
 	_apply_kitty_fish_theme()
 	var label: String = str(_all_themes().get(_name, {}).get("label", _name))
-	_append_chat("IDE", "[color=#57e389]Tema aplicado:[/color] [b]" + label + "[/b]", Color("#57e389"))
+	_append_chat("IDE", "[color=#57e389]Theme applied:[/color] [b]" + label + "[/b]", Color("#57e389"))
 	_show_toast("Theme: " + label, false)
 
 
 func _show_theme_picker() -> void:
 	var all := _all_themes()
-	var body := "[b][color=#62a0ea]Temas Disponíveis:[/color][/b]\n\n"
+	var body := "[b][color=#62a0ea]Available themes:[/color][/b]\n\n"
 	for key: String in all.keys():
 		var t: Dictionary = all[key]
-		var active_mark := "  [color=#57e389]✓ activo[/color]" if key == _active_theme else ""
+		var active_mark := "  [color=#57e389]✓ active[/color]" if key == _active_theme else ""
 		var custom_mark := "  [color=#ffa348]⬡ XML[/color]" if _custom_themes.has(key) else ""
 		body += "• [b]%s[/b]%s%s\n  [color=#9a9996]/theme %s[/color]\n\n" % [str(t.get("label", key)), active_mark, custom_mark, key]
-	body += "[color=#9a9996]Utilização: /theme <nome>   ex: /theme dracula\n"
-	body += "/theme import — instalar tema via ficheiro .xml[/color]"
-	_show_overlay("Seleccionar Tema", body)
+	body += "[color=#9a9996]Usage: /theme <name>   e.g. /theme dracula\n"
+	body += "/theme import — install a theme from a .xml file[/color]"
+	_show_overlay("Select theme", body)
 
 
 func _load_custom_themes() -> void:
@@ -1131,15 +1273,15 @@ func _import_theme_xml_dialog() -> void:
 	if _open_theme_xml_dlg:
 		_open_theme_xml_dlg.popup_centered(Vector2i(800, 500))
 	else:
-		_append_chat("IDE", "[color=#ed333b]Diálogo de importação não disponível.[/color]", Color("#ed333b"))
+		_append_chat("IDE", "[color=#ed333b]Theme import dialogue is not available.[/color]", Color("#ed333b"))
 
 
 func _import_theme_from_xml(xml_path: String) -> void:
 	## Imports a theme from the given .xml path into user://themes/
 	var parsed := _parse_theme_xml(xml_path)
 	if parsed.is_empty():
-		_append_chat("IDE", "[color=#ed333b]Ficheiro XML inválido ou tema incompleto.[/color]\nVerifique o formato: [color=#9a9996]<theme name=\"id\" label=\"Nome\">[/color]", Color("#ed333b"))
-		_show_toast("Theme XML: formato inválido.", true)
+		_append_chat("IDE", "[color=#ed333b]Invalid XML file or incomplete theme.[/color]\nCheck the format: [color=#9a9996]<theme name=\"id\" label=\"Name\">[/color]", Color("#ed333b"))
+		_show_toast("Theme XML: invalid format.", true)
 		return
 	## Copy file into user://themes/
 	var dest_name: String = str(parsed.get("key", "custom")) + ".xml"
@@ -1147,13 +1289,13 @@ func _import_theme_from_xml(xml_path: String) -> void:
 	DirAccess.make_dir_absolute(ProjectSettings.globalize_path("user://themes"))
 	var src := FileAccess.open(xml_path, FileAccess.READ)
 	if src == null:
-		_append_chat("IDE", "[color=#ed333b]Não foi possível ler o ficheiro XML.[/color]", Color("#ed333b"))
+		_append_chat("IDE", "[color=#ed333b]Could not read the XML file.[/color]", Color("#ed333b"))
 		return
 	var content := src.get_as_text()
 	src.close()
 	var dst := FileAccess.open(dest_path, FileAccess.WRITE)
 	if dst == null:
-		_append_chat("IDE", "[color=#ed333b]Não foi possível guardar o tema em user://themes/.[/color]", Color("#ed333b"))
+		_append_chat("IDE", "[color=#ed333b]Could not save the theme to user://themes/.[/color]", Color("#ed333b"))
 		return
 	dst.store_string(content)
 	dst.close()
@@ -1162,8 +1304,8 @@ func _import_theme_from_xml(xml_path: String) -> void:
 	var key: String = str(parsed.get("key", "custom"))
 	var label: String = str(parsed.get("label", key))
 	_apply_theme_by_name(key)
-	_append_chat("IDE", "[color=#57e389]Tema importado com sucesso:[/color] [b]" + label + "[/b]\nGuardado em: [color=#9a9996]" + dest_path + "[/color]", Color("#57e389"))
-	_show_toast("Tema instalado: " + label, false)
+	_append_chat("IDE", "[color=#57e389]Theme imported:[/color] [b]" + label + "[/b]\nSaved to: [color=#9a9996]" + dest_path + "[/color]", Color("#57e389"))
+	_show_toast("Theme installed: " + label, false)
 
 
 func _update_ai_status() -> void:
@@ -1183,11 +1325,15 @@ func _update_ai_status() -> void:
 	_chat_input.placeholder_text = "Describe what to build or ask %s…" % display_title
 
 
+func _apply_style_if_unset(control: Control, _name: StringName, style: StyleBox) -> void:
+	if not control.has_theme_stylebox_override(_name):
+		control.add_theme_stylebox_override(_name, style)
+
+
 func _apply_kitty_fish_theme() -> void:
 	## Resolve active palette from THEMES dict
 	var p: Dictionary = THEMES.get(_active_theme, THEMES["adwaita_darker"])
 	var bg_black   := Color(str(p.get("bg_black",   "#000000")))
-	var bg_darker  := Color(str(p.get("bg_darker",  "#0e0e11")))
 	var bg_surface := Color(str(p.get("bg_surface", "#16161b")))
 	var bg_card    := Color(str(p.get("bg_card",    "#1c1c22")))
 	var bg_lighter := Color(str(p.get("bg_lighter", "#26262e")))
@@ -1212,16 +1358,25 @@ func _apply_kitty_fish_theme() -> void:
 	var explorer_header: Label = $RootVBox/MainSplit/ExplorerPane/ExplorerHeader
 	explorer_header.add_theme_color_override("font_color", muted)
 	var explorer_sb := StyleBoxFlat.new()
-	explorer_sb.bg_color = bg_surface
-	$RootVBox/MainSplit/ExplorerPane.add_theme_stylebox_override("panel", explorer_sb)
+	explorer_sb.bg_color = bg_black
+	_apply_style_if_unset($RootVBox/MainSplit/ExplorerPane, "panel", explorer_sb)
 	_file_tree.add_theme_color_override("font_color", fg)
 	_file_tree.add_theme_color_override("font_selected_color", blue)
 	var tree_bg_sb := StyleBoxFlat.new()
-	tree_bg_sb.bg_color = bg_surface
+	tree_bg_sb.bg_color = bg_black
 	_file_tree.add_theme_stylebox_override("panel", tree_bg_sb)
+	_file_tree.add_theme_stylebox_override("focus", tree_bg_sb)
 
-	## CodeEdit — palette-driven colours
+	## CodeEdit — palette-driven colours (styleboxes fill gutter/minimap, not just font bg)
+	var code_sb := StyleBoxFlat.new()
+	code_sb.bg_color = bg_black
+	_code_edit.add_theme_stylebox_override("normal", code_sb)
+	_code_edit.add_theme_stylebox_override("focus", code_sb)
+	_code_edit.add_theme_stylebox_override("read_only", code_sb)
 	_code_edit.add_theme_color_override("background_color", bg_black)
+	_code_edit.add_theme_color_override("caret_background_color", bg_black)
+	_code_edit.add_theme_color_override("gutter_background_color", bg_black)
+	_code_edit.add_theme_color_override("minimap_background_color", bg_black)
 	_code_edit.add_theme_color_override("font_color", fg)
 	_code_edit.add_theme_color_override("current_line_color", bg_surface)
 	_code_edit.add_theme_color_override("selection_color", bg_lighter)
@@ -1244,22 +1399,31 @@ func _apply_kitty_fish_theme() -> void:
 	## TabBar
 	_tab_bar.add_theme_color_override("font_selected_color", fg_bright)
 	_tab_bar.add_theme_color_override("font_unselected_color", muted)
+	var tab_bg := StyleBoxFlat.new()
+	tab_bg.bg_color = bg_black
+	var tab_selected := StyleBoxFlat.new()
+	tab_selected.bg_color = bg_black
+	tab_selected.border_color = blue
+	tab_selected.border_width_bottom = 1
+	_tab_bar.add_theme_stylebox_override("tab_unselected", tab_bg)
+	_tab_bar.add_theme_stylebox_override("tab_selected", tab_selected)
+	_tab_bar.add_theme_stylebox_override("tab_hovered", tab_bg)
 
 	## Chat pane
 	_chat_log.add_theme_color_override("default_color", fg)
 	var chat_log_sb := StyleBoxFlat.new()
-	chat_log_sb.bg_color = bg_darker
+	chat_log_sb.bg_color = bg_black
 	chat_log_sb.set_content_margin_all(10)
-	_chat_log.add_theme_stylebox_override("normal", chat_log_sb)
+	_apply_style_if_unset(_chat_log, "normal", chat_log_sb)
 
 	## Chat Input Card
 	var input_card_sb := StyleBoxFlat.new()
-	input_card_sb.bg_color = bg_card
+	input_card_sb.bg_color = bg_black
 	input_card_sb.border_color = bg_lighter
 	input_card_sb.set_border_width_all(1)
 	input_card_sb.set_corner_radius_all(14)
 	input_card_sb.set_content_margin_all(8)
-	_chat_input_card.add_theme_stylebox_override("panel", input_card_sb)
+	_apply_style_if_unset(_chat_input_card, "panel", input_card_sb)
 
 	var chat_input_sb := StyleBoxEmpty.new()
 	chat_input_sb.set_content_margin_all(4)
@@ -1298,7 +1462,7 @@ func _apply_kitty_fish_theme() -> void:
 	btn_pill_sb.bg_color = bg_lighter
 	btn_pill_sb.set_corner_radius_all(6)
 	btn_pill_sb.set_content_margin_all(4)
-	for btn: Button in [_chat_tools_btn, _chat_clear_btn, _chat_context_chip, _attach_btn, _agent_mode_btn, _smart_commit_btn]:
+	for btn: Button in [_chat_context_chip, _attach_btn, _agent_mode_btn, _smart_commit_btn]:
 		btn.add_theme_stylebox_override("normal", btn_pill_sb)
 		btn.add_theme_stylebox_override("hover", btn_pill_sb)
 		btn.add_theme_color_override("font_color", fg)
@@ -1374,7 +1538,10 @@ func _apply_kitty_fish_theme() -> void:
 	status_banner_sb.set_border_width_all(1)
 	status_banner_sb.set_corner_radius_all(8)
 	status_banner_sb.set_content_margin_all(8)
-	_chat_status_banner.add_theme_stylebox_override("panel", status_banner_sb)
+	_apply_style_if_unset(_chat_status_banner, "panel", status_banner_sb)
+	if _chat_thinking_label:
+		_chat_thinking_label.add_theme_color_override("default_color", muted)
+		_chat_thinking_label.add_theme_font_size_override("normal_font_size", 11)
 
 	## Chat suggestions popup & list
 	var suggestions_sb := StyleBoxFlat.new()
@@ -1394,10 +1561,10 @@ func _apply_kitty_fish_theme() -> void:
 	if _nerd_font:
 		for node: Control in [_code_edit, _file_tree, _chat_log, _chat_input,
 				_status_left, _status_git, _status_cursor, _status_lang, _status_enc,
-				_chat_tools_btn, _chat_clear_btn, _chat_context_chip,
+				_chat_context_chip,
 				_attach_btn, _agent_mode_btn, _smart_commit_btn,
 				_provider_select, explorer_header,
-				_chat_status_label, _chat_send, _chat_suggestions_list,
+				_chat_status_label, _chat_thinking_label, _chat_send, _chat_suggestions_list,
 				_dialog_title, _dialog_input, _dialog_action_btn, _dialog_close]:
 			if node:
 				node.add_theme_font_override("font", _nerd_font)
@@ -1411,12 +1578,6 @@ func _apply_kitty_fish_theme() -> void:
 		_agent_mode_btn.add_theme_font_size_override("font_size", 11)
 		if _status_git:
 			_status_git.add_theme_font_size_override("font_size", 12)
-
-func _on_clear_chat_pressed() -> void:
-	_chat_history.clear()
-	_chat_log.clear()
-	_append_chat("IDE", "Chat history and context reset.", Color("#57e389"))
-
 
 func _on_context_chip_pressed() -> void:
 	if _active_index >= 0 and _active_index < _open_files.size():
@@ -2155,7 +2316,10 @@ func _on_chat_send_pressed() -> void:
 
 func _clear_ai_busy() -> void:
 	_ai_busy = false
+	_stop_chat_stream()
 	_chat_status_banner.visible = false
+	_thinking_text = ""
+	_chat_thinking_label.text = ""
 	_chat_send.text = "↑"
 	_status_left.text = "READY"
 
@@ -2163,8 +2327,9 @@ func _clear_ai_busy() -> void:
 func _cancel_ai_request() -> void:
 	var pending_smart := _is_smart_commit_pending()
 	_ai_chat_http.cancel_request()
+	_stop_chat_stream()
 	if pending_smart:
-		_fallback_smart_commit("Pedido cancelado.")
+		_fallback_smart_commit("Request cancelled.")
 		return
 	_smart_commit_prompt = ""
 	_clear_ai_busy()
@@ -2224,7 +2389,7 @@ func _handle_slash(cmd: String) -> void:
 						GitService.stage_all(_workspace_root)
 						var commit_res: Dictionary = GitService.commit(sub_arg, _workspace_root)
 						if bool(commit_res.get("success", false)):
-							_append_chat("GIT", "[b][color=#57e389]Commit criado com sucesso:[/color][/b]\n" + sub_arg, Color("#57e389"))
+							_append_chat("GIT", "[b][color=#57e389]Commit created successfully:[/color][/b]\n" + sub_arg, Color("#57e389"))
 							_show_toast("Git commit: " + sub_arg, false)
 						else:
 							_append_chat("GIT", "[color=#ed333b]Git commit failed:\n" + str(commit_res.get("output", "")) + "[/color]", Color("#ed333b"))
@@ -2259,9 +2424,9 @@ func _handle_slash(cmd: String) -> void:
 					else:
 						var create_res: Dictionary = GitService.create_branch(sub_arg, _workspace_root)
 						if bool(create_res.get("success", false)):
-							_append_chat("GIT", "[color=#57e389]Branch '%s' criada com sucesso.[/color]" % sub_arg, Color("#57e389"))
+							_append_chat("GIT", "[color=#57e389]Branch '%s' created successfully.[/color]" % sub_arg, Color("#57e389"))
 						else:
-							_append_chat("GIT", "[color=#ed333b]Erro ao criar branch:\n" + str(create_res.get("output", "")) + "[/color]", Color("#ed333b"))
+							_append_chat("GIT", "[color=#ed333b]Failed to create branch:\n" + str(create_res.get("output", "")) + "[/color]", Color("#ed333b"))
 						_update_git_status_bar()
 				"checkout", "switch":
 					if sub_arg.is_empty():
@@ -2271,10 +2436,10 @@ func _handle_slash(cmd: String) -> void:
 						var branch_target := sub_arg.trim_prefix("-b ").trim_prefix("+").strip_edges()
 						var co_res: Dictionary = GitService.checkout_branch(branch_target, create_new, _workspace_root)
 						if bool(co_res.get("success", false)):
-							_append_chat("GIT", "[color=#57e389]Mudança para o ramo '%s' efectuada com sucesso.[/color]" % branch_target, Color("#57e389"))
+							_append_chat("GIT", "[color=#57e389]Switched to branch '%s' successfully.[/color]" % branch_target, Color("#57e389"))
 							_show_toast("Branch: " + branch_target, false)
 						else:
-							_append_chat("GIT", "[color=#ed333b]Falha ao mudar de ramo:\n" + str(co_res.get("output", "")) + "[/color]", Color("#ed333b"))
+							_append_chat("GIT", "[color=#ed333b]Failed to switch branch:\n" + str(co_res.get("output", "")) + "[/color]", Color("#ed333b"))
 						_update_git_status_bar()
 				"remote":
 					var remotes: Array[Dictionary] = GitService.get_remotes(_workspace_root)
@@ -2299,26 +2464,26 @@ func _handle_slash(cmd: String) -> void:
 							email_val = sub_arg.substr(s_idx + 1, e_idx - s_idx - 1).strip_edges()
 						var cfg_res: Dictionary = GitService.set_user_config(name_val, email_val, false, _workspace_root)
 						if bool(cfg_res.get("success", false)):
-							_append_chat("GIT", "[color=#57e389]Git user configurado: %s <%s>[/color]" % [name_val, email_val], Color("#57e389"))
+							_append_chat("GIT", "[color=#57e389]Git user configured: %s <%s>[/color]" % [name_val, email_val], Color("#57e389"))
 						else:
-							_append_chat("GIT", "[color=#ed333b]Erro ao configurar utilizador Git.[/color]", Color("#ed333b"))
+							_append_chat("GIT", "[color=#ed333b]Failed to configure Git user.[/color]", Color("#ed333b"))
 				"clone":
 					if sub_arg.is_empty():
 						_prompt_git_clone()
 					else:
 						var target_dir: String = _workspace_root.path_join(sub_arg.get_file().trim_suffix(".git"))
-						_show_toast("Clonando repositório…", false)
+						_show_toast("Cloning repository…", false)
 						var cl_res: Dictionary = GitService.clone_repository(sub_arg, target_dir)
 						if bool(cl_res.get("success", false)):
-							_append_chat("GIT", "[color=#57e389]Repositório clonado com sucesso para %s[/color]" % target_dir, Color("#57e389"))
+							_append_chat("GIT", "[color=#57e389]Repository cloned to %s[/color]" % target_dir, Color("#57e389"))
 							_refresh_file_tree()
 						else:
-							_append_chat("GIT", "[color=#ed333b]Erro ao clonar repositório:\n" + str(cl_res.get("output", "")) + "[/color]", Color("#ed333b"))
+							_append_chat("GIT", "[color=#ed333b]Failed to clone repository:\n" + str(cl_res.get("output", "")) + "[/color]", Color("#ed333b"))
 				_:
 					var res: Dictionary = _execute_git_command(subcmd_raw.split(" ", false))
 					var out_txt: String = str(res.get("output", "")).strip_edges()
 					if out_txt.is_empty():
-						out_txt = "Comando Git executado."
+						out_txt = "Git command executed."
 					_append_chat("GIT", "```bash\n" + out_txt + "\n```", Color("#62a0ea"))
 					_update_git_status_bar()
 		"/theme":
@@ -2331,7 +2496,7 @@ func _handle_slash(cmd: String) -> void:
 				_apply_theme_by_name(theme_arg)
 			else:
 				var names := ", ".join(_all_themes().keys())
-				_append_chat("IDE", "[color=#ffa348]Tema não encontrado:[/color] " + theme_arg + "\nTemas disponíveis: " + names, Color("#ffa348"))
+				_append_chat("IDE", "[color=#ffa348]Theme not found:[/color] " + theme_arg + "\nAvailable themes: " + names, Color("#ffa348"))
 		"/save":
 			_save_active()
 			var p: String = _open_files[_active_index]["path"] if _active_index >= 0 else "untitled"
@@ -2355,32 +2520,68 @@ func _handle_slash(cmd: String) -> void:
 			_chat_history.clear()
 			_chat_log.clear()
 			_append_chat("IDE", "Chat history and context cleared.", Color("#57e389"))
+		"/compact":
+			_compact_chat_history()
 		"/cancel":
 			_cancel_ai_request()
 		"/quit", "/exit":
 			get_tree().quit()
 		_:
-			_append_chat("IDE", "Commands: `/tools`, `/github`, `/git status`, `/git diff`, `/git log`, `/git commit`, `/git push`, `/git pull`, `/git sync`, `/git branch`, `/save`, `/files`, `/open <path>`, `/goto <line>`, `/clear`, `/quit`", Color("#ffa348"))
+			_append_chat("IDE", "Commands: `/tools`, `/github`, `/git status`, `/git diff`, `/git log`, `/git commit`, `/git push`, `/git pull`, `/git sync`, `/git branch`, `/save`, `/files`, `/open <path>`, `/goto <line>`, `/clear`, `/compact`, `/quit`", Color("#ffa348"))
+
+
+func _compact_chat_history() -> void:
+	## Keep the latest turns verbatim and replace older turns with a bounded summary.
+	## This is deliberately local so /compact remains useful without an API key.
+	const RECENT_MESSAGES := 12
+	const SUMMARY_LIMIT := 6000
+	if _chat_history.size() <= RECENT_MESSAGES:
+		_append_chat("IDE", "Context is already compact (%d messages)." % _chat_history.size(), Color("#9a9996"))
+		return
+
+	var compact_count := _chat_history.size() - RECENT_MESSAGES
+	var summary := "Conversation summary (generated by /compact):\n"
+	for i in range(compact_count):
+		var entry: Dictionary = _chat_history[i]
+		var role := str(entry.get("role", "message")).capitalize()
+		var content := str(entry.get("content", "")).strip_edges()
+		if content.is_empty():
+			continue
+		if content.length() > 700:
+			content = content.substr(0, 700) + "…"
+		summary += "%s: %s\n" % [role, content]
+		if summary.length() >= SUMMARY_LIMIT:
+			summary += "[Earlier details truncated.]\n"
+			break
+
+	var recent: Array[Dictionary] = []
+	for i in range(compact_count, _chat_history.size()):
+		recent.append(_chat_history[i])
+	_chat_history.clear()
+	_chat_history.append({"role": "user", "content": summary.strip_edges()})
+	_chat_history.append({"role": "assistant", "content": "Summary recorded. Continue from the preserved recent context."})
+	_chat_history.append_array(recent)
+	_append_chat("IDE", "Context compactado: %d mensagens antigas resumidas; %d mensagens recentes preservadas." % [compact_count, RECENT_MESSAGES], Color("#57e389"))
 
 
 func _show_tools_list() -> void:
-	var tools_md := """Aqui estão as ferramentas e comandos Git disponíveis no SSCodeIDE:
+	var tools_md := """Git tools and commands available in SSCodeIDE:
 
-• **git_status**: Verificar estado do repositório Git, ramo activo e ficheiros alterados.
-• **git_diff**: Inspecionar alterações de código (estatísticas de adições e remoções).
-• **git_log**: Consultar histórico de commits recentes.
-• **git_commit**: Gerar e executar commits inteligentes automáticos ou personalizados.
-• **git_push**: Enviar commits locais para o repositório GitHub.
-• **git_pull**: Descarregar e incorporar actualizações do repositório GitHub.
-• **git_sync**: Sincronização automática bidireccional com o GitHub (Pull & Push).
-• **git_fetch**: Obter referências de ramos remotos.
-• **git_branch**: Listar, criar ou alternar entre ramos.
-• **git_remote**: Visualizar repositórios remotos e URLs do GitHub.
-• **git_config**: Configurar nome de utilizador e e-mail para commits.
-• **git_clone**: Clonar repositório do GitHub.
-• **apply_patch**: Editar ficheiros do workspace aplicando patches.
-• **create_file / read_file**: Criar e ler ficheiros do projecto.
-• **list_dir / file_search / grep_search**: Navegar e pesquisar ficheiros no directório."""
+• **git_status**: Check repository status, current branch and changed files.
+• **git_diff**: Inspect code changes (addition and deletion statistics).
+• **git_log**: View recent commit history.
+• **git_commit**: Generate and run smart or custom commits.
+• **git_push**: Push local commits to the GitHub repository.
+• **git_pull**: Fetch and merge updates from GitHub.
+• **git_sync**: Automatic two-way synchronisation with GitHub (Pull & Push).
+• **git_fetch**: Fetch remote branch references.
+• **git_branch**: List, create or switch branches.
+• **git_remote**: View remotes and GitHub URLs.
+• **git_config**: Configure Git user name and e-mail for commits.
+• **git_clone**: Clone a GitHub repository.
+• **apply_patch**: Edit workspace files by applying patches.
+• **create_file / read_file**: Create and read project files.
+• **list_dir / file_search / grep_search**: Browse and search files in the directory."""
 	_append_chat("AGENT", tools_md, Color("#62a0ea"))
 
 
@@ -2405,30 +2606,30 @@ func _finish_smart_commit(commit_msg: String, via_ai: bool, note: String = "") -
 	var commit_res: Dictionary = GitService.commit(message, _workspace_root)
 	if bool(commit_res.get("success", false)):
 		var headline: String = message.split("\n")[0]
-		var source_label: String = "mensagem gerada pela IA" if via_ai else "mensagem local (Conventional Commits)"
-		var commit_report := "[b]Smart Commit realizado:[/b]\n"
+		var source_label: String = "AI-generated message" if via_ai else "local Conventional Commits message"
+		var commit_report := "[b]Smart Commit completed:[/b]\n"
 		commit_report += "[bgcolor=#0d1a0d][color=#57e389]  " + headline + "\n[/color][/bgcolor]\n\n"
 		if not note.is_empty():
 			commit_report += "[color=#ffa348]%s[/color]\n\n" % note
 		if not diff_stat.is_empty():
-			commit_report += "[color=#9a9996]Resumo das alterações:\n" + diff_stat + "[/color]\n"
-		commit_report += "\n[color=#57e389]● Git[/color] [color=#62a0ea]commit com %s[/color]" % source_label
+			commit_report += "[color=#9a9996]Change summary:\n" + diff_stat + "[/color]\n"
+		commit_report += "\n[color=#57e389]● Git[/color] [color=#62a0ea]commit with %s[/color]" % source_label
 		_append_chat("GIT", commit_report, Color("#57e389"))
 		_show_toast("Smart Commit: " + headline, false)
 	else:
-		_append_chat("GIT", "[color=#ed333b]Erro no commit:[/color]\n" + str(commit_res.get("output", "")), Color("#ed333b"))
+		_append_chat("GIT", "[color=#ed333b]Commit error:[/color]\n" + str(commit_res.get("output", "")), Color("#ed333b"))
 		_show_toast("Smart Commit failed.", true)
 	_update_git_status_bar()
 
 
 func _fallback_smart_commit(reason: String) -> void:
 	var local_msg: String = GitService.build_fallback_commit_message(_workspace_root)
-	_finish_smart_commit(local_msg, false, reason + " A usar mensagem local.")
+	_finish_smart_commit(local_msg, false, reason + " Using a local message.")
 
 
 func _generate_smart_commit() -> void:
 	if not GitService.is_git_repository(_workspace_root):
-		_append_chat("GIT", "[color=#ffa348]Não é um repositório Git.[/color]", Color("#ffa348"))
+		_append_chat("GIT", "[color=#ffa348]Not a Git repository.[/color]", Color("#ffa348"))
 		_show_toast("Not a Git repository.", true)
 		return
 	_continue_smart_commit()
@@ -2441,14 +2642,14 @@ func _continue_smart_commit() -> void:
 	var unstaged: Array = st.get("unstaged",  [])
 	var untracked: Array= st.get("untracked", [])
 	if staged.is_empty() and unstaged.is_empty() and untracked.is_empty():
-		_append_chat("GIT", "[color=#9a9996]Sem alterações para commitar.[/color]", Color("#9a9996"))
+		_append_chat("GIT", "[color=#9a9996]Nothing to commit.[/color]", Color("#9a9996"))
 		_show_toast("Git: nothing to commit.", false)
 		return
 
 	## Stage everything (git add -A)
 	var stage_res: Dictionary = GitService.stage_all(_workspace_root)
 	if not bool(stage_res.get("success", false)):
-		_append_chat("GIT", "[color=#ed333b]Erro ao efectuar git add -A:[/color]\n" + str(stage_res.get("output", "")), Color("#ed333b"))
+		_append_chat("GIT", "[color=#ed333b]Failed to run git add -A:[/color]\n" + str(stage_res.get("output", "")), Color("#ed333b"))
 		return
 
 	## Gather diff stat for context
@@ -2465,12 +2666,12 @@ func _continue_smart_commit() -> void:
 		diff_text = diff_stat
 
 	if not AIService.has_nvidia_api_key():
-		_finish_smart_commit(GitService.build_fallback_commit_message(_workspace_root), false, "Sem chave NVIDIA NIM.")
+		_finish_smart_commit(GitService.build_fallback_commit_message(_workspace_root), false, "No NVIDIA NIM key.")
 		return
 
 	## Show spinner while AI generates the commit message
-	_show_toast("A gerar mensagem de commit com IA…", false)
-	_append_chat("GIT", "[color=#62a0ea]⠙ A gerar mensagem de commit com IA…[/color]", Color("#62a0ea"))
+	_show_toast("Generating commit message with AI…", false)
+	_append_chat("GIT", "[color=#62a0ea]⠙ Generating commit message with AI…[/color]", Color("#62a0ea"))
 
 	## Build AI prompt for Conventional Commits
 	var commit_prompt := (
@@ -2493,13 +2694,14 @@ func _ai_smart_commit_request(prompt: String, diff_stat: String) -> void:
 	## Reuse the same HTTPRequest as chat. Candidate fallback must send this
 	## compact payload — not the chat workspace dump — or the retry will hang.
 	if _ai_busy:
-		_finish_smart_commit(GitService.build_fallback_commit_message(_workspace_root), false, "IA ocupada.")
+		_finish_smart_commit(GitService.build_fallback_commit_message(_workspace_root), false, "AI is busy.")
 		return
 
 	_ai_busy = true
 	_request_start_time = Time.get_ticks_msec() / 1000.0
 	_spinner_time = 0.0
 	_chat_status_banner.visible = true
+	_chat_thinking_label.text = "[color=#858585][i]Waiting for the model's reasoning…[/i][/color]"
 	_chat_send.text = "■"
 	_status_left.text = "Smart Commit: generating AI message…"
 	_current_prompt = "__SMART_COMMIT__:" + diff_stat
@@ -2581,7 +2783,7 @@ func _ask_ai(prompt: String) -> void:
 func _send_chat_completion() -> void:
 	if _model_candidate_index >= _model_candidates.size():
 		if _is_smart_commit_pending():
-			_fallback_smart_commit("Modelos NVIDIA NIM esgotados.")
+			_fallback_smart_commit("NVIDIA NIM models exhausted.")
 			return
 		_smart_commit_prompt = ""
 		_clear_ai_busy()
@@ -2655,16 +2857,21 @@ func _send_chat_completion() -> void:
 			"temperature": 0.7 if _agent_mode else 0.5,
 			"top_p": 0.95,
 			"max_tokens": 4096,
-			"stream": false
+			"stream": true
 		}
 		if model_name.begins_with("nvidia/nemotron"):
 			payload_dict["chat_template_kwargs"] = {"thinking": true}
 
 	var payload_json := JSON.stringify(payload_dict)
+	if not is_smart_commit:
+		_thinking_text = ""
+		_refresh_thinking_panel()
+		if _start_chat_stream(payload_json):
+			return
 	var err: Error = _ai_chat_http.request(target_url, headers, HTTPClient.METHOD_POST, payload_json)
 	if err != OK:
 		if _is_smart_commit_pending():
-			_fallback_smart_commit("Falha ao iniciar o pedido HTTP (código %d)." % err)
+			_fallback_smart_commit("Failed to start HTTP request (code %d)." % err)
 			return
 		_smart_commit_prompt = ""
 		_clear_ai_busy()
@@ -2758,7 +2965,7 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 		if _try_next_ai_candidate(timeout_toast):
 			return
 		if is_smart_commit:
-			_fallback_smart_commit("O modelo excedeu o tempo limite.")
+			_fallback_smart_commit("The model timed out.")
 			return
 		_show_toast("Response timeout exceeded. Request cancelled.", true)
 		_append_chat(_ai_provider.to_upper(), "The model timed out. The request was cancelled automatically.", Color("#ff7800"))
@@ -2768,7 +2975,7 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 		if _try_next_ai_candidate("Empty response. Attempting candidate model…"):
 			return
 		if is_smart_commit:
-			_fallback_smart_commit("Resposta vazia do servidor.")
+			_fallback_smart_commit("Empty server response.")
 			return
 		_show_toast("Empty server response.", true)
 		_append_chat(_ai_provider.to_upper(), "Empty server response. Please retry.", Color("#ed333b"))
@@ -2783,7 +2990,13 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 		var choices: Array = parsed.get("choices", [])
 		if choices.size() > 0 and choices[0] is Dictionary:
 			var msg: Dictionary = choices[0].get("message", {})
+			var thought := _extract_reasoning(msg)
+			if not thought.is_empty():
+				_thinking_text = thought
+				_refresh_thinking_panel()
 			var reply_text: String = str(msg.get("content", "")).strip_edges()
+			if reply_text.is_empty() and not thought.is_empty():
+				reply_text = thought
 			if not reply_text.is_empty():
 
 				## ── Smart Commit intercept ──────────────────────────────────────
@@ -2791,7 +3004,7 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 					var commit_msg := reply_text.strip_edges()
 					commit_msg = commit_msg.trim_prefix("```").trim_suffix("```").strip_edges()
 					if commit_msg.is_empty():
-						_fallback_smart_commit("A IA devolveu uma mensagem vazia.")
+						_fallback_smart_commit("The AI returned an empty message.")
 						return
 					_finish_smart_commit(commit_msg, true)
 					return
@@ -2814,7 +3027,7 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 	if response_code == 401:
 		AIService.invalidate_cached_api_key()
 		if is_smart_commit:
-			_fallback_smart_commit("A chave NVIDIA NIM foi rejeitada (HTTP 401).")
+			_fallback_smart_commit("The NVIDIA NIM key was rejected (HTTP 401).")
 			_prompt_api_key(true, Callable())
 			return
 		_smart_commit_prompt = ""
@@ -2832,7 +3045,7 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 	if _try_next_ai_candidate("Server busy. Attempting candidate model…"):
 		return
 	if is_smart_commit:
-		_fallback_smart_commit("Erro do serviço de IA (HTTP %d)." % response_code)
+		_fallback_smart_commit("AI service error (HTTP %d)." % response_code)
 		return
 	var err_detail: String = ""
 	if parsed is Dictionary and parsed.has("error"):
