@@ -12,7 +12,7 @@
 [ext_resource type="Texture2D" uid="uid://bhmmg2p4eq0lw" path="res://icons/nav_settings.svg" id="9_nav_settings"]
 [ext_resource type="Texture2D" uid="uid://lweabxd0tqlv" path="res://icons/nav_help.svg" id="10_nav_help"]
 [ext_resource type="Texture2D" uid="uid://bvru54cisp7ec" path="res://icons/nav_sun.svg" id="11_nav_sun"]
-[ext_resource type="FontFile" uid="uid://bm1xevc15hlqh" path="res://fonts/FiraCodeNerdFont-Regular.ttf" id="13_r0xch"]
+[ext_resource type="FontFile" uid="uid://bm1xevc15hlqh" path="res://fonts/FiraCodeNerdFont-Regular.ttf" id="13_font"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_backdrop"]
 shader = ExtResource("2_backdrop")
@@ -21,9 +21,6 @@ shader_parameter/ambient_colour = Color(0.145, 0.122, 0.18, 1)
 shader_parameter/accent_colour = Color(0.19, 0.145, 0.23, 1)
 shader_parameter/glow_strength = 0.12
 shader_parameter/motion_speed = 0.008
-
-[sub_resource type="LabelSettings" id="LabelSettings_r8agn"]
-font = ExtResource("13_r0xch")
 
 [node name="UI_Editor" type="Control" unique_id=1791161152]
 layout_mode = 3
@@ -192,20 +189,22 @@ theme_type_variation = &"M3SidePanel"
 [node name="ExplorerContent" type="VBoxContainer" parent="AppHBox/MainLayout/MainSplit/ExplorerPane" unique_id=1294062821]
 layout_mode = 2
 
-[node name="DrawerCollapseBtn" type="Label" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent" unique_id=1924330637]
-custom_minimum_size = Vector2(24, 24)
+[node name="AppTitleLabel" type="Label" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent" unique_id=1924330637]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_vertical = 1
+theme_override_fonts/font = ExtResource("13_font")
+theme_override_font_sizes/font_size = 15
 text = "SS - Code IDE"
-label_settings = SubResource("LabelSettings_r8agn")
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="DrawerHeader" type="HBoxContainer" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent" unique_id=300101020]
-custom_minimum_size = Vector2(0, 32)
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 
-[node name="ExplorerHeader" type="Label" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent/DrawerHeader" unique_id=1893227217]
+[node name="WorkspaceState" type="Label" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent/DrawerHeader" unique_id=1893227217]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -216,12 +215,12 @@ vertical_alignment = 1
 
 [node name="SwitchWorkspaceBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent/DrawerHeader" unique_id=300101024]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 24)
 layout_mode = 2
-tooltip_text = "Open different project folder"
-theme_type_variation = &"M3NavPillButton"
+tooltip_text = "Switch workspace folder"
+theme_type_variation = &"M3RailButton"
 text = "⇄"
 flat = true
-alignment = 0
 
 [node name="FileTree" type="Tree" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent" unique_id=1514428791]
 unique_name_in_owner = true
@@ -355,7 +354,6 @@ theme_override_constants/separation = 4
 [node name="ChatHeaderRow" type="HBoxContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=440622983]
 custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
-theme_override_constants/separation = 8
 
 [node name="ChatHeader" type="Label" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatHeaderRow" unique_id=1421141929]
 unique_name_in_owner = true
@@ -482,12 +480,6 @@ popup/item_3/text = "DeepSeek V4"
 popup/item_3/id = 3
 popup/item_4/text = "Laguna Code"
 popup/item_4/id = 4
-
-[node name="SmartCommitBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=772031202]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-text = "⎇ Commit"
 
 [node name="InputSpacer" type="Control" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=1877726678]
 layout_mode = 2

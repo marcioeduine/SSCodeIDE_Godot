@@ -19,7 +19,7 @@ const ThemeResources = preload("res://scripts/theme_resource_registry.gd")
 @onready var _attach_btn: Button = %AttachBtn
 @onready var _agent_mode_btn: Button = %AgentModeBtn
 @onready var _provider_select: OptionButton = %ProviderSelect
-@onready var _smart_commit_btn: Button = %SmartCommitBtn
+@onready var _smart_commit_btn: Button = get_node_or_null("%SmartCommitBtn") as Button
 @onready var _chat_send: Button = %ChatSend
 @onready var _status_left: Label = %StatusLeft
 @onready var _status_git: Button = %StatusGit
@@ -593,7 +593,8 @@ func _wire_signals() -> void:
 	_chat_context_chip.pressed.connect(_on_context_chip_pressed)
 	_attach_btn.pressed.connect(_on_attach_btn_pressed)
 	_agent_mode_btn.pressed.connect(_on_agent_mode_pressed)
-	_smart_commit_btn.pressed.connect(_generate_smart_commit)
+	if _smart_commit_btn:
+		_smart_commit_btn.pressed.connect(_generate_smart_commit)
 	_file_menu.id_pressed.connect(_on_file_menu)
 	_edit_menu.id_pressed.connect(_on_edit_menu)
 	if _git_menu:
