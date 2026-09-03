@@ -13,9 +13,7 @@ const ThemeResources = preload("res://scripts/theme_resource_registry.gd")
 @onready var _tab_bar: TabBar = %TabBar
 @onready var _code_edit: CodeEdit = %CodeEdit
 @onready var _chat_log: RichTextLabel = %ChatLog
-@onready var _chat_header: Label = %ChatHeader
 @onready var _chat_context_badge: Label = %ChatContextBadge
-@onready var _chat_input_card: PanelContainer = %ChatInputCard
 @onready var _chat_context_chip: Button = %ChatContextChip
 @onready var _chat_input: LineEdit = %ChatInput
 @onready var _attach_btn: Button = %AttachBtn
@@ -40,7 +38,8 @@ const ThemeResources = preload("res://scripts/theme_resource_registry.gd")
 @onready var _git_menu: PopupMenu = %Git
 @onready var _config_menu: PopupMenu = %Config
 @onready var _help_menu: PopupMenu = %Help
-@onready var _about_menu: PopupMenu = %About
+@onready var _about_menu: PopupMenu = get_node_or_null("%About") as PopupMenu
+@onready var _app_brand: MenuButton = get_node_or_null("%AppBrand") as MenuButton
 @onready var _themes_menu: PopupMenu = %Themes
 @onready var _open_file_dlg: FileDialog = %OpenFileDialog
 @onready var _open_dir_dlg: FileDialog = %OpenDirDialog
@@ -178,6 +177,16 @@ const THEMES: Dictionary = {
 		"hl_number": "#ffa348", "hl_symbol": "#9a9996", "hl_func": "#62a0ea",
 		"hl_member": "#99c1f1", "hl_comment": "#9a9996", "hl_string": "#57e389",
 		"hl_keyword": "#8be9fd", "hl_type": "#62a0ea", "hl_const": "#ffa348",
+	},
+	"terminal": {
+		"label": "Terminal (Antigravity)",
+		"bg_black": "#000000", "bg_darker": "#050505", "bg_surface": "#0a0a0c",
+		"bg_card": "#121216", "bg_lighter": "#1a1a20",
+		"fg": "#deddda", "fg_bright": "#ffffff", "muted": "#9a9996",
+		"blue": "#62a0ea", "green": "#57e389", "cyan": "#5bc8af", "red": "#ed333b",
+		"hl_number": "#ffa348", "hl_symbol": "#5bc8af", "hl_func": "#62a0ea",
+		"hl_member": "#99c1f1", "hl_comment": "#9a9996", "hl_string": "#57e389",
+		"hl_keyword": "#62a0ea", "hl_type": "#5bc8af", "hl_const": "#ffa348",
 	},
 	"solarized_dark": {
 		"label": "Solarized Dark",
@@ -571,12 +580,16 @@ func _wire_signals() -> void:
 	if _git_menu:
 		_git_menu.id_pressed.connect(_on_git_menu)
 	_populate_themes_menu()
-	_themes_menu.id_pressed.connect(_on_theme_menu_id_pressed)
+	if _themes_menu:
+		_themes_menu.id_pressed.connect(_on_theme_menu_id_pressed)
 	if _status_git:
 		_status_git.pressed.connect(_show_git_status_dialog)
 	_config_menu.id_pressed.connect(_on_config_menu)
 	_help_menu.id_pressed.connect(_on_help_menu)
-	_about_menu.id_pressed.connect(_on_about_menu)
+	if _about_menu:
+		_about_menu.id_pressed.connect(_on_about_menu)
+	if _app_brand:
+		_setup_app_brand_menu()
 	_open_file_dlg.file_selected.connect(_open_path)
 	_open_dir_dlg.dir_selected.connect(_on_dir_selected)
 	_save_as_dlg.file_selected.connect(_save_as_path)
@@ -859,6 +872,48 @@ func _on_chat_input_gui_input(event: InputEvent) -> void:
 		_chat_input.accept_event()
 
 
+func _setup_app_brand_menu() -> void:
+	if _app_brand == null:
+		return
+	var popup := _app_brand.get_popup()
+	if not popup.id_pressed.is_connected(_on_app_brand_menu_id_pressed):
+		popup.id_pressed.connect(_on_app_brand_menu_id_pressed)
+	_update_app_brand_menu()
+
+
+func _update_app_brand_menu() -> void:
+	if _app_brand == null:
+		return
+	var popup := _app_brand.get_popup()
+	popup.clear()
+	var is_light := ThemeColorScheme.is_light(_active_theme)
+	popup.add_radio_check_item("Dark Mode", 1)
+	popup.set_item_checked(0, not is_light)
+	popup.add_radio_check_item("Light Mode", 2)
+	popup.set_item_checked(1, is_light)
+	popup.add_separator()
+	popup.add_item("About SSCodeIDE", 3)
+	popup.add_item("Close\tCtrl+Q", 4)
+
+
+func _on_app_brand_menu_id_pressed(id: int) -> void:
+	match id:
+		1:
+			var target := ThemeColorScheme.get_dark_variant(_active_theme)
+			if target.is_empty():
+				target = "adwaita_darker"
+			_apply_theme_by_name(target)
+		2:
+			var target := ThemeColorScheme.get_light_variant(_active_theme)
+			if target.is_empty():
+				target = "adwaita_lighter"
+			_apply_theme_by_name(target)
+		3:
+			_show_about()
+		4:
+			get_tree().quit()
+
+
 func _on_file_menu(id: int) -> void:
 	match id:
 		0: _open_file_dlg.popup_centered()
@@ -866,7 +921,6 @@ func _on_file_menu(id: int) -> void:
 		3: _open_untitled()
 		4: _save_active()
 		5: _save_as_dlg.popup_centered()
-		7: get_tree().quit()
 
 
 func _on_edit_menu(id: int) -> void:
@@ -1272,6 +1326,8 @@ func _save_theme_config() -> void:
 
 
 func _apply_theme_by_name(_name: String) -> void:
+	if _name == _active_theme:
+		return
 	var previous_theme := _active_theme
 	_active_theme = _name
 	if not _apply_kitty_fish_theme():
@@ -1282,6 +1338,7 @@ func _apply_theme_by_name(_name: String) -> void:
 	_save_theme_config()
 	var label: String = str(_all_themes().get(_name, {}).get("label", _name))
 	_populate_themes_menu()
+	_update_app_brand_menu()
 	_append_chat("IDE", "[color=#57e389]Theme applied:[/color] [b]" + label + "[/b]", Color("#57e389"))
 	_show_toast("Theme: " + label, false)
 

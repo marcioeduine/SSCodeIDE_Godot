@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Antigravity CLI (Terminal) Theme for SSCodeIDE
+  Based on the Antigravity CLI color palette.
+-->
+<theme name="terminal" label="Terminal (Antigravity)">
+
+  <!-- Backgrounds -->
+  <colour key="bg_black"   value="#000000"/>
+  <colour key="bg_darker"  value="#050505"/>
+  <colour key="bg_surface" value="#0a0a0c"/>
+  <colour key="bg_card"    value="#121216"/>
+  <colour key="bg_lighter" value="#1a1a20"/>
+
+  <!-- Text -->
+  <colour key="fg"         value="#deddda"/>
+  <colour key="fg_bright"  value="#ffffff"/>
+  <colour key="muted"      value="#9a9996"/>
+
+  <!-- Accents -->
+  <colour key="blue"       value="#62a0ea"/>
+  <colour key="green"      value="#57e389"/>
+  <colour key="cyan"       value="#5bc8af"/>
+  <colour key="red"        value="#ed333b"/>
+
+  <!-- Syntax highlighting -->
+  <colour key="hl_number"  value="#ffa348"/>
+  <colour key="hl_symbol"  value="#5bc8af"/>
+  <colour key="hl_func"    value="#62a0ea"/>
+  <colour key="hl_member"  value="#99c1f1"/>
+  <colour key="hl_comment" value="#9a9996"/>
+  <colour key="hl_string"  value="#57e389"/>
+  <colour key="hl_keyword" value="#62a0ea"/>
+  <colour key="hl_type"    value="#5bc8af"/>
+  <colour key="hl_const"   value="#ffa348"/>
+
+</theme>

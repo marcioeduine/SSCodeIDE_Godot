@@ -14,11 +14,18 @@ Full technical documentation lives in [`docs/`](docs/README.md).
 
 ## Overview
 
-**SSCodeIDE** is a dedicated code editor and development environment engineered entirely with **Godot Engine 4.x** and **GDScript**. Combining a Monokai Pro aesthetic theme, full typographic support with *FiraCode Nerd Font*, a hierarchical workspace file explorer, and a native AI coding assistant with automated candidate fallback, SSCodeIDE provides a streamlined coding experience without external runtime dependencies or mandatory login requirements.
+**SSCodeIDE** is a dedicated code editor and development environment engineered entirely with **Godot Engine 4.x** and **GDScript** with a modern JetBrains / VS Code inspired UI/UX. Featuring custom Material 3 / JetBrains themes (including Adwaita, Monokai, Tokyo Night, Dracula, Catppuccin, Nord, Solarized, and Antigravity Terminal), Dark/Light variant toggling, clean flat TabBar styling with accent indicators, full typographic support with *FiraCode Nerd Font*, a hierarchical workspace file explorer, and a native AI coding assistant with automated candidate fallback, SSCodeIDE provides a streamlined coding experience without external runtime dependencies or mandatory login requirements.
 
 ---
 
 ## Key Functional Features
+
+- **Modern JetBrains / VS Code IDE Styling**:
+  - Refined chrome hierarchy with distinct surface depths, quiet borders, and balanced contrast across dark and light palettes.
+  - Sleek top navigation bar (`NavBar`) with text-hover effects.
+  - Interactive **AppBrand** (`SS`) menu button providing quick Dark/Light mode toggle, About dialogue, and application exit.
+  - Streamlined tab bar (`TabBar`) featuring flat active tabs with bottom accent indicator bars and comfortable padding.
+  - Comprehensive built-in themes: Adwaita Darker/Lighter, Monokai (Dark/Light), Tokyo Night (Dark/Light), Dracula (Dark/Light), Catppuccin Mocha/Latte, Nord (Dark/Light), Solarized (Dark/Light), Terminal (Antigravity), and Jake's Theme, plus runtime XML theme importing.
 
 - **Multi-Tab Code Editor (`CodeEdit`)**:
   - Multi-tab management with active file tracking and modification state indicators.
@@ -103,25 +110,37 @@ Full technical documentation lives in [`docs/`](docs/README.md).
 
 ```text
 .
-├── addons/             # Godot addons (at-icons, gut test framework)
-├── fonts/              # Typography (FiraCode Nerd Font)
-├── scene/              # Godot scenes
-│   └── ui_editor.tscn  # Main IDE scene and layout hierarchy
-├── scripts/            # Core GDScript modules
-│   ├── ai_service.gd   # NVIDIA NIM API integration and fallback logic
-│   ├── file_kind.gd    # File type categorisation and icon mapping
-│   ├── git_service.gd  # Native Git & GitHub version control service
-│   └── ui_editor.gd    # Primary IDE UI controller and workspace manager
-├── test/               # Automated unit tests (GUT)
+├── addons/                         # Godot addons (at-icons, gut test framework)
+├── docs/                           # Comprehensive technical documentation
+├── fonts/                          # Typography (FiraCode Nerd Font)
+├── icons/                          # SVG icons and visual assets
+├── scene/                          # Godot scenes
+│   └── ui_editor.tscn              # Main IDE scene and node hierarchy
+├── scripts/                        # Core GDScript modules
+│   ├── agent_workspace_service.gd  # Workspace file mutation service
+│   ├── ai_service.gd               # NVIDIA NIM API integration and fallback logic
+│   ├── app_brand_button.gd         # AppBrand menu button controller
+│   ├── chat_markdown_renderer.gd   # Markdown & GFM renderer for chat
+│   ├── code_editor_service.gd      # Code completion & editor utilities
+│   ├── file_controller.gd          # File explorer and buffer management
+│   ├── file_kind.gd                # File type categorisation and icon mapping
+│   ├── git_service.gd              # Native Git & GitHub version control service
+│   ├── markdown_preview_renderer.gd# Markdown tab preview renderer
+│   ├── theme_color_scheme.gd       # Theme palette schema & definitions
+│   ├── theme_controller.gd         # Theme application and config controller
+│   ├── theme_resource_registry.gd  # Dynamic .theme builder and resource manager
+│   └── ui_editor.gd                # Primary IDE orchestrator
+├── test/                           # Automated unit tests (GUT)
 │   └── unit/
 │       ├── test_ai_service.gd
 │       ├── test_file_kind.gd
 │       ├── test_git_service.gd
 │       └── test_ui_editor_script.gd
-├── project.godot       # Godot project settings and engine configuration
-├── .gutconfig.json     # GUT test runner configuration
-├── LICENSE             # Proprietary licence agreement
-└── README.md           # Technical documentation
+├── themes/                         # Precompiled binary .theme resources & XML templates
+├── project.godot                   # Godot project settings and engine configuration
+├── .gutconfig.json                 # GUT test runner configuration
+├── LICENSE                         # Proprietary licence agreement
+└── README.md                       # Technical documentation
 ```
 
 ---

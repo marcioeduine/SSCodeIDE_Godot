@@ -12,10 +12,18 @@ SSCodeIDE is a single-window Godot application. There is no separate language se
 ## Layers
 
 ```
-ui_editor.tscn  →  ui_editor.gd (controller)
-                      ├── FileKind      (icons / extension map)
-                      ├── GitService    (OS.execute git)
-                      └── AIService     (HTTPRequest → NVIDIA NIM)
+ui_editor.tscn  →  ui_editor.gd (primary orchestrator)
+                      ├── AppBrandButton         (brand menu button with Light/Dark/About/Close)
+                      ├── ThemeController        (palette selection, persistence, XML import)
+                      ├── ThemeColorScheme       (colour palettes: 9 dark, 7 light variants)
+                      ├── ThemeResourceRegistry  (builds & compiles .theme resources)
+                      ├── FileController         (file tree and buffer management)
+                      ├── FileKind               (icons / extension map)
+                      ├── GitService             (OS.execute git)
+                      ├── AIService              (HTTPRequest → NVIDIA NIM)
+                      ├── CodeEditorTools        (code completion & editor utilities)
+                      ├── ChatMarkdownRenderer   (chat markdown & GFM table rendering)
+                      └── MarkdownPreviewRenderer(markdown document preview rendering)
 ```
 
 ### `ui_editor.gd`
@@ -24,11 +32,11 @@ Owns:
 
 - Multi-tab `CodeEdit` buffers and dirty state
 - Workspace `Tree` (`FileTree`)
-- Menu bar (File, Edit, Git, Config, Help)
-- Status bar (branch, dirty count)
+- Top navigation bar with `AppBrand` (`SS` button) and `MenuBar` (File, Edit, Git, Config, Themes, Help)
+- Status bar (branch indicator, dirty count, language, cursor position, AI status)
 - AI side panel (input, markdown preview, slash commands)
 - Keyboard routing (`_unhandled_input`)
-- Theme load/save (built-in Monokai-style palettes plus XML themes under `themes/`)
+- Theme orchestration delegating to `ThemeController`, `ThemeColorScheme`, and `ThemeResourceRegistry`
 
 It never embeds an API key. Chat and Smart Commit call `AIService.get_nvidia_api_key()` and send `Authorization: Bearer …`.
 

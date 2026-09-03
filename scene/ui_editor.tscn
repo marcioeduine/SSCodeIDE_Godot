@@ -57,13 +57,13 @@ theme_type_variation = &"M3TopAppBar"
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="AppBrand" type="Label" parent="RootVBox/NavBar/NavRow" unique_id=300101002]
-custom_minimum_size = Vector2(88, 0)
+[node name="AppBrand" type="MenuButton" parent="RootVBox/NavBar/NavRow" unique_id=300101002]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 24)
 layout_mode = 2
-theme_type_variation = &"M3AppBrand"
+theme_type_variation = &"M3AppBrandButton"
 text = "SS"
-vertical_alignment = 1
-uppercase = true
+flat = true
 
 [node name="MenuBar" type="MenuBar" parent="RootVBox/NavBar/NavRow" unique_id=302529279]
 layout_mode = 2
@@ -71,8 +71,8 @@ flat = true
 
 [node name="File" type="PopupMenu" parent="RootVBox/NavBar/NavRow/MenuBar" unique_id=728694481]
 unique_name_in_owner = true
-size = Vector2i(266, 213)
-item_count = 8
+size = Vector2i(266, 180)
+item_count = 6
 item_0/text = "Open File…	Ctrl+O"
 item_0/id = 0
 item_1/text = "Open Directory…	Ctrl+Shift+O"
@@ -85,10 +85,6 @@ item_4/text = "Save	Ctrl+S"
 item_4/id = 4
 item_5/text = "Save As…	Ctrl+Shift+S"
 item_5/id = 5
-item_6/id = 6
-item_6/separator = true
-item_7/text = "Quit	Ctrl+Q"
-item_7/id = 7
 
 [node name="Edit" type="PopupMenu" parent="RootVBox/NavBar/NavRow/MenuBar" unique_id=1755527386]
 unique_name_in_owner = true
@@ -156,12 +152,6 @@ size = Vector2i(280, 8)
 unique_name_in_owner = true
 item_count = 1
 item_0/text = "Keyboard Shortcuts	F1"
-item_0/id = 0
-
-[node name="About" type="PopupMenu" parent="RootVBox/NavBar/NavRow/MenuBar" unique_id=935818175]
-unique_name_in_owner = true
-item_count = 1
-item_0/text = "About SSCodeIDE"
 item_0/id = 0
 
 [node name="NavSpacer" type="Control" parent="RootVBox/NavBar/NavRow" unique_id=300101003]

@@ -220,6 +220,110 @@ static func color_for_path(path: String, is_dir: bool = false) -> Color:
 			return Color("#deddda")
 
 
+static func icon_for_path(path: String) -> String:
+	if path.is_empty():
+		return "📄"
+	var ext: String = path.get_extension().to_lower()
+	match ext:
+		"py", "pyw", "ipynb":
+			return "🐍"
+		"js", "mjs", "cjs":
+			return "📜"
+		"ts", "tsx":
+			return "📘"
+		"jsx":
+			return "⚛️"
+		"gd":
+			return "🎮"
+		"c", "h":
+			return "🔤"
+		"cpp", "cc", "cxx", "hpp", "hxx":
+			return "⚙️"
+		"rs":
+			return "🦀"
+		"go":
+			return "🐹"
+		"java":
+			return "☕"
+		"kt":
+			return "🅺"
+		"sh", "bash", "zsh", "fish":
+			return "🐚"
+		"lua":
+			return "🌙"
+		"rb":
+			return "💎"
+		"tscn", "scn":
+			return "🃏"
+		"res", "tres":
+			return "📦"
+		"json":
+			return "🔷"
+		"yaml", "yml":
+			return "�purple"
+		"toml", "ini":
+			return "⚙️"
+		"cfg":
+			return "🛠"
+		"xml":
+			return "🧾"
+		"md":
+			return "📝"
+		"html", "htm":
+			return "📄"
+		"css":
+			return "🎨"
+		"scss", "sass":
+			return "💅"
+		"png", "jpg", "jpeg", "gif", "webp", "svg", "ico", "bmp":
+			return "🖼"
+		"wav", "mp3", "ogg", "flac":
+			return "🎵"
+		"mp4", "webm", "ogv", "mkv":
+			return "🎬"
+		"zip", "tar", "gz", "tgz", "7z", "rar":
+			return "🗜"
+		"pdf":
+			return "📄"
+		"txt", "log", "rst":
+			return "📄"
+		_:
+			return "📄"
+
+
+static func icon_resource_path(kind: Kind) -> String:
+	match kind:
+		Kind.DIRECTORY:
+			return "res://icons/folder.svg"
+		Kind.SCRIPT:
+			return "res://icons/godot.svg"
+		Kind.SCENE:
+			return "res://icons/scene.svg"
+		Kind.IMAGE:
+			return "res://icons/image.svg"
+		Kind.AUDIO:
+			return "res://icons/audio.svg"
+		Kind.VIDEO:
+			return "res://icons/scene.svg"
+		Kind.ARCHIVE:
+			return "res://icons/archive.svg"
+		Kind.CONFIG:
+			return "res://icons/config.svg"
+		Kind.DOCUMENT:
+			return "res://icons/markdown.svg"
+		Kind.FILE:
+			return "res://icons/file.svg"
+		_:
+			return "res://icons/file.svg"
+
+
+static func texture_for(kind: Kind) -> Texture2D:
+	var path: String = icon_resource_path(kind)
+	if ResourceLoader.exists(path):
+		return load(path) as Texture2D
+	return null
+
+
 static func label_for_path(path: String) -> String:
 	if path.is_empty():
 		return "Plain Text"

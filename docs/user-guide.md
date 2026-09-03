@@ -46,10 +46,24 @@ In Agent mode, the assistant can create or edit workspace files using `<sscode-w
 
 See [credentials-and-export.md](credentials-and-export.md).
 
+## AppBrand & Navigation
+
+The top left `SS` brand button functions as an integrated application menu:
+- **Dark Mode / Light Mode**: Toggle between the active theme's dark and light variants with radio-checked state.
+- **About SSCodeIDE**: View version, engine, typography, and AI service information.
+- **Close (`Ctrl+Q`)**: Exit the application safely.
+
+The top navigation bar buttons adopt a clean JetBrains IDE style with transparent hover boxes and text-only color transitions.
+
 ## Themes
 
-Built-in palettes plus optional XML files in `themes/` (`example_theme.xml`, `jakes_theme.xml`). Import via Config.
+SSCodeIDE provides a comprehensive suite of JetBrains-inspired palettes:
+- **Dark themes**: Adwaita Darker, Monokai, Tokyo Night, Dracula, Catppuccin Mocha, Nord, Jake's Theme, Terminal (Antigravity), Solarized Dark.
+- **Light themes**: Adwaita Lighter, Monokai Light, Tokyo Night Light, Dracula Light, Catppuccin Latte, Nord Light, Solarized Light.
+- **Tab styling**: JetBrains IDE flat tabs with a 2px bottom primary accent indicator on active tabs and clean muted inactive tabs.
+- **XML import**: Custom XML themes in `themes/` or `user://themes/` can be imported directly via the Themes menu (`Import XML theme…`).
+- **Duplicate protection**: Selecting the currently active theme will not trigger redundant re-application.
 
 ## Help
 
-Help and About overlays list shortcuts and version notes.
+Shortcuts and documentation overlays can be accessed via `F1`, the Help menu, or the AppBrand menu.

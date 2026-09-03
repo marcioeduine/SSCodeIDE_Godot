@@ -17,13 +17,19 @@ Technical documentation for **SSCodeIDE**, a lightweight IDE written in native G
 | Path | Role |
 | :--- | :--- |
 | `project.godot` | Godot 4.7 project; main scene `res://scene/ui_editor.tscn` |
-| `scripts/ui_editor.gd` | Shell: tabs, menus, explorer, chat, shortcuts |
+| `scripts/ui_editor.gd` | Shell orchestrator: tabs, menus, explorer, chat, shortcuts |
+| `scripts/theme_controller.gd` | Theme application, persistence, and XML import controller |
+| `scripts/theme_color_scheme.gd` | Centralised color schemes (JetBrains / VS Code palettes) |
+| `scripts/theme_resource_registry.gd` | Compiles dynamic `.theme` binary resources |
+| `scripts/app_brand_button.gd` | AppBrand menu button (Dark/Light toggle, About, Close) |
+| `scripts/file_controller.gd` | File tree inspection and buffer handling |
 | `scripts/ai_service.gd` | NVIDIA NIM HTTP client, models, credential loader |
 | `scripts/git_service.gd` | Git / GitHub CLI wrapper |
 | `scripts/file_kind.gd` | Workspace icon mapping by extension |
-| `scene/ui_editor.tscn` | Editor UI scene |
+| `scene/ui_editor.tscn` | Editor UI scene hierarchy |
+| `themes/` | Binary `.theme` resources and XML theme templates |
 | `test/unit/` | GUT unit tests |
-| `addons/gut/` | Godot Unit Test |
+| `addons/gut/` | Godot Unit Test framework |
 | `addons/at-icons/` | Icon set used by the file tree |
 | `.env.example` | Template for `NVIDIA_NIM_API_KEY` (never commit `.env`) |
 
