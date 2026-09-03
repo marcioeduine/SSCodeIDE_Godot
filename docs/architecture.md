@@ -13,7 +13,8 @@ SSCodeIDE is a single-window Godot application. There is no separate language se
 
 ```
 ui_editor.tscn  →  ui_editor.gd (primary orchestrator)
-                      ├── AppBrandButton         (brand menu button with Light/Dark/About/Close)
+                      ├── NavRail                (slim vertical activity rail with icons & dynamic theme toggle)
+                      ├── AppBrandButton         (brand menu button with About/Close)
                       ├── ThemeController        (palette selection, persistence, XML import)
                       ├── ThemeColorScheme       (colour palettes: 9 dark, 7 light variants)
                       ├── ThemeResourceRegistry  (builds & compiles .theme resources)
@@ -32,7 +33,8 @@ Owns:
 
 - Multi-tab `CodeEdit` buffers and dirty state
 - Workspace `Tree` (`FileTree`)
-- Top navigation bar with `AppBrand` (`SS` button) and `MenuBar` (File, Edit, Git, Config, Themes, Help)
+- Minimal Collapsible Sidebar Navigation (`NavRail` + collapsible `ExplorerPane` drawer)
+- Dynamic theme toggle (`☀️`/`🌙`) and `AppBrand` (`favicon.svg`)
 - Status bar (branch indicator, dirty count, language, cursor position, AI status)
 - AI side panel (input, markdown preview, slash commands)
 - Keyboard routing (`_unhandled_input`)

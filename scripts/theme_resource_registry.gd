@@ -202,25 +202,66 @@ static func _build_material3_theme(palette: Dictionary) -> Theme:
 	theme.set_color("font_hover_color", &"MenuBar", primary)
 	theme.set_color("font_pressed_color", &"MenuBar", primary)
 
-	# AppBrandButton in NavBar: text-only hover effect, flat, stylish
+	# AppBrandButton in NavBar/NavRail: clean icon/logo button
 	theme.set_type_variation(&"M3AppBrandButton", &"MenuButton")
 	theme.set_stylebox("normal", &"M3AppBrandButton", transparent_nav)
-	theme.set_stylebox("hover", &"M3AppBrandButton", transparent_nav)
-	theme.set_stylebox("pressed", &"M3AppBrandButton", transparent_nav)
+	theme.set_stylebox("hover", &"M3AppBrandButton", _box_margins(container, Color.TRANSPARENT, 6, 4, 4, 4, 4))
+	theme.set_stylebox("pressed", &"M3AppBrandButton", _box_margins(variant, Color.TRANSPARENT, 6, 4, 4, 4, 4))
 	theme.set_stylebox("focus", &"M3AppBrandButton", transparent_nav)
 	theme.set_color("font_color", &"M3AppBrandButton", primary)
 	theme.set_color("font_hover_color", &"M3AppBrandButton", primary.lightened(0.2) if not is_light else primary.darkened(0.2))
 	theme.set_font_size("font_size", &"M3AppBrandButton", 13)
 
-	# ThemeToggleBtn in NavBar (Sun / Moon)
+	# ThemeToggleBtn in NavRail (Sun / Moon)
 	theme.set_type_variation(&"M3ThemeToggle", &"Button")
 	theme.set_stylebox("normal", &"M3ThemeToggle", transparent_nav)
-	theme.set_stylebox("hover", &"M3ThemeToggle", transparent_nav)
-	theme.set_stylebox("pressed", &"M3ThemeToggle", transparent_nav)
+	theme.set_stylebox("hover", &"M3ThemeToggle", _box_margins(container, Color.TRANSPARENT, 6, 4, 4, 4, 4))
+	theme.set_stylebox("pressed", &"M3ThemeToggle", _box_margins(variant, Color.TRANSPARENT, 6, 4, 4, 4, 4))
 	theme.set_stylebox("focus", &"M3ThemeToggle", transparent_nav)
 	theme.set_color("font_color", &"M3ThemeToggle", on_surface)
 	theme.set_color("font_hover_color", &"M3ThemeToggle", primary)
 	theme.set_font_size("font_size", &"M3ThemeToggle", 14)
+
+	# Minimal Collapsible NavRail panel (Untitled UI style slim vertical bar)
+	theme.set_type_variation(&"M3NavRail", &"PanelContainer")
+	var rail_box := StyleBoxFlat.new()
+	rail_box.bg_color = background if is_light else Color("#0a0a0c")
+	rail_box.border_color = outline
+	rail_box.set_border_width(SIDE_RIGHT, 1)
+	rail_box.content_margin_left = 6
+	rail_box.content_margin_right = 6
+	rail_box.content_margin_top = 8
+	rail_box.content_margin_bottom = 8
+	rail_box.anti_aliasing = true
+	theme.set_stylebox("panel", &"M3NavRail", rail_box)
+
+	# Minimal NavRail icon buttons
+	theme.set_type_variation(&"M3RailButton", &"Button")
+	var rail_btn_norm := _box_margins(Color.TRANSPARENT, Color.TRANSPARENT, 6, 6, 6, 6, 6)
+	var rail_btn_hov := _box_margins(container, Color.TRANSPARENT, 6, 6, 6, 6, 6)
+	var rail_btn_press := _box_margins(variant, Color.TRANSPARENT, 6, 6, 6, 6, 6)
+	theme.set_stylebox("normal", &"M3RailButton", rail_btn_norm)
+	theme.set_stylebox("hover", &"M3RailButton", rail_btn_hov)
+	theme.set_stylebox("pressed", &"M3RailButton", rail_btn_press)
+	theme.set_stylebox("focus", &"M3RailButton", rail_btn_norm)
+	theme.set_color("font_color", &"M3RailButton", on_variant)
+	theme.set_color("font_hover_color", &"M3RailButton", primary if is_light else Color.WHITE)
+	theme.set_color("font_pressed_color", &"M3RailButton", primary)
+	theme.set_font_size("font_size", &"M3RailButton", 14)
+
+	# NavDrawer pill items (e.g. Analytics, Explorer, Git)
+	theme.set_type_variation(&"M3NavPillButton", &"Button")
+	var pill_norm := _box_margins(Color.TRANSPARENT, Color.TRANSPARENT, 6, 10, 6, 10, 6)
+	var pill_hov := _box_margins(container, Color.TRANSPARENT, 6, 10, 6, 10, 6)
+	var pill_press := _box_margins(variant, Color.TRANSPARENT, 6, 10, 6, 10, 6)
+	theme.set_stylebox("normal", &"M3NavPillButton", pill_norm)
+	theme.set_stylebox("hover", &"M3NavPillButton", pill_hov)
+	theme.set_stylebox("pressed", &"M3NavPillButton", pill_press)
+	theme.set_stylebox("focus", &"M3NavPillButton", pill_norm)
+	theme.set_color("font_color", &"M3NavPillButton", on_surface)
+	theme.set_color("font_hover_color", &"M3NavPillButton", primary if is_light else Color.WHITE)
+	theme.set_color("font_pressed_color", &"M3NavPillButton", primary)
+	theme.set_font_size("font_size", &"M3NavPillButton", 13)
 
 	# Popup Menus: JetBrains style elevated dropdowns with clean borders
 	theme.set_stylebox("panel", &"PopupMenu", _box_margins(container, outline, 6, 8, 8, 8, 8, 1))

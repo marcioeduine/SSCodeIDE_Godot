@@ -20,10 +20,11 @@ Full technical documentation lives in [`docs/`](docs/README.md).
 
 ## Key Functional Features
 
-- **Modern JetBrains / VS Code IDE Styling**:
-  - Refined chrome hierarchy with distinct surface depths, quiet borders, and balanced contrast across dark and light palettes.
-  - Sleek top navigation bar (`NavBar`) with text-hover effects.
-  - Interactive **AppBrand** (`SS`) menu button providing quick Dark/Light mode toggle, About dialogue, and application exit.
+- **Minimal Collapsible Sidebar Navigation & Styling**:
+  - Slim vertical activity navigation rail (`NavRail`) featuring quick access to Explorer (📁), Edit (✏️), Git (⎇), Themes (🎨), AI Chat (💬), Settings (⚙️), and Help (❓).
+  - Dynamic **Theme Toggle (`☀️` / `🌙`)** button in the navigation rail for instant Light and Dark mode switching.
+  - Interactive **AppBrand** (`favicon.svg`) providing About dialogue and exit (`Ctrl+Q`).
+  - Collapsible side drawer (`ExplorerPane`) with workspace switcher (`⇄ Switch Workspace…`), file tree, and zero-distraction collapse (`Ctrl+B`).
   - Streamlined tab bar (`TabBar`) featuring flat active tabs with bottom accent indicator bars and comfortable padding.
   - Comprehensive built-in themes: Adwaita Darker/Lighter, Monokai (Dark/Light), Tokyo Night (Dark/Light), Dracula (Dark/Light), Catppuccin Mocha/Latte, Nord (Dark/Light), Solarized (Dark/Light), Terminal (Antigravity), and Jake's Theme, plus runtime XML theme importing.
 

@@ -1,8 +1,21 @@
 # User guide
 
+## Minimal Collapsible Sidebar Navigation
+
+SSCodeIDE adopts a modern, minimalist collapsible sidebar navigation inspired by JetBrains and Untitled UI:
+- **Navigation Rail (Slim Vertical Bar)**:
+  - **App Brand (`favicon.svg`)**: Access application info (About SSCodeIDE) and exit (`Ctrl+Q`).
+  - **Navigation Icons**: Quick access to File Explorer (📁), Edit Actions (✏️), Git & GitHub (⎇), Themes (🎨), and AI Chat Assistant (💬).
+  - **Theme Toggle (`☀️` / `🌙`)**: Dynamic toggle button switching seamlessly between Dark and Light mode.
+  - **Utility Actions**: Quick settings (⚙️) and keyboard shortcuts help (❓).
+- **Collapsible Drawer / Explorer**:
+  - **Workspace Header**: Displays current workspace folder name with switch workspace action (`⇄ Switch Workspace…`).
+  - **File Explorer**: Fast workspace tree view with custom type icons.
+  - **Collapse / Expand (`Ctrl+B`)**: Collapse the drawer completely to leave only the minimal rail, giving 100% full-width view to the editor and chat tabs.
+
 ## Workspace
 
-Use **File → Open Folder** (`Ctrl+Shift+O`) to set the workspace root. The explorer lists files with type icons. Double-click a file to open a tab.
+Use **⇄ Switch Workspace…** or `Ctrl+Shift+O` to set the workspace root. The explorer lists files with type icons. Double-click a file to open a tab.
 
 ## Editing
 
@@ -45,15 +58,6 @@ The side panel talks to NVIDIA NIM. Choose a provider in Config. On first Chat o
 In Agent mode, the assistant can create or edit workspace files using `<sscode-write path="relative/path">…</sscode-write>` blocks. Paths outside the active workspace are rejected.
 
 See [credentials-and-export.md](credentials-and-export.md).
-
-## AppBrand & Navigation
-
-The top left `SS` brand button functions as an integrated application menu:
-- **Dark Mode / Light Mode**: Toggle between the active theme's dark and light variants with radio-checked state.
-- **About SSCodeIDE**: View version, engine, typography, and AI service information.
-- **Close (`Ctrl+Q`)**: Exit the application safely.
-
-The top navigation bar buttons adopt a clean JetBrains IDE style with transparent hover boxes and text-only color transitions.
 
 ## Themes
 

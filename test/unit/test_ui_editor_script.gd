@@ -27,7 +27,7 @@ func test_theme_menu_is_scene_backed_and_replaces_slash_selector() -> void:
 	var editor := scene.instantiate()
 	add_child_autofree(editor)
 	await get_tree().process_frame
-	var menu := editor.get_node_or_null("RootVBox/NavBar/NavRow/MenuBar/Themes") as PopupMenu
+	var menu := editor.get_node_or_null("%Themes") as PopupMenu
 	assert_not_null(menu)
 	assert_gt(menu.item_count, 1)
 	assert_eq(menu.get_item_text(menu.item_count - 1), "Import XML theme…")
@@ -48,7 +48,7 @@ func test_theme_menu_applies_a_resource_and_marks_the_active_choice() -> void:
 	editor._on_theme_menu_id_pressed(monokai_id)
 	assert_eq(editor._active_theme, "monokai")
 	assert_eq((editor.theme as Theme).resource_path, "res://themes/ui_material3_monokai.theme")
-	var menu := editor.get_node("RootVBox/NavBar/NavRow/MenuBar/Themes") as PopupMenu
+	var menu := editor.get_node("%Themes") as PopupMenu
 	assert_true(menu.is_item_checked(monokai_id))
 	editor._apply_theme_by_name(previous)
 
@@ -239,4 +239,45 @@ func test_app_brand_menu_and_theme_toggle_btn() -> void:
 	editor._toggle_light_dark_theme()
 	assert_eq(ThemeColorScheme.is_light(editor._active_theme), initial_is_light)
 	assert_eq(editor._theme_toggle_btn.text, expected_icon)
+
+
+func test_minimal_collapsible_sidebar_navigation() -> void:
+	var scene := load("res://scene/ui_editor.tscn") as PackedScene
+	var editor := scene.instantiate()
+	add_child_autofree(editor)
+	await get_tree().process_frame
+	
+	# Verify NavRail container and variation
+	var nav_rail: PanelContainer = editor.get_node_or_null("%NavRail") as PanelContainer
+	assert_not_null(nav_rail)
+	assert_eq(nav_rail.theme_type_variation, &"M3NavRail")
+	
+	# Verify Rail buttons
+	assert_not_null(editor._explorer_rail_btn)
+	assert_not_null(editor._edit_rail_btn)
+	assert_not_null(editor._git_rail_btn)
+	assert_not_null(editor._themes_rail_btn)
+	assert_not_null(editor._chat_rail_btn)
+	assert_not_null(editor._config_rail_btn)
+	assert_not_null(editor._help_rail_btn)
+	assert_not_null(editor._theme_toggle_btn)
+	
+	# Verify Drawer & Collapse interaction
+	assert_not_null(editor._explorer_pane)
+	assert_true(editor._explorer_pane.visible)
+	assert_false(editor._explorer_collapsed)
+	
+	# Collapse drawer
+	editor._toggle_explorer()
+	assert_true(editor._explorer_collapsed)
+	assert_false(editor._explorer_pane.visible)
+	
+	# Expand drawer
+	editor._toggle_explorer()
+	assert_false(editor._explorer_collapsed)
+	assert_true(editor._explorer_pane.visible)
+	
+	# Verify Workspace state in Drawer header
+	assert_not_null(editor._workspace_state)
+	assert_not_null(editor._switch_workspace_btn)
 

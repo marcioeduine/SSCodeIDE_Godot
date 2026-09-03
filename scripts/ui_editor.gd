@@ -8,7 +8,7 @@ const CodeEditorTools = preload("res://scripts/code_editor_service.gd")
 const MarkdownPreview = preload("res://scripts/markdown_preview_renderer.gd")
 const ThemeResources = preload("res://scripts/theme_resource_registry.gd")
 
-@onready var _root_vbox: VBoxContainer = %RootVBox
+@onready var _root_vbox: Control = (get_node_or_null("%AppHBox") if get_node_or_null("%AppHBox") else get_node_or_null("%RootVBox")) as Control
 @onready var _file_tree: Tree = %FileTree
 @onready var _tab_bar: TabBar = %TabBar
 @onready var _code_edit: CodeEdit = %CodeEdit
@@ -33,6 +33,16 @@ const ThemeResources = preload("res://scripts/theme_resource_registry.gd")
 @onready var _chat_pane: PanelContainer = %ChatPane
 @onready var _explorer_toggle_btn: Button = %ExplorerToggleBtn
 @onready var _chat_toggle_btn: Button = %ChatToggleBtn
+@onready var _explorer_rail_btn: Button = get_node_or_null("%ExplorerRailBtn") as Button
+@onready var _edit_rail_btn: Button = get_node_or_null("%EditRailBtn") as Button
+@onready var _git_rail_btn: Button = get_node_or_null("%GitRailBtn") as Button
+@onready var _themes_rail_btn: Button = get_node_or_null("%ThemesRailBtn") as Button
+@onready var _chat_rail_btn: Button = get_node_or_null("%ChatRailBtn") as Button
+@onready var _config_rail_btn: Button = get_node_or_null("%ConfigRailBtn") as Button
+@onready var _help_rail_btn: Button = get_node_or_null("%HelpRailBtn") as Button
+@onready var _drawer_collapse_btn: Button = get_node_or_null("%DrawerCollapseBtn") as Button
+@onready var _switch_workspace_btn: Button = get_node_or_null("%SwitchWorkspaceBtn") as Button
+@onready var _workspace_state: Label = get_node_or_null("%WorkspaceState") as Label
 @onready var _file_menu: PopupMenu = %File
 @onready var _edit_menu: PopupMenu = %Edit
 @onready var _git_menu: PopupMenu = %Git
@@ -621,6 +631,41 @@ func _wire_signals() -> void:
 	_center_split.dragged.connect(_on_center_split_dragged)
 	_explorer_toggle_btn.pressed.connect(_toggle_explorer)
 	_chat_toggle_btn.pressed.connect(_toggle_chat)
+	if _explorer_rail_btn:
+		_explorer_rail_btn.pressed.connect(_toggle_explorer)
+	if _edit_rail_btn:
+		_edit_rail_btn.pressed.connect(func() -> void:
+			if _edit_menu:
+				_edit_menu.popup_on_parent(Rect2i(_edit_rail_btn.get_global_rect()))
+		)
+	if _git_rail_btn:
+		_git_rail_btn.pressed.connect(func() -> void:
+			if _git_menu:
+				_git_menu.popup_on_parent(Rect2i(_git_rail_btn.get_global_rect()))
+		)
+	if _themes_rail_btn:
+		_themes_rail_btn.pressed.connect(func() -> void:
+			if _themes_menu:
+				_themes_menu.popup_on_parent(Rect2i(_themes_rail_btn.get_global_rect()))
+		)
+	if _chat_rail_btn:
+		_chat_rail_btn.pressed.connect(_toggle_chat)
+	if _config_rail_btn:
+		_config_rail_btn.pressed.connect(func() -> void:
+			if _config_menu:
+				_config_menu.popup_on_parent(Rect2i(_config_rail_btn.get_global_rect()))
+		)
+	if _help_rail_btn:
+		_help_rail_btn.pressed.connect(func() -> void:
+			if _help_menu:
+				_help_menu.popup_on_parent(Rect2i(_help_rail_btn.get_global_rect()))
+		)
+	if _drawer_collapse_btn:
+		_drawer_collapse_btn.pressed.connect(_toggle_explorer)
+	if _switch_workspace_btn:
+		_switch_workspace_btn.pressed.connect(func() -> void:
+			_open_dir_dlg.popup_centered()
+		)
 
 
 func _input(event: InputEvent) -> void:
@@ -1633,6 +1678,8 @@ func _refresh_file_tree() -> void:
 	var root_title: String = _workspace_root.get_file()
 	if root_title.is_empty():
 		root_title = "WORKSPACE"
+	if _workspace_state:
+		_workspace_state.text = root_title.to_upper()
 	root_item.set_text(0, root_title.to_upper())
 	var folder_tex: Texture2D = FileKind.texture_for_path(_workspace_root, true, true)
 	if folder_tex:

@@ -36,7 +36,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 1)
 
-[node name="RootVBox" type="VBoxContainer" parent="." unique_id=502389437]
+[node name="AppHBox" type="HBoxContainer" parent="." unique_id=502389437]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -49,29 +49,529 @@ size_flags_vertical = 3
 theme = ExtResource("1_0cx3e")
 theme_override_constants/separation = 0
 
-[node name="NavBar" type="PanelContainer" parent="RootVBox" unique_id=402821925]
-custom_minimum_size = Vector2(0, 30)
+[node name="NavRail" type="PanelContainer" parent="AppHBox" unique_id=402821925]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 0)
 layout_mode = 2
-theme_type_variation = &"M3TopAppBar"
+theme_type_variation = &"M3NavRail"
 
-[node name="NavRow" type="HBoxContainer" parent="RootVBox/NavBar" unique_id=300101001]
+[node name="NavRailContent" type="VBoxContainer" parent="AppHBox/NavRail" unique_id=300101001]
 layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="WindowDots" type="HBoxContainer" parent="AppHBox/NavRail/NavRailContent" unique_id=300101030]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+alignment = 1
 theme_override_constants/separation = 4
 
-[node name="AppBrand" type="MenuButton" parent="RootVBox/NavBar/NavRow" unique_id=300101002]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(26, 24)
+[node name="DotClose" type="ColorRect" parent="AppHBox/NavRail/NavRailContent/WindowDots" unique_id=300101031]
+custom_minimum_size = Vector2(8, 8)
 layout_mode = 2
+size_flags_vertical = 4
+color = Color(0.98, 0.36, 0.34, 0.9)
+
+[node name="DotMin" type="ColorRect" parent="AppHBox/NavRail/NavRailContent/WindowDots" unique_id=300101032]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+color = Color(0.98, 0.74, 0.18, 0.9)
+
+[node name="DotMax" type="ColorRect" parent="AppHBox/NavRail/NavRailContent/WindowDots" unique_id=300101033]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+color = Color(0.15, 0.78, 0.25, 0.9)
+
+[node name="AppBrand" type="MenuButton" parent="AppHBox/NavRail/NavRailContent" unique_id=300101002]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+tooltip_text = "SSCodeIDE App Menu"
 theme_type_variation = &"M3AppBrandButton"
 icon = ExtResource("3_favicon")
 flat = true
 expand_icon = true
 
-[node name="MenuBar" type="MenuBar" parent="RootVBox/NavBar/NavRow" unique_id=302529279]
+[node name="RailDivider1" type="HSeparator" parent="AppHBox/NavRail/NavRailContent" unique_id=300101010]
 layout_mode = 2
+
+[node name="ExplorerRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101011]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+tooltip_text = "Files / Explorer (Ctrl+B)"
+theme_type_variation = &"M3RailButton"
+text = "📁"
 flat = true
 
-[node name="File" type="PopupMenu" parent="RootVBox/NavBar/NavRow/MenuBar" unique_id=728694481]
+[node name="EditRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101012]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+tooltip_text = "Edit Actions (Ctrl+F)"
+theme_type_variation = &"M3RailButton"
+text = "✏️"
+flat = true
+
+[node name="GitRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101013]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+tooltip_text = "Source Control & GitHub (Ctrl+Shift+G)"
+theme_type_variation = &"M3RailButton"
+text = "⎇"
+flat = true
+
+[node name="ThemesRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101014]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+tooltip_text = "Themes Selector & Import"
+theme_type_variation = &"M3RailButton"
+text = "🎨"
+flat = true
+
+[node name="ChatRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101015]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+tooltip_text = "AI Assistant Chat (Ctrl+Shift+B)"
+theme_type_variation = &"M3RailButton"
+text = "💬"
+flat = true
+
+[node name="RailSpacer" type="Control" parent="AppHBox/NavRail/NavRailContent" unique_id=300101003]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ThemeToggleBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101005]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+tooltip_text = "Toggle Light / Dark Mode"
+theme_type_variation = &"M3ThemeToggle"
+text = "☀️"
+flat = true
+
+[node name="ConfigRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101016]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+tooltip_text = "Settings & Configuration (Ctrl+,)"
+theme_type_variation = &"M3RailButton"
+text = "⚙️"
+flat = true
+
+[node name="HelpRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101017]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+tooltip_text = "Keyboard Shortcuts & Help (F1)"
+theme_type_variation = &"M3RailButton"
+text = "❓"
+flat = true
+
+[node name="MainLayout" type="VBoxContainer" parent="AppHBox" unique_id=300101040]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="MainSplit" type="HSplitContainer" parent="AppHBox/MainLayout" unique_id=470791301]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offsets = PackedInt32Array(260)
+split_offset = 260
+
+[node name="ExplorerPane" type="PanelContainer" parent="AppHBox/MainLayout/MainSplit" unique_id=1429488087]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"M3SidePanel"
+
+[node name="ExplorerContent" type="VBoxContainer" parent="AppHBox/MainLayout/MainSplit/ExplorerPane" unique_id=300101005]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="DrawerHeader" type="HBoxContainer" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent" unique_id=300101020]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="WorkspaceTitleVBox" type="VBoxContainer" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent/DrawerHeader" unique_id=300101021]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+
+[node name="AppTitleLabel" type="Label" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent/DrawerHeader/WorkspaceTitleVBox" unique_id=300101022]
+layout_mode = 2
+theme_type_variation = &"M3SidebarHeader"
+text = "SSCodeIDE"
+
+[node name="WorkspaceState" type="Label" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent/DrawerHeader/WorkspaceTitleVBox" unique_id=300101004]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"M3StatusText"
+text = "WORKSPACE"
+clip_text = true
+
+[node name="DrawerCollapseBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent/DrawerHeader" unique_id=300101023]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+tooltip_text = "Collapse Sidebar (Ctrl+B)"
+text = "◀"
+flat = true
+
+[node name="SwitchWorkspaceBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent" unique_id=300101024]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Open different project folder"
+theme_type_variation = &"M3NavPillButton"
+text = "⇄ Switch Workspace…"
+flat = true
+alignment = 0
+
+[node name="ExplorerHeader" type="Label" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent" unique_id=1893227217]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+theme_type_variation = &"M3SidebarHeader"
+text = "EXPLORER"
+vertical_alignment = 1
+
+[node name="FileTree" type="Tree" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent" unique_id=1514428791]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"M3ExplorerTree"
+
+[node name="CenterSplit" type="HSplitContainer" parent="AppHBox/MainLayout/MainSplit" unique_id=270599731]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offsets = PackedInt32Array(720)
+split_offset = 720
+
+[node name="EditorPane" type="PanelContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit" unique_id=301077544]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"M3EditorSurface"
+
+[node name="EditorContent" type="VBoxContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane" unique_id=300101006]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="GridContainer" type="HBoxContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=1574192106]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="ExplorerToggleBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent/GridContainer" unique_id=1893227218]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 3
+tooltip_text = "Collapse or expand the File Explorer (Ctrl+B)"
+text = "◀"
+flat = true
+
+[node name="TabBar" type="TabBar" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent/GridContainer" unique_id=256136646]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+tab_close_display_policy = 1
+
+[node name="ChatToggleBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent/GridContainer" unique_id=1421141930]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 3
+tooltip_text = "Collapse or expand Chat (Ctrl+Shift+B)"
+text = "▶"
+flat = true
+
+[node name="FindRow" type="HBoxContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=1655727780]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+
+[node name="FindInput" type="LineEdit" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=1760361776]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Find…"
+
+[node name="FindNext" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=2119594804]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Next"
+
+[node name="ReplaceInput" type="LineEdit" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=356564620]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Replace…"
+
+[node name="ReplaceAll" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=632382191]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "Replace All"
+
+[node name="FindClose" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=1962445891]
+unique_name_in_owner = true
+layout_mode = 2
+text = "×"
+
+[node name="CodeEdit" type="CodeEdit" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=411562642]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"M3CodeEditor"
+wrap_mode = 1
+indent_wrapped_lines = true
+minimap_draw = true
+caret_blink = true
+highlight_all_occurrences = true
+highlight_current_line = true
+gutters_draw_line_numbers = true
+code_completion_enabled = true
+indent_automatic = true
+
+[node name="MarkdownPreview" type="RichTextLabel" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=1429657402]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+focus_mode = 2
+theme_type_variation = &"M3MarkdownDocument"
+bbcode_enabled = true
+selection_enabled = true
+
+[node name="ChatPane" type="PanelContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit" unique_id=1200057739]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"M3ChatSurface"
+
+[node name="ChatContent" type="VBoxContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane" unique_id=300101007]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ChatHeaderRow" type="HBoxContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=440622983]
+custom_minimum_size = Vector2(0, 26)
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ChatHeader" type="Label" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatHeaderRow" unique_id=1421141929]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"M3SidebarHeader"
+text = "chat"
+clip_text = true
+uppercase = true
+
+[node name="ChatContextBadge" type="Label" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatHeaderRow" unique_id=1082829237]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"M3StatusText"
+text = "SSBot · Workspace"
+
+[node name="ChatLog" type="RichTextLabel" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=1541749788]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+focus_mode = 2
+theme_type_variation = &"M3ChatTranscript"
+bbcode_enabled = true
+scroll_following = true
+selection_enabled = true
+
+[node name="ChatStatusBanner" type="PanelContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=896163620]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+
+[node name="ChatStatusVBox" type="VBoxContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatStatusBanner" unique_id=896163621]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ChatStatusLabel" type="RichTextLabel" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatStatusBanner/ChatStatusVBox" unique_id=1868283993]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="ChatThinkingLabel" type="RichTextLabel" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatStatusBanner/ChatStatusVBox" unique_id=1868283994]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+size_flags_vertical = 3
+focus_mode = 2
+theme_override_font_sizes/normal_font_size = 11
+theme_override_font_sizes/bold_font_size = 11
+theme_override_font_sizes/italics_font_size = 11
+bbcode_enabled = true
+scroll_following = true
+autowrap_mode = 2
+selection_enabled = true
+
+[node name="ChatSuggestionsPopup" type="PanelContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=705864052]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 110)
+layout_mode = 2
+
+[node name="ChatSuggestionsList" type="ItemList" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatSuggestionsPopup" unique_id=1315998758]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+allow_reselect = true
+
+[node name="ChatInputCard" type="PanelContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=1363750561]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 78)
+layout_mode = 2
+theme_type_variation = &"M3Composer"
+
+[node name="ChatInputVBox" type="VBoxContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard" unique_id=1761679636]
+layout_mode = 2
+
+[node name="ChatContextChip" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox" unique_id=740238814]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+theme_type_variation = &"M3TextButton"
+text = "+ Active File"
+
+[node name="ChatInput" type="LineEdit" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox" unique_id=1160227838]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Ask SSBot about the code, errors, or new ideas…"
+keep_editing_on_text_submit = true
+clear_button_enabled = true
+caret_blink = true
+
+[node name="ChatInputBottomRow" type="HBoxContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox" unique_id=742355465]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="AttachBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=637576685]
+unique_name_in_owner = true
+layout_mode = 2
+text = "📎"
+
+[node name="AgentModeBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=274574760]
+unique_name_in_owner = true
+layout_mode = 2
+text = "</> Agent"
+
+[node name="ProviderSelect" type="OptionButton" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=656410950]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(172, 0)
+layout_mode = 2
+item_count = 5
+popup/item_0/text = "Nemotron 3 Omni"
+popup/item_0/id = 0
+popup/item_1/text = "Nemotron 3.5"
+popup/item_1/id = 1
+popup/item_2/text = "Kimi K3"
+popup/item_2/id = 2
+popup/item_3/text = "DeepSeek V4"
+popup/item_3/id = 3
+popup/item_4/text = "Laguna Code"
+popup/item_4/id = 4
+
+[node name="SmartCommitBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=772031202]
+unique_name_in_owner = true
+layout_mode = 2
+text = "⎇ Commit"
+
+[node name="InputSpacer" type="Control" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=1877726678]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ChatSend" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=748177452]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(38, 26)
+layout_mode = 2
+tooltip_text = "Send prompt"
+theme_type_variation = &"M3FilledButton"
+text = "↑"
+
+[node name="StatusBar" type="PanelContainer" parent="AppHBox/MainLayout" unique_id=374397806]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+theme_type_variation = &"M3StatusBar"
+
+[node name="StatusRow" type="HBoxContainer" parent="AppHBox/MainLayout/StatusBar" unique_id=976935217]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="StatusLeft" type="Label" parent="AppHBox/MainLayout/StatusBar/StatusRow" unique_id=1079174229]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"M3StatusText"
+text = "READY"
+clip_text = true
+
+[node name="StatusGit" type="Button" parent="AppHBox/MainLayout/StatusBar/StatusRow" unique_id=1936752626]
+unique_name_in_owner = true
+layout_mode = 2
+text = "⎇ main"
+flat = true
+
+[node name="StatusCursor" type="Label" parent="AppHBox/MainLayout/StatusBar/StatusRow" unique_id=1248834476]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"M3StatusText"
+text = "Ln 1, Col 1"
+
+[node name="StatusLang" type="Label" parent="AppHBox/MainLayout/StatusBar/StatusRow" unique_id=279194814]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"M3StatusText"
+text = "Plain Text"
+
+[node name="StatusEnc" type="Label" parent="AppHBox/MainLayout/StatusBar/StatusRow" unique_id=1839436809]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"M3StatusText"
+text = "UTF-8"
+
+[node name="StatusAI" type="Label" parent="AppHBox/MainLayout/StatusBar/StatusRow" unique_id=745361571]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"M3StatusText"
+text = "AI: offline"
+
+[node name="MenuBar" type="MenuBar" parent="." unique_id=302529279]
+visible = false
+layout_mode = 0
+
+[node name="File" type="PopupMenu" parent="MenuBar" unique_id=728694481]
 unique_name_in_owner = true
 size = Vector2i(266, 180)
 item_count = 6
@@ -88,7 +588,7 @@ item_4/id = 4
 item_5/text = "Save As…	Ctrl+Shift+S"
 item_5/id = 5
 
-[node name="Edit" type="PopupMenu" parent="RootVBox/NavBar/NavRow/MenuBar" unique_id=1755527386]
+[node name="Edit" type="PopupMenu" parent="MenuBar" unique_id=1755527386]
 unique_name_in_owner = true
 item_count = 8
 item_0/text = "Undo	Ctrl+Z"
@@ -108,7 +608,7 @@ item_6/id = 6
 item_7/text = "Find	Ctrl+F"
 item_7/id = 7
 
-[node name="Git" type="PopupMenu" parent="RootVBox/NavBar/NavRow/MenuBar" unique_id=1482456375]
+[node name="Git" type="PopupMenu" parent="MenuBar" unique_id=1482456375]
 unique_name_in_owner = true
 item_count = 13
 item_0/text = "Status & Changes…	Ctrl+Shift+G"
@@ -138,7 +638,7 @@ item_11/id = 11
 item_12/text = "Configure Git & GitHub…"
 item_12/id = 12
 
-[node name="Config" type="PopupMenu" parent="RootVBox/NavBar/NavRow/MenuBar" unique_id=739621716]
+[node name="Config" type="PopupMenu" parent="MenuBar" unique_id=739621716]
 unique_name_in_owner = true
 item_count = 2
 item_0/text = "Settings…	Ctrl+,"
@@ -146,384 +646,15 @@ item_0/id = 0
 item_1/text = "NVIDIA NIM API key…"
 item_1/id = 1
 
-[node name="Themes" type="PopupMenu" parent="RootVBox/NavBar/NavRow/MenuBar" unique_id=211823952]
+[node name="Themes" type="PopupMenu" parent="MenuBar" unique_id=211823952]
 unique_name_in_owner = true
 size = Vector2i(280, 8)
 
-[node name="Help" type="PopupMenu" parent="RootVBox/NavBar/NavRow/MenuBar" unique_id=515346578]
+[node name="Help" type="PopupMenu" parent="MenuBar" unique_id=515346578]
 unique_name_in_owner = true
 item_count = 1
 item_0/text = "Keyboard Shortcuts	F1"
 item_0/id = 0
-
-[node name="NavSpacer" type="Control" parent="RootVBox/NavBar/NavRow" unique_id=300101003]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="WorkspaceState" type="Label" parent="RootVBox/NavBar/NavRow" unique_id=300101004]
-layout_mode = 2
-theme_type_variation = &"M3StatusText"
-text = "WORKSPACE"
-vertical_alignment = 1
-
-[node name="ThemeToggleBtn" type="Button" parent="RootVBox/NavBar/NavRow" unique_id=300101005]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(28, 24)
-layout_mode = 2
-tooltip_text = "Toggle Light / Dark Mode"
-theme_type_variation = &"M3ThemeToggle"
-text = "☀️"
-flat = true
-
-[node name="MainSplit" type="HSplitContainer" parent="RootVBox" unique_id=470791301]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-split_offsets = PackedInt32Array(260)
-split_offset = 260
-
-[node name="ExplorerPane" type="PanelContainer" parent="RootVBox/MainSplit" unique_id=1429488087]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 3
-theme_type_variation = &"M3SidePanel"
-
-[node name="ExplorerContent" type="VBoxContainer" parent="RootVBox/MainSplit/ExplorerPane" unique_id=300101005]
-layout_mode = 2
-theme_override_constants/separation = 0
-
-[node name="ExplorerHeader" type="Label" parent="RootVBox/MainSplit/ExplorerPane/ExplorerContent" unique_id=1893227217]
-custom_minimum_size = Vector2(0, 26)
-layout_mode = 2
-theme_type_variation = &"M3SidebarHeader"
-text = "EXPLORER"
-vertical_alignment = 1
-
-[node name="FileTree" type="Tree" parent="RootVBox/MainSplit/ExplorerPane/ExplorerContent" unique_id=1514428791]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_type_variation = &"M3ExplorerTree"
-
-[node name="CenterSplit" type="HSplitContainer" parent="RootVBox/MainSplit" unique_id=270599731]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-split_offsets = PackedInt32Array(720)
-split_offset = 720
-
-[node name="EditorPane" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit" unique_id=301077544]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_type_variation = &"M3EditorSurface"
-
-[node name="EditorContent" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit/EditorPane" unique_id=300101006]
-layout_mode = 2
-theme_override_constants/separation = 0
-
-[node name="GridContainer" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=1574192106]
-custom_minimum_size = Vector2(0, 30)
-layout_mode = 2
-theme_override_constants/separation = 2
-
-[node name="ExplorerToggleBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/EditorPane/EditorContent/GridContainer" unique_id=1893227218]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 3
-tooltip_text = "Collapse or expand the File Explorer (Ctrl+B)"
-text = "◀"
-flat = true
-
-[node name="TabBar" type="TabBar" parent="RootVBox/MainSplit/CenterSplit/EditorPane/EditorContent/GridContainer" unique_id=256136646]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-tab_close_display_policy = 1
-
-[node name="ChatToggleBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/EditorPane/EditorContent/GridContainer" unique_id=1421141930]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 2
-size_flags_horizontal = 8
-size_flags_vertical = 3
-tooltip_text = "Collapse or expand Chat (Ctrl+Shift+B)"
-text = "▶"
-flat = true
-
-[node name="FindRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=1655727780]
-unique_name_in_owner = true
-visible = false
-custom_minimum_size = Vector2(0, 28)
-layout_mode = 2
-
-[node name="FindInput" type="LineEdit" parent="RootVBox/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=1760361776]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "Find…"
-
-[node name="FindNext" type="Button" parent="RootVBox/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=2119594804]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Next"
-
-[node name="ReplaceInput" type="LineEdit" parent="RootVBox/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=356564620]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "Replace…"
-
-[node name="ReplaceAll" type="Button" parent="RootVBox/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=632382191]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-text = "Replace All"
-
-[node name="FindClose" type="Button" parent="RootVBox/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=1962445891]
-unique_name_in_owner = true
-layout_mode = 2
-text = "×"
-
-[node name="CodeEdit" type="CodeEdit" parent="RootVBox/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=411562642]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_type_variation = &"M3CodeEditor"
-wrap_mode = 1
-indent_wrapped_lines = true
-minimap_draw = true
-caret_blink = true
-highlight_all_occurrences = true
-highlight_current_line = true
-gutters_draw_line_numbers = true
-code_completion_enabled = true
-indent_automatic = true
-
-[node name="MarkdownPreview" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=1429657402]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-focus_mode = 2
-theme_type_variation = &"M3MarkdownDocument"
-bbcode_enabled = true
-selection_enabled = true
-
-[node name="ChatPane" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit" unique_id=1200057739]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 3
-theme_type_variation = &"M3ChatSurface"
-
-[node name="ChatContent" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane" unique_id=300101007]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="ChatHeaderRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=440622983]
-custom_minimum_size = Vector2(0, 26)
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="ChatHeader" type="Label" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatHeaderRow" unique_id=1421141929]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_type_variation = &"M3SidebarHeader"
-text = "chat"
-clip_text = true
-uppercase = true
-
-[node name="ChatContextBadge" type="Label" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatHeaderRow" unique_id=1082829237]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"M3StatusText"
-text = "SSBot · Workspace"
-
-[node name="ChatLog" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=1541749788]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-focus_mode = 2
-theme_type_variation = &"M3ChatTranscript"
-bbcode_enabled = true
-scroll_following = true
-selection_enabled = true
-
-[node name="ChatStatusBanner" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=896163620]
-unique_name_in_owner = true
-visible = false
-custom_minimum_size = Vector2(0, 120)
-layout_mode = 2
-
-[node name="ChatStatusVBox" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatStatusBanner" unique_id=896163621]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="ChatStatusLabel" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatStatusBanner/ChatStatusVBox" unique_id=1868283993]
-unique_name_in_owner = true
-layout_mode = 2
-bbcode_enabled = true
-fit_content = true
-scroll_active = false
-
-[node name="ChatThinkingLabel" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatStatusBanner/ChatStatusVBox" unique_id=1868283994]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 96)
-layout_mode = 2
-size_flags_vertical = 3
-focus_mode = 2
-theme_override_font_sizes/normal_font_size = 11
-theme_override_font_sizes/bold_font_size = 11
-theme_override_font_sizes/italics_font_size = 11
-bbcode_enabled = true
-scroll_following = true
-autowrap_mode = 2
-selection_enabled = true
-
-[node name="ChatSuggestionsPopup" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=705864052]
-unique_name_in_owner = true
-visible = false
-custom_minimum_size = Vector2(0, 110)
-layout_mode = 2
-
-[node name="ChatSuggestionsList" type="ItemList" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatSuggestionsPopup" unique_id=1315998758]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-allow_reselect = true
-
-[node name="ChatInputCard" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=1363750561]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 78)
-layout_mode = 2
-theme_type_variation = &"M3Composer"
-
-[node name="ChatInputVBox" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard" unique_id=1761679636]
-layout_mode = 2
-
-[node name="ChatContextChip" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox" unique_id=740238814]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 0
-theme_type_variation = &"M3TextButton"
-text = "+ Active File"
-
-[node name="ChatInput" type="LineEdit" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox" unique_id=1160227838]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 34)
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "Ask SSBot about the code, errors, or new ideas…"
-keep_editing_on_text_submit = true
-clear_button_enabled = true
-caret_blink = true
-
-[node name="ChatInputBottomRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox" unique_id=742355465]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="AttachBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=637576685]
-unique_name_in_owner = true
-layout_mode = 2
-text = "📎"
-
-[node name="AgentModeBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=274574760]
-unique_name_in_owner = true
-layout_mode = 2
-text = "</> Agent"
-
-[node name="ProviderSelect" type="OptionButton" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=656410950]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(172, 0)
-layout_mode = 2
-item_count = 5
-popup/item_0/text = "Nemotron 3 Omni"
-popup/item_0/id = 0
-popup/item_1/text = "Nemotron 3.5"
-popup/item_1/id = 1
-popup/item_2/text = "Kimi K3"
-popup/item_2/id = 2
-popup/item_3/text = "DeepSeek V4"
-popup/item_3/id = 3
-popup/item_4/text = "Laguna Code"
-popup/item_4/id = 4
-
-[node name="SmartCommitBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=772031202]
-unique_name_in_owner = true
-layout_mode = 2
-text = "⎇ Commit"
-
-[node name="InputSpacer" type="Control" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=1877726678]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="ChatSend" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=748177452]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(38, 26)
-layout_mode = 2
-tooltip_text = "Send prompt"
-theme_type_variation = &"M3FilledButton"
-text = "↑"
-
-[node name="StatusBar" type="PanelContainer" parent="RootVBox" unique_id=374397806]
-custom_minimum_size = Vector2(0, 20)
-layout_mode = 2
-theme_type_variation = &"M3StatusBar"
-
-[node name="StatusRow" type="HBoxContainer" parent="RootVBox/StatusBar" unique_id=976935217]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 12
-
-[node name="StatusLeft" type="Label" parent="RootVBox/StatusBar/StatusRow" unique_id=1079174229]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_type_variation = &"M3StatusText"
-text = "READY"
-clip_text = true
-
-[node name="StatusGit" type="Button" parent="RootVBox/StatusBar/StatusRow" unique_id=1936752626]
-unique_name_in_owner = true
-layout_mode = 2
-text = "⎇ main"
-flat = true
-
-[node name="StatusCursor" type="Label" parent="RootVBox/StatusBar/StatusRow" unique_id=1248834476]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"M3StatusText"
-text = "Ln 1, Col 1"
-
-[node name="StatusLang" type="Label" parent="RootVBox/StatusBar/StatusRow" unique_id=279194814]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"M3StatusText"
-text = "Plain Text"
-
-[node name="StatusEnc" type="Label" parent="RootVBox/StatusBar/StatusRow" unique_id=1839436809]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"M3StatusText"
-text = "UTF-8"
-
-[node name="StatusAI" type="Label" parent="RootVBox/StatusBar/StatusRow" unique_id=745361571]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"M3StatusText"
-text = "AI: offline"
 
 [node name="OpenFileDialog" type="FileDialog" parent="." unique_id=769801889]
 unique_name_in_owner = true
