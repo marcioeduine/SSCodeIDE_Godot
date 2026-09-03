@@ -212,6 +212,16 @@ static func _build_material3_theme(palette: Dictionary) -> Theme:
 	theme.set_color("font_hover_color", &"M3AppBrandButton", primary.lightened(0.2) if not is_light else primary.darkened(0.2))
 	theme.set_font_size("font_size", &"M3AppBrandButton", 13)
 
+	# ThemeToggleBtn in NavBar (Sun / Moon)
+	theme.set_type_variation(&"M3ThemeToggle", &"Button")
+	theme.set_stylebox("normal", &"M3ThemeToggle", transparent_nav)
+	theme.set_stylebox("hover", &"M3ThemeToggle", transparent_nav)
+	theme.set_stylebox("pressed", &"M3ThemeToggle", transparent_nav)
+	theme.set_stylebox("focus", &"M3ThemeToggle", transparent_nav)
+	theme.set_color("font_color", &"M3ThemeToggle", on_surface)
+	theme.set_color("font_hover_color", &"M3ThemeToggle", primary)
+	theme.set_font_size("font_size", &"M3ThemeToggle", 14)
+
 	# Popup Menus: JetBrains style elevated dropdowns with clean borders
 	theme.set_stylebox("panel", &"PopupMenu", _box_margins(container, outline, 6, 8, 8, 8, 8, 1))
 	theme.set_stylebox("hover", &"PopupMenu", _box_margins(variant, Color.TRANSPARENT, 4, 8, 4, 8, 4))

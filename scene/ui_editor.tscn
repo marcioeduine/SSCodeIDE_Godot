@@ -3,6 +3,7 @@
 [ext_resource type="Theme" path="res://themes/ui_grid_outline.theme" id="1_0cx3e"]
 [ext_resource type="Script" uid="uid://dm57wbc3c6m76" path="res://scripts/ui_editor.gd" id="1_editor"]
 [ext_resource type="Shader" uid="uid://crhc3gwj4ct3f" path="res://themes/glass_backdrop.gdshader" id="2_backdrop"]
+[ext_resource type="Texture2D" uid="uid://coxctd2h6bsq5" path="res://favicon.svg" id="3_favicon"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_backdrop"]
 shader = ExtResource("2_backdrop")
@@ -59,11 +60,12 @@ theme_override_constants/separation = 4
 
 [node name="AppBrand" type="MenuButton" parent="RootVBox/NavBar/NavRow" unique_id=300101002]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(40, 24)
+custom_minimum_size = Vector2(26, 24)
 layout_mode = 2
 theme_type_variation = &"M3AppBrandButton"
-text = "SS"
+icon = ExtResource("3_favicon")
 flat = true
+expand_icon = true
 
 [node name="MenuBar" type="MenuBar" parent="RootVBox/NavBar/NavRow" unique_id=302529279]
 layout_mode = 2
@@ -163,6 +165,15 @@ layout_mode = 2
 theme_type_variation = &"M3StatusText"
 text = "WORKSPACE"
 vertical_alignment = 1
+
+[node name="ThemeToggleBtn" type="Button" parent="RootVBox/NavBar/NavRow" unique_id=300101005]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 24)
+layout_mode = 2
+tooltip_text = "Toggle Light / Dark Mode"
+theme_type_variation = &"M3ThemeToggle"
+text = "☀️"
+flat = true
 
 [node name="MainSplit" type="HSplitContainer" parent="RootVBox" unique_id=470791301]
 unique_name_in_owner = true

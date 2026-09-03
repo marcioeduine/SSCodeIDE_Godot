@@ -13,7 +13,7 @@ config_version=5
 config/name="SSCodeIDE"
 run/main_scene="res://scene/ui_editor.tscn"
 config/features=PackedStringArray("4.7")
-config/icon="res://icon.svg"
+config/icon="res://favicon.svg"
 
 [display]
 

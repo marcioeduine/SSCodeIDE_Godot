@@ -40,6 +40,7 @@ const ThemeResources = preload("res://scripts/theme_resource_registry.gd")
 @onready var _help_menu: PopupMenu = %Help
 @onready var _about_menu: PopupMenu = get_node_or_null("%About") as PopupMenu
 @onready var _app_brand: MenuButton = get_node_or_null("%AppBrand") as MenuButton
+@onready var _theme_toggle_btn: Button = get_node_or_null("%ThemeToggleBtn") as Button
 @onready var _themes_menu: PopupMenu = %Themes
 @onready var _open_file_dlg: FileDialog = %OpenFileDialog
 @onready var _open_dir_dlg: FileDialog = %OpenDirDialog
@@ -886,7 +887,10 @@ func _setup_app_brand_menu() -> void:
 	var popup := _app_brand.get_popup()
 	if not popup.id_pressed.is_connected(_on_app_brand_menu_id_pressed):
 		popup.id_pressed.connect(_on_app_brand_menu_id_pressed)
+	if _theme_toggle_btn and not _theme_toggle_btn.pressed.is_connected(_toggle_light_dark_theme):
+		_theme_toggle_btn.pressed.connect(_toggle_light_dark_theme)
 	_update_app_brand_menu()
+	_update_theme_toggle_btn()
 
 
 func _update_app_brand_menu() -> void:
@@ -894,31 +898,38 @@ func _update_app_brand_menu() -> void:
 		return
 	var popup := _app_brand.get_popup()
 	popup.clear()
+	popup.add_item("About SSCodeIDE", 1)
+	popup.add_item("Close\tCtrl+Q", 2)
+
+
+func _update_theme_toggle_btn() -> void:
+	if _theme_toggle_btn == null:
+		return
 	var is_light := ThemeColorScheme.is_light(_active_theme)
-	popup.add_radio_check_item("Dark Mode", 1)
-	popup.set_item_checked(0, not is_light)
-	popup.add_radio_check_item("Light Mode", 2)
-	popup.set_item_checked(1, is_light)
-	popup.add_separator()
-	popup.add_item("About SSCodeIDE", 3)
-	popup.add_item("Close\tCtrl+Q", 4)
+	# In light mode, show moon 🌙 to switch to dark; in dark mode, show sun ☀️ to switch to light
+	_theme_toggle_btn.text = "🌙" if is_light else "☀️"
+	_theme_toggle_btn.tooltip_text = "Switch to Dark Mode" if is_light else "Switch to Light Mode"
+
+
+func _toggle_light_dark_theme() -> void:
+	var is_light := ThemeColorScheme.is_light(_active_theme)
+	var target := ""
+	if is_light:
+		target = ThemeColorScheme.get_dark_variant(_active_theme)
+		if target.is_empty():
+			target = "adwaita_darker"
+	else:
+		target = ThemeColorScheme.get_light_variant(_active_theme)
+		if target.is_empty():
+			target = "adwaita_lighter"
+	_apply_theme_by_name(target)
 
 
 func _on_app_brand_menu_id_pressed(id: int) -> void:
 	match id:
 		1:
-			var target := ThemeColorScheme.get_dark_variant(_active_theme)
-			if target.is_empty():
-				target = "adwaita_darker"
-			_apply_theme_by_name(target)
-		2:
-			var target := ThemeColorScheme.get_light_variant(_active_theme)
-			if target.is_empty():
-				target = "adwaita_lighter"
-			_apply_theme_by_name(target)
-		3:
 			_show_about()
-		4:
+		2:
 			get_tree().quit()
 
 
@@ -1347,6 +1358,7 @@ func _apply_theme_by_name(_name: String) -> void:
 	var label: String = str(_all_themes().get(_name, {}).get("label", _name))
 	_populate_themes_menu()
 	_update_app_brand_menu()
+	_update_theme_toggle_btn()
 	_append_chat("IDE", "[color=#57e389]Theme applied:[/color] [b]" + label + "[/b]", Color("#57e389"))
 	_show_toast("Theme: " + label, false)
 

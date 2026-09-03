@@ -203,3 +203,40 @@ func test_git_service_script_integration() -> void:
 	assert_true(cmds.has("/github"))
 	
 	editor_script.free()
+
+
+func test_app_brand_menu_and_theme_toggle_btn() -> void:
+	var scene := load("res://scene/ui_editor.tscn") as PackedScene
+	var editor := scene.instantiate()
+	add_child_autofree(editor)
+	await get_tree().process_frame
+	
+	# Verify AppBrand icon and text
+	assert_not_null(editor._app_brand)
+	assert_not_null(editor._app_brand.icon)
+	assert_true(editor._app_brand.text.is_empty())
+	
+	# Verify AppBrand popup has removed Dark/Light Mode and now has only About and Close
+	var popup: PopupMenu = editor._app_brand.get_popup()
+	assert_eq(popup.item_count, 2)
+	assert_eq(popup.get_item_text(0), "About SSCodeIDE")
+	assert_true(popup.get_item_text(1).begins_with("Close"))
+	
+	# Verify ThemeToggleBtn is present and toggles between Sun/Moon and light/dark themes
+	assert_not_null(editor._theme_toggle_btn)
+	var initial_is_light: bool = ThemeColorScheme.is_light(editor._active_theme)
+	var expected_icon: String = "🌙" if initial_is_light else "☀️"
+	assert_eq(editor._theme_toggle_btn.text, expected_icon)
+	
+	# Toggle theme
+	editor._toggle_light_dark_theme()
+	var new_is_light: bool = ThemeColorScheme.is_light(editor._active_theme)
+	assert_ne(new_is_light, initial_is_light)
+	var toggled_icon: String = "🌙" if new_is_light else "☀️"
+	assert_eq(editor._theme_toggle_btn.text, toggled_icon)
+	
+	# Toggle back
+	editor._toggle_light_dark_theme()
+	assert_eq(ThemeColorScheme.is_light(editor._active_theme), initial_is_light)
+	assert_eq(editor._theme_toggle_btn.text, expected_icon)
+
