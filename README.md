@@ -10,6 +10,8 @@
 
 ---
 
+Full technical documentation lives in [`docs/`](docs/README.md).
+
 ## Overview
 
 **SSCodeIDE** is a dedicated code editor and development environment engineered entirely with **Godot Engine 4.x** and **GDScript**. Combining a Monokai Pro aesthetic theme, full typographic support with *FiraCode Nerd Font*, a hierarchical workspace file explorer, and a native AI coding assistant with automated candidate fallback, SSCodeIDE provides a streamlined coding experience without external runtime dependencies or mandatory login requirements.
@@ -43,7 +45,7 @@
     - `DeepSeek V4` (`deepseek-ai/deepseek-v4-pro-0813`)
     - `Laguna Code` (`poolside/laguna-xs-2.1`)
   - Intelligent multi-model candidate fallback mechanism to mitigate transient service errors.
-  - API credentials are loaded from the `NVIDIA_NIM_API_KEY` environment variable or a local `.env` file (see `.env.example`). Never commit real keys.
+  - On first Chat or Smart Commit use the editor asks for an NVIDIA NIM API key and stores it in Godot user data (`user://ai_secrets.cfg`). Change it under Config. Optional override: `NVIDIA_NIM_API_KEY` or a sidecar `.env` (see `.env.example`). Never commit real keys.
   - Non-blocking asynchronous requests with cancellation support (<kbd>Esc</kbd>) and animated toast notifications.
 
 - **Automated Test Suite**:

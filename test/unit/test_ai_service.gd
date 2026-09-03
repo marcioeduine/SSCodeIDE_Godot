@@ -45,3 +45,82 @@ func test_api_key_prefers_environment_variable() -> void:
 	assert_eq(AIService.get_nvidia_api_key(), "test-env-key")
 	AIService._cached_api_key = ""
 	OS.set_environment("NVIDIA_NIM_API_KEY", "")
+
+
+func test_env_file_candidates_include_user_and_res() -> void:
+	var paths: PackedStringArray = AIService._env_file_candidates()
+	assert_true(paths.has("user://.env"))
+	assert_true(paths.has("res://.env"))
+
+
+func test_reads_quoted_assignment_from_env_file() -> void:
+	var path := "user://sscodeide_test_dotenv"
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	assert_not_null(file)
+	file.store_string("# comment\nNVIDIA_NIM_API_KEY=\"from-dotenv\"\n")
+	file.close()
+	assert_eq(AIService._read_env_file_value(path, "NVIDIA_NIM_API_KEY", false), "from-dotenv")
+	DirAccess.remove_absolute(path)
+
+
+func test_stored_api_key_roundtrip() -> void:
+	var backup := _backup_stored_secrets()
+	OS.set_environment("NVIDIA_NIM_API_KEY", "")
+	AIService._cached_api_key = ""
+	assert_true(AIService.set_stored_nvidia_api_key("stored-key-test"))
+	AIService._cached_api_key = ""
+	assert_eq(AIService.get_nvidia_api_key(), "stored-key-test")
+	assert_true(AIService.has_nvidia_api_key())
+	assert_true(AIService.set_stored_nvidia_api_key(""))
+	AIService._cached_api_key = ""
+	assert_eq(AIService.get_nvidia_api_key(), "")
+	_restore_stored_secrets(backup)
+
+
+func test_environment_overrides_stored_api_key() -> void:
+	var backup := _backup_stored_secrets()
+	OS.set_environment("NVIDIA_NIM_API_KEY", "")
+	AIService._cached_api_key = ""
+	AIService.set_stored_nvidia_api_key("stored-only")
+	OS.set_environment("NVIDIA_NIM_API_KEY", "env-wins")
+	AIService._cached_api_key = ""
+	assert_eq(AIService.get_nvidia_api_key(), "env-wins")
+	OS.set_environment("NVIDIA_NIM_API_KEY", "")
+	AIService._cached_api_key = ""
+	_restore_stored_secrets(backup)
+
+
+func test_saving_stored_key_updates_process_environment() -> void:
+	var backup := _backup_stored_secrets()
+	OS.set_environment("NVIDIA_NIM_API_KEY", "stale-revoked-key")
+	AIService._cached_api_key = ""
+	assert_true(AIService.set_stored_nvidia_api_key("fresh-gui-key"))
+	assert_eq(OS.get_environment("NVIDIA_NIM_API_KEY"), "fresh-gui-key")
+	assert_eq(AIService.get_nvidia_api_key(), "fresh-gui-key")
+	OS.set_environment("NVIDIA_NIM_API_KEY", "")
+	AIService._cached_api_key = ""
+	_restore_stored_secrets(backup)
+
+
+func _backup_stored_secrets() -> String:
+	var path := AIService.STORED_SECRETS_PATH
+	if not FileAccess.file_exists(path):
+		return ""
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return ""
+	var data := f.get_as_text()
+	f.close()
+	return data
+
+
+func _restore_stored_secrets(backup: String) -> void:
+	var path := AIService.STORED_SECRETS_PATH
+	if backup.is_empty():
+		DirAccess.remove_absolute(path)
+		return
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	if f == null:
+		return
+	f.store_string(backup)
+	f.close()

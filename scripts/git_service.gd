@@ -300,6 +300,48 @@ static func commit(message: String, working_dir: String = "") -> Dictionary:
 	return execute(PackedStringArray(["commit", "-m", message]), working_dir)
 
 
+static func compose_commit_message(paths: Array, custom_scope: String = "") -> String:
+	var all_modified: Array[String] = []
+	for f in paths:
+		var p: String = str(f).strip_edges()
+		if p.is_empty():
+			continue
+		if p.contains(" -> "):
+			p = p.split(" -> ")[-1].strip_edges()
+		if not all_modified.has(p):
+			all_modified.append(p)
+	if all_modified.is_empty():
+		return "chore(workspace): update files"
+	var scope: String = custom_scope if not custom_scope.is_empty() else "workspace"
+	if custom_scope.is_empty():
+		var first_file: String = all_modified[0]
+		if first_file.begins_with("scripts/"):
+			scope = first_file.get_file().get_basename()
+		elif first_file.begins_with("scene/"):
+			scope = "ui"
+		elif first_file.begins_with("test/"):
+			scope = "test"
+		elif first_file.ends_with(".md"):
+			scope = "docs"
+	var file_sample: String = ", ".join(all_modified.slice(0, 3))
+	var summary_msg: String = "feat(%s): update %s" % [scope, file_sample]
+	if all_modified.size() > 3:
+		summary_msg += " and %d more files" % (all_modified.size() - 3)
+	return summary_msg
+
+
+static func build_fallback_commit_message(working_dir: String = "", custom_scope: String = "") -> String:
+	var status: Dictionary = get_status(working_dir)
+	var all_modified: Array = []
+	for f in status.get("staged", []):
+		all_modified.append(str(f))
+	for f in status.get("unstaged", []):
+		all_modified.append(str(f))
+	for f in status.get("untracked", []):
+		all_modified.append(str(f))
+	return compose_commit_message(all_modified, custom_scope)
+
+
 static func smart_commit(custom_scope: String = "", working_dir: String = "") -> Dictionary:
 	var status: Dictionary = get_status(working_dir)
 	var staged: Array = status.get("staged", [])
@@ -319,8 +361,6 @@ static func smart_commit(custom_scope: String = "", working_dir: String = "") ->
 	if not bool(stage_res.get("success", false)):
 		return stage_res
 		
-	# Determine scope and message
-	var scope: String = custom_scope if not custom_scope.is_empty() else "workspace"
 	var all_modified: Array[String] = []
 	for f in staged:
 		all_modified.append(str(f))
@@ -328,23 +368,7 @@ static func smart_commit(custom_scope: String = "", working_dir: String = "") ->
 		all_modified.append(str(f))
 	for f in untracked:
 		all_modified.append(str(f))
-	
-	if custom_scope.is_empty() and not all_modified.is_empty():
-		var first_file: String = all_modified[0]
-		if first_file.begins_with("scripts/"):
-			scope = first_file.get_file().get_basename()
-		elif first_file.begins_with("scene/"):
-			scope = "ui"
-		elif first_file.begins_with("test/"):
-			scope = "test"
-		elif first_file.ends_with(".md"):
-			scope = "docs"
-			
-	var file_sample: String = ", ".join(all_modified.slice(0, 3))
-	var summary_msg: String = "feat(%s): update %s" % [scope, file_sample]
-	if all_modified.size() > 3:
-		summary_msg += " and %d more files" % (all_modified.size() - 3)
-		
+	var summary_msg: String = compose_commit_message(all_modified, custom_scope)
 	var commit_res: Dictionary = commit(summary_msg, working_dir)
 	commit_res["message"] = summary_msg
 	commit_res["modified_files"] = all_modified

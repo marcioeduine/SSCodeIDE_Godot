@@ -26,6 +26,8 @@ extends Control
 @onready var _status_ai: Label = $RootVBox/StatusBar/StatusRow/StatusAI
 @onready var _main_split: HSplitContainer = $RootVBox/MainSplit
 @onready var _center_split: HSplitContainer = $RootVBox/MainSplit/CenterSplit
+@onready var _explorer_pane: VBoxContainer = $RootVBox/MainSplit/ExplorerPane
+@onready var _chat_pane: VBoxContainer = $RootVBox/MainSplit/CenterSplit/ChatPane
 @onready var _file_menu: PopupMenu = $RootVBox/NavBar/MenuBar/File
 @onready var _edit_menu: PopupMenu = $RootVBox/NavBar/MenuBar/Edit
 @onready var _git_menu: PopupMenu = $RootVBox/NavBar/MenuBar/Git
@@ -66,10 +68,10 @@ var _suppress_tab: bool = false
 var _md_preview_active: bool = false
 var _agent_mode: bool = true
 var _ai_busy: bool = false
-var _toast_tween: Tween = null
 var _ai_provider: String = "nemotron"
 var _active_theme: String = "adwaita_darker"
 var _current_prompt: String = ""
+var _smart_commit_prompt: String = ""
 var _model_candidates: Array[String] = []
 var _model_candidate_index: int = 0
 var _spinner_time: float = 0.0
@@ -82,7 +84,10 @@ var _explorer_collapsed: bool = false  ## Whether the file explorer pane is hidd
 var _chat_collapsed: bool = false      ## Whether the chat pane is hidden
 var _explorer_split_offset: int = 0   ## Saved split offset when explorer is collapsed
 var _chat_split_offset: int = 0       ## Saved split offset when chat is collapsed
+var _os_notify_generation: int = 0    ## Invalidates pending auto-dismiss timers
 const SPINNER_FRAMES: Array[String] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+const OS_NOTIFY_EXPIRE_MS: int = 4000
+const OS_NOTIFY_REPLACE_ID: int = 424242
 
 const THEMES: Dictionary = {
 	"adwaita_darker": {
@@ -283,51 +288,41 @@ func _apply_split_offsets() -> void:
 	var w: float = size.x
 	if w <= 1.0:
 		w = get_viewport_rect().size.x
-	_main_split.split_offset = int(w * 0.18)
-	_center_split.split_offset = int(w * 0.50)
-	_explorer_split_offset = _main_split.split_offset
-	_chat_split_offset     = _center_split.split_offset
+	if not _explorer_collapsed:
+		_main_split.split_offset = int(w * 0.18)
+		_explorer_split_offset = _main_split.split_offset
+	if not _chat_collapsed:
+		_center_split.split_offset = int(w * 0.50)
+		_chat_split_offset = _center_split.split_offset
 
 
 func _toggle_explorer() -> void:
-	## Collapse or expand the File Explorer pane by animating _main_split.split_offset
-	var tween := create_tween()
-	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	## Hide the explorer completely (`visible = false`) so it does not keep a split slot.
 	if _explorer_collapsed:
-		## Expand: restore saved offset
 		_explorer_collapsed = false
+		_explorer_pane.visible = true
 		var target := _explorer_split_offset if _explorer_split_offset > 60 else int(get_viewport_rect().size.x * 0.18)
-		tween.tween_property(_main_split, "split_offset", target, 0.22)
-		get_node("RootVBox/MainSplit/ExplorerPane/ExplorerToggleBtn").visible = true
+		_main_split.split_offset = target
 		_status_left.text = "Explorer  ▶  shown"
 	else:
-		## Collapse: save current offset then slide to 0
 		_explorer_split_offset = _main_split.split_offset
 		_explorer_collapsed = true
-		tween.tween_property(_main_split, "split_offset", 0, 0.22)
-		get_node("RootVBox/MainSplit/ExplorerPane/ExplorerToggleBtn").visible = false
+		_explorer_pane.visible = false
 		_status_left.text = "Explorer  ◀  hidden  (Ctrl+B to restore)"
 
 
 func _toggle_chat() -> void:
-	## Collapse or expand the Chat pane by animating _center_split.split_offset
-	## A very large positive offset pushes the chat pane fully off-screen to the right.
-	var tween := create_tween()
-	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	var full_width: int = int(get_viewport_rect().size.x)
+	## Hide the chat completely (`visible = false`) so it does not keep a split slot.
 	if _chat_collapsed:
-		## Expand: restore saved offset
 		_chat_collapsed = false
-		var target := _chat_split_offset if _chat_split_offset > 60 else int(full_width * 0.50)
-		tween.tween_property(_center_split, "split_offset", target, 0.22)
-		get_node("RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatToggleBtn").visible = true
+		_chat_pane.visible = true
+		var target := _chat_split_offset if _chat_split_offset > 60 else int(get_viewport_rect().size.x * 0.50)
+		_center_split.split_offset = target
 		_status_left.text = "Chat  ▶  shown"
 	else:
-		## Collapse: save current offset then push chat fully right
 		_chat_split_offset = _center_split.split_offset
 		_chat_collapsed = true
-		tween.tween_property(_center_split, "split_offset", full_width, 0.22)
-		get_node("RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatToggleBtn").visible = false
+		_chat_pane.visible = false
 		_status_left.text = "Chat  ◀  hidden  (Ctrl+Shift+B to restore)"
 
 
@@ -622,6 +617,7 @@ func _on_git_menu(id: int) -> void:
 func _on_config_menu(id: int) -> void:
 	match id:
 		0: _show_config()
+		1: _prompt_api_key(true, Callable())
 
 
 func _on_help_menu(_id: int) -> void:
@@ -642,7 +638,7 @@ func _show_overlay(title: String, body: String) -> void:
 	_overlay.visible = true
 
 
-func _show_input_dialog(title: String, body: String, placeholder: String, default_val: String, btn_label: String, callback: Callable) -> void:
+func _show_input_dialog(title: String, body: String, placeholder: String, default_val: String, btn_label: String, callback: Callable, secret: bool = false) -> void:
 	_dialog_title.text = title
 	_dialog_body.text = body
 	_dialog_body.visible = true
@@ -650,6 +646,7 @@ func _show_input_dialog(title: String, body: String, placeholder: String, defaul
 		_dialog_input_row.visible = true
 		_dialog_input.placeholder_text = placeholder
 		_dialog_input.text = default_val
+		_dialog_input.secret = secret
 		_dialog_action_btn.text = btn_label
 	_dialog_action_callback = callback
 	_dialog_panel.visible = true
@@ -674,6 +671,9 @@ func _hide_overlay() -> void:
 	_dialog_panel.visible = false
 	_overlay.visible = false
 	_dialog_action_callback = Callable()
+	if _dialog_input:
+		_dialog_input.secret = false
+		_dialog_input.text = ""
 
 
 func _update_git_status_bar() -> void:
@@ -881,11 +881,49 @@ func _show_about() -> void:
 
 
 func _show_config() -> void:
-	var body := "[b]Settings[/b]\n\n• [b]Typography:[/b] FiraCode Nerd Font\n• [b]Workspace:[/b] %s\n• [b]Active Model:[/b] %s (NVIDIA NIM)\n• [b]Status:[/b] Connected & Active" % [
+	var key_state := "saved on this machine" if not AIService._read_stored_api_key().is_empty() else "not saved"
+	if not OS.get_environment(AIService.NVIDIA_API_KEY_ENV).strip_edges().is_empty():
+		key_state = "set via process environment"
+	var body := "[b]Settings[/b]\n\n• [b]Typography:[/b] FiraCode Nerd Font\n• [b]Workspace:[/b] %s\n• [b]Active Model:[/b] %s (NVIDIA NIM)\n• [b]API key:[/b] %s\n• [b]Status:[/b] %s\n\nUse Config → NVIDIA NIM API key… to change the stored key." % [
 		_workspace_root,
 		_ai_provider.replace("_", " ").to_upper(),
+		key_state,
+		"Ready" if AIService.has_nvidia_api_key() else "API key required",
 	]
 	_show_overlay("Settings", body)
+
+
+func _ensure_api_key(after: Callable) -> void:
+	if AIService.has_nvidia_api_key():
+		if after.is_valid():
+			after.call()
+		return
+	_prompt_api_key(false, after)
+
+
+func _prompt_api_key(force: bool, after: Callable) -> void:
+	var existing := AIService._read_stored_api_key()
+	var body := "The NVIDIA NIM API key is stored only on this machine (Godot user data) and is never committed with the project.\n\nPaste the key below. Leave empty and confirm to remove a stored key." if force else "To use the chat assistant you need an NVIDIA NIM API key.\n\nIt will be saved on this machine so you do not have to enter it again. You can change it later under Config → NVIDIA NIM API key…"
+	_show_input_dialog(
+		"NVIDIA NIM API key",
+		body,
+		"nvapi-…",
+		existing if force else "",
+		"Save",
+		func(val: String) -> void:
+			if val.is_empty() and not force:
+				_show_toast("API key not set. Chat is unavailable until you add one.", true)
+				return
+			if not AIService.set_stored_nvidia_api_key(val):
+				_show_toast("Could not save the API key.", true)
+				return
+			if val.is_empty():
+				_show_toast("Stored API key removed.", false)
+			else:
+				_show_toast("API key saved.", false)
+			_update_ai_status()
+			if after.is_valid() and AIService.has_nvidia_api_key():
+				after.call(), true)
 
 
 func _on_provider_selected(index: int) -> void:
@@ -1080,7 +1118,10 @@ func _update_ai_status() -> void:
 		"laguna": "Laguna Code",
 	}
 	var display_title: String = titles.get(_ai_provider, "Nemotron 3 Omni")
-	_status_ai.text = "AI: %s · on" % display_title
+	if AIService.has_nvidia_api_key():
+		_status_ai.text = "AI: %s · on" % display_title
+	else:
+		_status_ai.text = "AI: %s · key needed" % display_title
 	_chat_context_badge.text = "Local · Autopilot"
 	_chat_input.placeholder_text = "Describe what to build or ask %s…" % display_title
 
@@ -2055,12 +2096,21 @@ func _on_chat_send_pressed() -> void:
 		_cancel_ai_request()
 
 
-func _cancel_ai_request() -> void:
-	_ai_chat_http.cancel_request()
+func _clear_ai_busy() -> void:
 	_ai_busy = false
 	_chat_status_banner.visible = false
 	_chat_send.text = "↑"
 	_status_left.text = "READY"
+
+
+func _cancel_ai_request() -> void:
+	var pending_smart := _is_smart_commit_pending()
+	_ai_chat_http.cancel_request()
+	if pending_smart:
+		_fallback_smart_commit("Pedido cancelado.")
+		return
+	_smart_commit_prompt = ""
+	_clear_ai_busy()
 	_show_toast("Request cancelled.", false)
 	_append_chat("IDE", "Request cancelled.", Color("#ffa348"))
 
@@ -2080,7 +2130,7 @@ func _on_chat_submitted(text: String) -> void:
 		_handle_slash(prompt)
 		return
 	_chat_history.append({"role": "user", "content": prompt})
-	_ask_ai(prompt)
+	_ensure_api_key(func() -> void: _ask_ai(prompt))
 
 
 func _handle_slash(cmd: String) -> void:
@@ -2281,12 +2331,53 @@ func _execute_git_command(args: PackedStringArray) -> Dictionary:
 	return GitService.execute(args, _workspace_root)
 
 
+func _is_smart_commit_pending() -> bool:
+	return not _smart_commit_prompt.is_empty() or _current_prompt.begins_with("__SMART_COMMIT__:")
+
+
+func _finish_smart_commit(commit_msg: String, via_ai: bool, note: String = "") -> void:
+	var diff_stat: String = ""
+	if _current_prompt.begins_with("__SMART_COMMIT__:"):
+		diff_stat = _current_prompt.trim_prefix("__SMART_COMMIT__:")
+	_current_prompt = ""
+	_smart_commit_prompt = ""
+	_clear_ai_busy()
+	var message: String = commit_msg.strip_edges()
+	if message.is_empty():
+		message = GitService.build_fallback_commit_message(_workspace_root)
+	var commit_res: Dictionary = GitService.commit(message, _workspace_root)
+	if bool(commit_res.get("success", false)):
+		var headline: String = message.split("\n")[0]
+		var source_label: String = "mensagem gerada pela IA" if via_ai else "mensagem local (Conventional Commits)"
+		var commit_report := "[b]Smart Commit realizado:[/b]\n"
+		commit_report += "[bgcolor=#0d1a0d][color=#57e389]  " + headline + "\n[/color][/bgcolor]\n\n"
+		if not note.is_empty():
+			commit_report += "[color=#ffa348]%s[/color]\n\n" % note
+		if not diff_stat.is_empty():
+			commit_report += "[color=#9a9996]Resumo das alterações:\n" + diff_stat + "[/color]\n"
+		commit_report += "\n[color=#57e389]● Git[/color] [color=#62a0ea]commit com %s[/color]" % source_label
+		_append_chat("GIT", commit_report, Color("#57e389"))
+		_show_toast("Smart Commit: " + headline, false)
+	else:
+		_append_chat("GIT", "[color=#ed333b]Erro no commit:[/color]\n" + str(commit_res.get("output", "")), Color("#ed333b"))
+		_show_toast("Smart Commit failed.", true)
+	_update_git_status_bar()
+
+
+func _fallback_smart_commit(reason: String) -> void:
+	var local_msg: String = GitService.build_fallback_commit_message(_workspace_root)
+	_finish_smart_commit(local_msg, false, reason + " A usar mensagem local.")
+
+
 func _generate_smart_commit() -> void:
-	## Stage all changes first
 	if not GitService.is_git_repository(_workspace_root):
 		_append_chat("GIT", "[color=#ffa348]Não é um repositório Git.[/color]", Color("#ffa348"))
 		_show_toast("Not a Git repository.", true)
 		return
+	_continue_smart_commit()
+
+
+func _continue_smart_commit() -> void:
 
 	var st: Dictionary = GitService.get_status(_workspace_root)
 	var staged: Array   = st.get("staged",    [])
@@ -2316,6 +2407,10 @@ func _generate_smart_commit() -> void:
 	if diff_text.is_empty():
 		diff_text = diff_stat
 
+	if not AIService.has_nvidia_api_key():
+		_finish_smart_commit(GitService.build_fallback_commit_message(_workspace_root), false, "Sem chave NVIDIA NIM.")
+		return
+
 	## Show spinner while AI generates the commit message
 	_show_toast("A gerar mensagem de commit com IA…", false)
 	_append_chat("GIT", "[color=#62a0ea]⠙ A gerar mensagem de commit com IA…[/color]", Color("#62a0ea"))
@@ -2338,10 +2433,10 @@ func _generate_smart_commit() -> void:
 
 
 func _ai_smart_commit_request(prompt: String, diff_stat: String) -> void:
-	## Fires a dedicated one-shot HTTPRequest to NVIDIA NIM to generate the commit message.
-	## We reuse _ai_chat_http; if a chat request is already running we queue with a small delay.
+	## Reuse the same HTTPRequest as chat. Candidate fallback must send this
+	## compact payload — not the chat workspace dump — or the retry will hang.
 	if _ai_busy:
-		_append_chat("GIT", "[color=#ffa348]IA ocupada. Tenta novamente em breve.[/color]", Color("#ffa348"))
+		_finish_smart_commit(GitService.build_fallback_commit_message(_workspace_root), false, "IA ocupada.")
 		return
 
 	_ai_busy = true
@@ -2350,32 +2445,11 @@ func _ai_smart_commit_request(prompt: String, diff_stat: String) -> void:
 	_chat_status_banner.visible = true
 	_chat_send.text = "■"
 	_status_left.text = "Smart Commit: generating AI message…"
-
-	var model_name: String = AIService.get_candidate_models(_ai_provider)[0]
-	var headers := PackedStringArray([
-		"Content-Type: application/json",
-		"Authorization: Bearer " + AIService.get_nvidia_api_key(),
-		"Accept: application/json"
-	])
-	var messages_payload: Array[Dictionary] = [
-		{"role": "system", "content": "You are an expert Git commit message writer. Output ONLY the commit message with no extra text or markdown."},
-		{"role": "user",   "content": prompt}
-	]
-	var payload_dict: Dictionary = {
-		"model": model_name,
-		"messages": messages_payload,
-		"temperature": 0.2,
-		"top_p": 0.9,
-		"max_tokens": 256,
-		"stream": false
-	}
-	var payload_json := JSON.stringify(payload_dict)
-
-	## Tag this as a smart-commit request so _on_ai_chat_http_completed can handle it
 	_current_prompt = "__SMART_COMMIT__:" + diff_stat
+	_smart_commit_prompt = prompt
 	_model_candidates = AIService.get_candidate_models(_ai_provider)
 	_model_candidate_index = 0
-	_ai_chat_http.request(AIService.NVIDIA_BASE_URL, headers, HTTPClient.METHOD_POST, payload_json)
+	_send_chat_completion()
 
 
 func _get_workspace_files_list() -> Array[String]:
@@ -2449,11 +2523,12 @@ func _ask_ai(prompt: String) -> void:
 
 func _send_chat_completion() -> void:
 	if _model_candidate_index >= _model_candidates.size():
-		_ai_busy = false
-		_chat_status_banner.visible = false
-		_chat_send.text = "↑"
+		if _is_smart_commit_pending():
+			_fallback_smart_commit("Modelos NVIDIA NIM esgotados.")
+			return
+		_smart_commit_prompt = ""
+		_clear_ai_busy()
 		_append_chat(_ai_provider.to_upper(), "Could not retrieve response from NVIDIA NIM models. Please retry.", Color("#ed333b"))
-		_status_left.text = "READY"
 		return
 
 	var model_name: String = _model_candidates[_model_candidate_index]
@@ -2463,89 +2538,107 @@ func _send_chat_completion() -> void:
 		"Authorization: Bearer " + AIService.get_nvidia_api_key(),
 		"Accept: application/json"
 	])
-	
-	var workspace_info: String = _get_workspace_context()
-	var system_role_content: String = ""
-	if _agent_mode:
-		system_role_content = (
-			"You are SSBot, an elite autonomous AI programming agent integrated directly into SSCodeIDE created by Ser Superior (SS).\n" +
-			"You have direct access and visibility to the project workspace files, directory tree, and active file.\n\n" +
-			"=== WORKSPACE CONTEXT ===\n" +
-			workspace_info + "\n" +
-			"=========================\n\n" +
-			"=== CRITICAL COMMUNICATION & LANGUAGE RULES ===\n" +
-			"1. You MUST ALWAYS communicate and respond in European Portuguese (pt-PT), adhering strictly to the 'norma culta' of Portugal.\n" +
-			"2. Treat the user informally by 'tu' (second person singular: 'podes', 'vê', 'executa', 'fizeste').\n" +
-			"3. Follow the grammatical rules of the pre-2012 orthographic agreement (preserving silent consonants, e.g., 'acção', 'directo', 'projecto', 'objectivo', 'adopção', 'correcção', 'facto', 'actualização', 'óptimo', 'eléctrico').\n" +
-			"4. However, ALL projects, source code, variable names, functions, docstrings, and technical code comments MUST ALWAYS be in technical British English (en-GB) (e.g., 'colour', 'behaviour', 'initialise', 'serialisation', 'optimise', 'centre').\n" +
-			"===============================================\n\n" +
-			"Provide detailed technical guidance, plan development tasks with checklists, review code, execute slash commands, and format responses clearly with Markdown/BBCode.\n" +
-			"Always consider the full workspace context and active file contents when responding."
-		)
-	else:
-		system_role_content = (
-			"You are SSBot, a helpful AI programming assistant embedded in SSCodeIDE created by Ser Superior (SS).\n\n" +
-			"=== CRITICAL COMMUNICATION & LANGUAGE RULES ===\n" +
-			"1. You MUST ALWAYS communicate and respond in European Portuguese (pt-PT), adhering strictly to the 'norma culta' of Portugal.\n" +
-			"2. Treat the user informally by 'tu' (second person singular: 'podes', 'vê', 'executa', 'fizeste').\n" +
-			"3. Follow the grammatical rules of the pre-2012 orthographic agreement (preserving silent consonants, e.g., 'acção', 'directo', 'projecto', 'objectivo', 'adopção', 'correcção', 'facto', 'actualização', 'óptimo', 'eléctrico').\n" +
-			"4. However, ALL projects, source code, variable names, functions, docstrings, and technical code comments MUST ALWAYS be in technical British English (en-GB) (e.g., 'colour', 'behaviour', 'initialise', 'serialisation', 'optimise', 'centre').\n" +
-			"===============================================\n\n" +
-			"Respond concisely and helpfully to general programming questions and discussions."
-		)
-	
-	var messages_payload: Array[Dictionary] = [
-		{"role": "system", "content": system_role_content}
-	]
-	
-	var history_limit: int = 60 if _agent_mode else 30
-	var start_idx: int = maxi(0, _chat_history.size() - history_limit)
-	for i in range(start_idx, _chat_history.size()):
-		messages_payload.append(_chat_history[i])
+	var is_smart_commit := _current_prompt.begins_with("__SMART_COMMIT__:")
+	var messages_payload: Array[Dictionary] = []
+	var payload_dict: Dictionary = {}
 
-	var payload_dict: Dictionary = {
-		"model": model_name,
-		"messages": messages_payload,
-		"temperature": 0.7 if _agent_mode else 0.5,
-		"top_p": 0.95,
-		"max_tokens": 4096,
-		"stream": false
-	}
-	if model_name.begins_with("nvidia/nemotron"):
-		payload_dict["chat_template_kwargs"] = {"thinking": true}
+	if is_smart_commit:
+		messages_payload = [
+			{"role": "system", "content": "You are an expert Git commit message writer. Output ONLY the commit message with no extra text or markdown."},
+			{"role": "user", "content": _smart_commit_prompt}
+		]
+		payload_dict = {
+			"model": model_name,
+			"messages": messages_payload,
+			"temperature": 0.2,
+			"top_p": 0.9,
+			"max_tokens": 256,
+			"stream": false
+		}
+	else:
+		var workspace_info: String = _get_workspace_context()
+		var system_role_content: String = ""
+		if _agent_mode:
+			system_role_content = (
+				"You are SSBot, an elite autonomous AI programming agent integrated directly into SSCodeIDE created by Ser Superior (SS).\n" +
+				"You have direct access and visibility to the project workspace files, directory tree, and active file.\n\n" +
+				"=== WORKSPACE CONTEXT ===\n" +
+				workspace_info + "\n" +
+				"=========================\n\n" +
+				"=== CRITICAL COMMUNICATION & LANGUAGE RULES ===\n" +
+				"1. You MUST ALWAYS communicate and respond in European Portuguese (pt-PT), adhering strictly to the 'norma culta' of Portugal.\n" +
+				"2. Treat the user informally by 'tu' (second person singular: 'podes', 'vê', 'executa', 'fizeste').\n" +
+				"3. Follow the grammatical rules of the pre-2012 orthographic agreement (preserving silent consonants, e.g., 'acção', 'directo', 'projecto', 'objectivo', 'adopção', 'correcção', 'facto', 'actualização', 'óptimo', 'eléctrico').\n" +
+				"4. However, ALL projects, source code, variable names, functions, docstrings, and technical code comments MUST ALWAYS be in technical British English (en-GB) (e.g., 'colour', 'behaviour', 'initialise', 'serialisation', 'optimise', 'centre').\n" +
+				"===============================================\n\n" +
+				"Provide detailed technical guidance, plan development tasks with checklists, review code, execute slash commands, and format responses clearly with Markdown/BBCode.\n" +
+				"Always consider the full workspace context and active file contents when responding."
+			)
+		else:
+			system_role_content = (
+				"You are SSBot, a helpful AI programming assistant embedded in SSCodeIDE created by Ser Superior (SS).\n\n" +
+				"=== CRITICAL COMMUNICATION & LANGUAGE RULES ===\n" +
+				"1. You MUST ALWAYS communicate and respond in European Portuguese (pt-PT), adhering strictly to the 'norma culta' of Portugal.\n" +
+				"2. Treat the user informally by 'tu' (second person singular: 'podes', 'vê', 'executa', 'fizeste').\n" +
+				"3. Follow the grammatical rules of the pre-2012 orthographic agreement (preserving silent consonants, e.g., 'acção', 'directo', 'projecto', 'objectivo', 'adopção', 'correcção', 'facto', 'actualização', 'óptimo', 'eléctrico').\n" +
+				"4. However, ALL projects, source code, variable names, functions, docstrings, and technical code comments MUST ALWAYS be in technical British English (en-GB) (e.g., 'colour', 'behaviour', 'initialise', 'serialisation', 'optimise', 'centre').\n" +
+				"===============================================\n\n" +
+				"Respond concisely and helpfully to general programming questions and discussions."
+			)
+		messages_payload = [
+			{"role": "system", "content": system_role_content}
+		]
+		var history_limit: int = 60 if _agent_mode else 30
+		var start_idx: int = maxi(0, _chat_history.size() - history_limit)
+		for i in range(start_idx, _chat_history.size()):
+			messages_payload.append(_chat_history[i])
+		payload_dict = {
+			"model": model_name,
+			"messages": messages_payload,
+			"temperature": 0.7 if _agent_mode else 0.5,
+			"top_p": 0.95,
+			"max_tokens": 4096,
+			"stream": false
+		}
+		if model_name.begins_with("nvidia/nemotron"):
+			payload_dict["chat_template_kwargs"] = {"thinking": true}
+
 	var payload_json := JSON.stringify(payload_dict)
 	var err: Error = _ai_chat_http.request(target_url, headers, HTTPClient.METHOD_POST, payload_json)
 	if err != OK:
-		_ai_busy = false
-		_chat_status_banner.visible = false
-		_chat_send.text = "↑"
+		if _is_smart_commit_pending():
+			_fallback_smart_commit("Falha ao iniciar o pedido HTTP (código %d)." % err)
+			return
+		_smart_commit_prompt = ""
+		_clear_ai_busy()
 		_show_toast("Failed to initiate HTTP request (Code %d)." % err, true)
 		_append_chat(_ai_provider.to_upper(), "Failed to initiate HTTP request (Code %d)." % err, Color("#ed333b"))
-		_status_left.text = "READY"
 
 
 func _show_toast(message: String, is_warning: bool = true) -> void:
-	## Send a native OS notification, then briefly show the in-app indicator
 	_send_os_notification("SSCodeIDE", message, is_warning)
 
+
 func _send_os_notification(title: String, body: String, is_warning: bool = false) -> void:
-	## Dispatches a native OS desktop notification.
-	## Linux  — notify-send (libnotify)
-	## macOS  — osascript (AppleScript)
-	## Windows — PowerShell BurntToast / Shell.Application
-	var urgency := "normal" if not is_warning else "critical"
-	var icon    := "dialog-information" if not is_warning else "dialog-warning"
+	## Native desktop notification. Auto-dismiss after OS_NOTIFY_EXPIRE_MS.
+	## GNOME ignores expire-time for urgency=critical, so warnings stay "normal"
+	## and transient; CloseNotification is issued after the timeout.
+	var icon := "dialog-information" if not is_warning else "dialog-warning"
+	var expire_s := float(OS_NOTIFY_EXPIRE_MS) / 1000.0
 	match OS.get_name():
 		"Linux", "FreeBSD", "OpenBSD", "NetBSD":
 			OS.execute("notify-send", [
-				"--urgency=" + urgency,
+				"--urgency=normal",
 				"--icon=" + icon,
 				"--app-name=SSCodeIDE",
-				"--expire-time=4000",
+				"--hint=int:transient:1",
+				"--hint=int:resident:0",
+				"--replace-id=" + str(OS_NOTIFY_REPLACE_ID),
+				"--expire-time=" + str(OS_NOTIFY_EXPIRE_MS),
 				title, body
 			])
 		"macOS":
-			var script := "display notification \"%s\" with title \"%s\" sound name \"Submarine\"" % [
+			var script := "display notification \"%s\" with title \"%s\"" % [
 				body.replace("\"", "'"), title.replace("\"", "'")
 			]
 			OS.execute("osascript", ["-e", script])
@@ -2555,42 +2648,70 @@ func _send_os_notification(title: String, body: String, is_warning: bool = false
 				"$xml = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02);" +
 				"$xml.GetElementsByTagName('text')[0].InnerText = '%s';" % title.replace("'", "`'") +
 				"$xml.GetElementsByTagName('text')[1].InnerText = '%s';" % body.replace("'", "`'") +
-				"[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('SSCodeIDE').Show((New-Object Windows.UI.Notifications.ToastNotification($xml)))"
+				"$toast = New-Object Windows.UI.Notifications.ToastNotification($xml);" +
+				"$toast.ExpirationTime = [DateTimeOffset]::Now.AddMilliseconds(%d);" % OS_NOTIFY_EXPIRE_MS +
+				"[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('SSCodeIDE').Show($toast)"
 			)
 			OS.execute("powershell", ["-WindowStyle", "Hidden", "-Command", ps_cmd])
+	_os_notify_generation += 1
+	var gen := _os_notify_generation
+	get_tree().create_timer(expire_s).timeout.connect(func() -> void:
+		if gen == _os_notify_generation:
+			_dismiss_os_notification()
+	)
+
+
+func _dismiss_os_notification() -> void:
+	match OS.get_name():
+		"Linux", "FreeBSD", "OpenBSD", "NetBSD":
+			OS.execute("gdbus", [
+				"call", "--session",
+				"--dest", "org.freedesktop.Notifications",
+				"--object-path", "/org/freedesktop/Notifications",
+				"--method", "org.freedesktop.Notifications.CloseNotification",
+				str(OS_NOTIFY_REPLACE_ID)
+			])
+		_:
+			pass
+
+
+func _try_next_ai_candidate(toast_message: String) -> bool:
+	_model_candidate_index += 1
+	if _model_candidate_index < _model_candidates.size():
+		_ai_busy = true
+		_chat_status_banner.visible = true
+		_chat_send.text = "■"
+		_show_toast(toast_message, true)
+		_send_chat_completion()
+		return true
+	if _is_smart_commit_pending():
+		_fallback_smart_commit("Todos os modelos candidatos falharam.")
+		return false
+	_smart_commit_prompt = ""
+	_clear_ai_busy()
+	return false
 
 
 func _on_ai_chat_http_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
 	var is_smart_commit := _current_prompt.begins_with("__SMART_COMMIT__:")
-	if not is_smart_commit:
-		_ai_busy = false
-		_chat_status_banner.visible = false
-		_chat_send.text = "↑"
-		_status_left.text = "READY"
-
 	var elapsed: float = maxf(0.1, (Time.get_ticks_msec() / 1000.0) - _request_start_time)
 
 	if result != HTTPRequest.RESULT_SUCCESS:
-		_model_candidate_index += 1
-		if _model_candidate_index < _model_candidates.size():
-			_ai_busy = true
-			_chat_status_banner.visible = true
-			_chat_send.text = "■"
-			_show_toast("Request timeout. Attempting candidate model…", true)
-			_send_chat_completion()
+		var timeout_toast := "Request timeout. Attempting candidate model…"
+		if _try_next_ai_candidate(timeout_toast):
+			return
+		if is_smart_commit:
+			_fallback_smart_commit("O modelo excedeu o tempo limite.")
 			return
 		_show_toast("Response timeout exceeded. Request cancelled.", true)
 		_append_chat(_ai_provider.to_upper(), "The model timed out. The request was cancelled automatically.", Color("#ff7800"))
 		return
 
 	if body.is_empty():
-		_model_candidate_index += 1
-		if _model_candidate_index < _model_candidates.size():
-			_ai_busy = true
-			_chat_status_banner.visible = true
-			_chat_send.text = "■"
-			_show_toast("Empty response. Attempting candidate model…", true)
-			_send_chat_completion()
+		if _try_next_ai_candidate("Empty response. Attempting candidate model…"):
+			return
+		if is_smart_commit:
+			_fallback_smart_commit("Resposta vazia do servidor.")
 			return
 		_show_toast("Empty server response.", true)
 		_append_chat(_ai_provider.to_upper(), "Empty server response. Please retry.", Color("#ed333b"))
@@ -2610,29 +2731,12 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 
 				## ── Smart Commit intercept ──────────────────────────────────────
 				if _current_prompt.begins_with("__SMART_COMMIT__:"):
-					var diff_stat: String = _current_prompt.trim_prefix("__SMART_COMMIT__:")
-					_current_prompt = ""
-					## Strip accidental markdown fences the model may add
 					var commit_msg := reply_text.strip_edges()
 					commit_msg = commit_msg.trim_prefix("```").trim_suffix("```").strip_edges()
-					## Commit with the AI-generated message
-					var commit_res: Dictionary = GitService.commit(commit_msg, _workspace_root)
-					if bool(commit_res.get("success", false)):
-						var commit_report := "[b]Smart Commit (IA) realizado:[/b]\n"
-						commit_report += "[bgcolor=#0d1a0d][color=#57e389]  " + commit_msg.split("\n")[0] + "\n[/color][/bgcolor]\n\n"
-						if not diff_stat.is_empty():
-							commit_report += "[color=#9a9996]Resumo das alterações:\n" + diff_stat + "[/color]\n"
-						commit_report += "\n[color=#57e389]● Git[/color] [color=#62a0ea]commit com mensagem gerada pela IA[/color]"
-						_append_chat("GIT", commit_report, Color("#57e389"))
-						_show_toast("Smart Commit: " + commit_msg.split("\n")[0], false)
-					else:
-						_append_chat("GIT", "[color=#ed333b]Erro no commit:[/color]\n" + str(commit_res.get("output", "")), Color("#ed333b"))
-						_show_toast("Smart Commit failed.", true)
-					_ai_busy = false
-					_chat_status_banner.visible = false
-					_chat_send.text = "↑"
-					_status_left.text = "READY"
-					_update_git_status_bar()
+					if commit_msg.is_empty():
+						_fallback_smart_commit("A IA devolveu uma mensagem vazia.")
+						return
+					_finish_smart_commit(commit_msg, true)
 					return
 				## ── End smart commit ────────────────────────────────────────────
 
@@ -2640,28 +2744,45 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 				var usage: Dictionary = parsed.get("usage", {})
 				var prompt_tokens: int = int(usage.get("prompt_tokens", float(_current_prompt.length()) / 4.0))
 				var completion_tokens: int = int(usage.get("completion_tokens", float(reply_text.length()) / 4.0))
+				_clear_ai_busy()
 				_append_ai_response(_ai_provider, reply_text, elapsed, prompt_tokens, completion_tokens)
 				return
 	elif response_code in [200, 201] and not text.strip_edges().is_empty() and not text.begins_with("{"):
 		_chat_history.append({"role": "assistant", "content": text.strip_edges()})
+		_clear_ai_busy()
 		_append_ai_response(_ai_provider, text.strip_edges(), elapsed)
 		return
 
-	_model_candidate_index += 1
-	if _model_candidate_index < _model_candidates.size():
-		_ai_busy = true
-		_chat_status_banner.visible = true
-		_chat_send.text = "■"
-		_show_toast("Server busy. Attempting candidate model…", true)
-		_send_chat_completion()
-	else:
-		_ai_busy = false
-		var err_detail: String = ""
-		if parsed is Dictionary and parsed.has("error"):
-			var err_dict: Dictionary = parsed["error"] if parsed["error"] is Dictionary else {}
-			err_detail = " — " + str(err_dict.get("message", parsed["error"]))
-		_show_toast("AI Service Error (HTTP %d)" % response_code, true)
-		_append_chat(_ai_provider.to_upper(), "Could not retrieve response (HTTP %d)%s." % [response_code, err_detail], Color("#ed333b"))
+	# 401 is the key, not the model — do not cycle candidates with the same secret.
+	if response_code == 401:
+		AIService.invalidate_cached_api_key()
+		if is_smart_commit:
+			_fallback_smart_commit("A chave NVIDIA NIM foi rejeitada (HTTP 401).")
+			_prompt_api_key(true, Callable())
+			return
+		_smart_commit_prompt = ""
+		_clear_ai_busy()
+		_show_toast("NVIDIA NIM rejected the API key (HTTP 401). Enter a new key.", true)
+		_append_chat(_ai_provider.to_upper(), "Could not retrieve response (HTTP 401). The API key was rejected. Paste a new NVIDIA NIM key to continue.", Color("#ed333b"))
+		var retry_prompt := _current_prompt
+		_prompt_api_key(true, func() -> void:
+			if retry_prompt.is_empty() or retry_prompt.begins_with("__SMART_COMMIT__:"):
+				return
+			_ask_ai(retry_prompt)
+		)
+		return
+
+	if _try_next_ai_candidate("Server busy. Attempting candidate model…"):
+		return
+	if is_smart_commit:
+		_fallback_smart_commit("Erro do serviço de IA (HTTP %d)." % response_code)
+		return
+	var err_detail: String = ""
+	if parsed is Dictionary and parsed.has("error"):
+		var err_dict: Dictionary = parsed["error"] if parsed["error"] is Dictionary else {}
+		err_detail = " — " + str(err_dict.get("message", parsed["error"]))
+	_show_toast("AI Service Error (HTTP %d)" % response_code, true)
+	_append_chat(_ai_provider.to_upper(), "Could not retrieve response (HTTP %d)%s." % [response_code, err_detail], Color("#ed333b"))
 
 
 func _append_user_message(prompt: String) -> void:

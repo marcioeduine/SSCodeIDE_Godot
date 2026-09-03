@@ -94,6 +94,26 @@ func test_get_commit_history() -> void:
 	assert_has(first_entry, "message")
 
 
+func test_compose_commit_message_scripts_scope() -> void:
+	var msg: String = GitService.compose_commit_message(["scripts/ui_editor.gd", "scripts/ai_service.gd"])
+	assert_eq(msg, "feat(ui_editor): update scripts/ui_editor.gd, scripts/ai_service.gd")
+
+
+func test_compose_commit_message_docs_and_truncation() -> void:
+	var msg: String = GitService.compose_commit_message([
+		"README.md",
+		"docs/user-guide.md",
+		"docs/architecture.md",
+		"docs/development.md",
+	])
+	assert_eq(msg, "feat(docs): update README.md, docs/user-guide.md, docs/architecture.md and 1 more files")
+
+
+func test_compose_commit_message_empty_paths() -> void:
+	var msg: String = GitService.compose_commit_message([])
+	assert_eq(msg, "chore(workspace): update files")
+
+
 func test_bbcode_formatters() -> void:
 	var mock_status: Dictionary = {
 		"branch": "main",

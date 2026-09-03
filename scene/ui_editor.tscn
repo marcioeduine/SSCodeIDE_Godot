@@ -114,9 +114,11 @@ item_12/text = "Configure Git & GitHub…"
 item_12/id = 12
 
 [node name="Config" type="PopupMenu" parent="RootVBox/NavBar/MenuBar" unique_id=739621716]
-item_count = 1
+item_count = 2
 item_0/text = "Settings…	Ctrl+,"
 item_0/id = 0
+item_1/text = "NVIDIA NIM API key…"
+item_1/id = 1
 
 [node name="Help" type="PopupMenu" parent="RootVBox/NavBar/MenuBar" unique_id=515346578]
 item_count = 1
@@ -462,4 +464,4 @@ text = "Fechar"
 timeout = 30.0
 
 [node name="AIChatHttp" type="HTTPRequest" parent="." unique_id=1786510434]
-timeout = 25.0
+timeout = 90.0
