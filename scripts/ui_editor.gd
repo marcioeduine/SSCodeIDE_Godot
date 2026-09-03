@@ -3,7 +3,7 @@ extends Control
 ## SSCodeIDE — root controller. All nodes live in ui_editor.tscn.
 
 @onready var _file_tree: Tree = $RootVBox/MainSplit/ExplorerPane/FileTree
-@onready var _tab_bar: TabBar = $RootVBox/MainSplit/CenterSplit/EditorPane/TabBar
+@onready var _tab_bar: TabBar = %TabBar
 @onready var _code_edit: CodeEdit = $RootVBox/MainSplit/CenterSplit/EditorPane/CodeEdit
 @onready var _chat_log: RichTextLabel = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatLog
 @onready var _chat_header: Label = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatHeader
@@ -28,6 +28,8 @@ extends Control
 @onready var _center_split: HSplitContainer = $RootVBox/MainSplit/CenterSplit
 @onready var _explorer_pane: VBoxContainer = $RootVBox/MainSplit/ExplorerPane
 @onready var _chat_pane: VBoxContainer = $RootVBox/MainSplit/CenterSplit/ChatPane
+@onready var _explorer_toggle_btn: Button = %ExplorerToggleBtn
+@onready var _chat_toggle_btn: Button = %ChatToggleBtn
 @onready var _file_menu: PopupMenu = $RootVBox/NavBar/MenuBar/File
 @onready var _edit_menu: PopupMenu = $RootVBox/NavBar/MenuBar/Edit
 @onready var _git_menu: PopupMenu = $RootVBox/NavBar/MenuBar/Git
@@ -88,6 +90,7 @@ var _os_notify_generation: int = 0    ## Invalidates pending auto-dismiss timers
 const SPINNER_FRAMES: Array[String] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 const OS_NOTIFY_EXPIRE_MS: int = 4000
 const OS_NOTIFY_REPLACE_ID: int = 424242
+const SPLIT_COLLAPSE_PX: int = 32
 
 const THEMES: Dictionary = {
 	"adwaita_darker": {
@@ -297,33 +300,72 @@ func _apply_split_offsets() -> void:
 
 
 func _toggle_explorer() -> void:
-	## Hide the explorer completely (`visible = false`) so it does not keep a split slot.
 	if _explorer_collapsed:
-		_explorer_collapsed = false
-		_explorer_pane.visible = true
-		var target := _explorer_split_offset if _explorer_split_offset > 60 else int(get_viewport_rect().size.x * 0.18)
-		_main_split.split_offset = target
-		_status_left.text = "Explorer  ▶  shown"
+		_expand_explorer()
 	else:
-		_explorer_split_offset = _main_split.split_offset
-		_explorer_collapsed = true
-		_explorer_pane.visible = false
-		_status_left.text = "Explorer  ◀  hidden  (Ctrl+B to restore)"
+		_collapse_explorer(true)
 
 
 func _toggle_chat() -> void:
-	## Hide the chat completely (`visible = false`) so it does not keep a split slot.
 	if _chat_collapsed:
-		_chat_collapsed = false
-		_chat_pane.visible = true
-		var target := _chat_split_offset if _chat_split_offset > 60 else int(get_viewport_rect().size.x * 0.50)
-		_center_split.split_offset = target
-		_status_left.text = "Chat  ▶  shown"
+		_expand_chat()
 	else:
+		_collapse_chat(true)
+
+
+func _expand_explorer() -> void:
+	_explorer_collapsed = false
+	_explorer_pane.visible = true
+	var target := _explorer_split_offset if _explorer_split_offset > SPLIT_COLLAPSE_PX else int(get_viewport_rect().size.x * 0.18)
+	_main_split.split_offset = target
+	_status_left.text = "Explorer  ▶  shown"
+
+
+func _collapse_explorer(save_offset: bool) -> void:
+	if _explorer_collapsed:
+		return
+	if save_offset and _main_split.split_offset > SPLIT_COLLAPSE_PX:
+		_explorer_split_offset = _main_split.split_offset
+	_explorer_collapsed = true
+	_explorer_pane.visible = false
+	_status_left.text = "Explorer  ◀  hidden  (Ctrl+B to restore)"
+
+
+func _expand_chat() -> void:
+	_chat_collapsed = false
+	_chat_pane.visible = true
+	var target := _chat_split_offset if _chat_split_offset > SPLIT_COLLAPSE_PX else int(get_viewport_rect().size.x * 0.50)
+	_center_split.split_offset = target
+	_status_left.text = "Chat  ▶  shown"
+
+
+func _collapse_chat(save_offset: bool) -> void:
+	if _chat_collapsed:
+		return
+	if save_offset and _center_split.split_offset > SPLIT_COLLAPSE_PX:
 		_chat_split_offset = _center_split.split_offset
-		_chat_collapsed = true
-		_chat_pane.visible = false
-		_status_left.text = "Chat  ◀  hidden  (Ctrl+Shift+B to restore)"
+	_chat_collapsed = true
+	_chat_pane.visible = false
+	_status_left.text = "Chat  ◀  hidden  (Ctrl+Shift+B to restore)"
+
+
+func _on_main_split_dragged(offset: int) -> void:
+	if _explorer_collapsed:
+		return
+	if offset > SPLIT_COLLAPSE_PX:
+		_explorer_split_offset = offset
+		return
+	_collapse_explorer(false)
+
+
+func _on_center_split_dragged(offset: int) -> void:
+	if _chat_collapsed:
+		return
+	var remaining: int = int(_center_split.size.x) - offset
+	if remaining > SPLIT_COLLAPSE_PX:
+		_chat_split_offset = offset
+		return
+	_collapse_chat(false)
 
 
 func _wire_signals() -> void:
@@ -370,6 +412,38 @@ func _wire_signals() -> void:
 	_find_close.pressed.connect(func() -> void: _find_row.visible = false)
 	_chat_suggestions_list.item_selected.connect(_on_chat_suggestion_selected)
 	_chat_suggestions_list.item_activated.connect(_on_chat_suggestion_selected)
+	_main_split.dragged.connect(_on_main_split_dragged)
+	_center_split.dragged.connect(_on_center_split_dragged)
+	_explorer_toggle_btn.pressed.connect(_toggle_explorer)
+	_chat_toggle_btn.pressed.connect(_toggle_chat)
+
+
+func _input(event: InputEvent) -> void:
+	## ESC must run before CodeEdit consumes it, so the editor can lose focus
+	## and subsequent shortcuts reach `_unhandled_input`.
+	if not (event is InputEventKey) or not event.pressed or event.echo:
+		return
+	var key: InputEventKey = event
+	if key.keycode != KEY_ESCAPE:
+		return
+	_handle_escape()
+	get_viewport().set_input_as_handled()
+
+
+func _handle_escape() -> void:
+	if _find_row.visible:
+		_find_row.visible = false
+		return
+	if _chat_suggestions_popup.visible:
+		_chat_suggestions_popup.visible = false
+		return
+	if _dialog_panel.visible:
+		_hide_overlay()
+		return
+	if _ai_busy:
+		_cancel_ai_request()
+		return
+	get_viewport().gui_release_focus()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -384,22 +458,6 @@ func _unhandled_input(event: InputEvent) -> void:
 	if ctrl and key.keycode == KEY_SPACE:
 		_update_code_completion()
 		_code_edit.request_code_completion(true)
-		get_viewport().set_input_as_handled()
-		return
-
-	# Escape handling
-	if key.keycode == KEY_ESCAPE:
-		if _find_row.visible:
-			_find_row.visible = false
-			_code_edit.grab_focus()
-		elif _chat_suggestions_popup.visible:
-			_chat_suggestions_popup.visible = false
-		elif _dialog_panel.visible:
-			_hide_overlay()
-		elif _ai_busy:
-			_cancel_ai_request()
-		else:
-			_code_edit.grab_focus()
 		get_viewport().set_input_as_handled()
 		return
 

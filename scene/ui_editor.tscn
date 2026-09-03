@@ -142,12 +142,6 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 0
 
-[node name="ExplorerToggleBtn" type="Button" parent="RootVBox/MainSplit/ExplorerPane" unique_id=1893227218]
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 2
-tooltip_text = "Colapse/Expansão do File Explorer (Ctrl+B)"
-text = "◂"
-
 [node name="ExplorerHeader" type="Label" parent="RootVBox/MainSplit/ExplorerPane" unique_id=1893227217]
 layout_mode = 2
 text = "  EXPLORER"
@@ -170,10 +164,34 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 0
 
-[node name="TabBar" type="TabBar" parent="RootVBox/MainSplit/CenterSplit/EditorPane" unique_id=256136646]
+[node name="GridContainer" type="GridContainer" parent="RootVBox/MainSplit/CenterSplit/EditorPane" unique_id=1574192106]
+layout_mode = 2
+columns = 3
+
+[node name="ExplorerToggleBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/EditorPane/GridContainer" unique_id=1893227218]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 3
+tooltip_text = "Colapse/Expansão do File Explorer (Ctrl+B)"
+text = "◂"
+
+[node name="TabBar" type="TabBar" parent="RootVBox/MainSplit/CenterSplit/EditorPane/GridContainer" unique_id=256136646]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 3
 tab_close_display_policy = 1
+
+[node name="ChatToggleBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/EditorPane/GridContainer" unique_id=1421141930]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 3
+tooltip_text = "Colapse/Expansão do Chat (Ctrl+Shift+B)"
+text = "◂"
 
 [node name="FindRow" type="HBoxContainer" parent="RootVBox/MainSplit/CenterSplit/EditorPane" unique_id=1655727780]
 visible = false
@@ -219,12 +237,6 @@ theme_override_constants/separation = 4
 custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 theme_override_constants/separation = 8
-
-[node name="ChatToggleBtn" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow" unique_id=1421141930]
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 2
-tooltip_text = "Colapse/Expansão do Chat (Ctrl+Shift+B)"
-text = "◂"
 
 [node name="ChatHeader" type="Label" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow" unique_id=1421141929]
 layout_mode = 2
