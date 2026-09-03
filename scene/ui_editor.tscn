@@ -3,24 +3,16 @@
 [ext_resource type="Script" uid="uid://dm57wbc3c6m76" path="res://scripts/ui_editor.gd" id="1_editor"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q2u7n"]
+content_margin_left = 10.0
+content_margin_top = 5.0
+content_margin_right = 10.0
+content_margin_bottom = 5.0
 draw_center = false
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(1, 1, 1, 1)
-border_blend = true
-corner_detail = 1
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0cx3e"]
-draw_center = false
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(1, 1, 1, 1)
-border_blend = true
-corner_detail = 1
 
 [node name="UI_Editor" type="Control" unique_id=1791161152]
 layout_mode = 3
@@ -52,21 +44,21 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 0
 
 [node name="NavBar" type="HBoxContainer" parent="RootVBox" unique_id=1955057909]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-theme_override_constants/separation = 8
 
 [node name="MenuBar" type="MenuBar" parent="RootVBox/NavBar" unique_id=302529279]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_q2u7n")
 flat = true
 
 [node name="File" type="PopupMenu" parent="RootVBox/NavBar/MenuBar" unique_id=728694481]
 oversampling_override = 1.0
-size = Vector2i(266, 178)
+size = Vector2i(266, 213)
+force_native = true
 item_count = 8
 item_0/text = "Open File…	Ctrl+O"
 item_0/id = 0
@@ -170,7 +162,7 @@ text = "  EXPLORER"
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_styles/focus = SubResource("StyleBoxFlat_q2u7n")
+theme_override_styles/panel = SubResource("StyleBoxFlat_q2u7n")
 
 [node name="CenterSplit" type="HSplitContainer" parent="RootVBox/MainSplit" unique_id=270599731]
 layout_mode = 2
@@ -228,13 +220,13 @@ placeholder_text = "Find…"
 layout_mode = 2
 text = "Next"
 
-[node name="ReplaceInput" type="LineEdit" parent="RootVBox/MainSplit/CenterSplit/EditorPane/FindRow"]
+[node name="ReplaceInput" type="LineEdit" parent="RootVBox/MainSplit/CenterSplit/EditorPane/FindRow" unique_id=356564620]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Replace…"
 
-[node name="ReplaceAll" type="Button" parent="RootVBox/MainSplit/CenterSplit/EditorPane/FindRow"]
+[node name="ReplaceAll" type="Button" parent="RootVBox/MainSplit/CenterSplit/EditorPane/FindRow" unique_id=632382191]
 visible = false
 layout_mode = 2
 text = "Replace All"
@@ -247,7 +239,7 @@ text = "×"
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_styles/focus = SubResource("StyleBoxFlat_0cx3e")
+theme_override_styles/normal = SubResource("StyleBoxFlat_q2u7n")
 wrap_mode = 1
 indent_wrapped_lines = true
 minimap_draw = true
@@ -292,6 +284,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 focus_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_q2u7n")
 bbcode_enabled = true
 scroll_following = true
 selection_enabled = true
@@ -312,12 +305,16 @@ fit_content = true
 scroll_active = false
 
 [node name="ChatThinkingLabel" type="RichTextLabel" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner/ChatStatusVBox" unique_id=1868283994]
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 size_flags_vertical = 3
 focus_mode = 2
+theme_override_font_sizes/normal_font_size = 11
+theme_override_font_sizes/bold_font_size = 11
+theme_override_font_sizes/italics_font_size = 11
 bbcode_enabled = true
 scroll_following = true
+autowrap_mode = 2
 selection_enabled = true
 
 [node name="ChatSuggestionsPopup" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane" unique_id=705864052]
@@ -337,7 +334,6 @@ layout_mode = 2
 
 [node name="ChatInputVBox" type="VBoxContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard" unique_id=1761679636]
 layout_mode = 2
-theme_override_constants/separation = 4
 
 [node name="ChatContextChip" type="Button" parent="RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox" unique_id=740238814]
 layout_mode = 2
@@ -396,6 +392,7 @@ text = "Send"
 [node name="StatusBar" type="PanelContainer" parent="RootVBox" unique_id=374397806]
 custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_q2u7n")
 
 [node name="StatusRow" type="HBoxContainer" parent="RootVBox/StatusBar" unique_id=976935217]
 layout_mode = 2

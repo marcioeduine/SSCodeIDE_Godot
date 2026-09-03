@@ -71,6 +71,8 @@ var _suppress_tab: bool = false
 var _md_preview_active: bool = false
 var _agent_mode: bool = true
 var _ai_busy: bool = false
+var _response_rendered: bool = false
+var _panel_outline_overlays: Array[Panel] = []
 var _ai_provider: String = "nemotron"
 var _active_theme: String = "adwaita_darker"
 var _current_prompt: String = ""
@@ -274,6 +276,7 @@ func _ready() -> void:
 	_load_theme_config()
 	_apply_kitty_fish_theme()
 	_wire_signals()
+	_create_panel_outline_overlays()
 	_configure_code_edit()
 	_refresh_file_tree()
 	_open_untitled()
@@ -285,6 +288,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_update_panel_outline_overlays()
 	if _stream_active:
 		_poll_chat_stream()
 	if _ai_busy:
@@ -297,13 +301,69 @@ func _process(delta: float) -> void:
 		_refresh_thinking_panel()
 
 
+func _create_panel_outline_overlays() -> void:
+	for pane: Control in [$RootVBox/MainSplit/ExplorerPane, $RootVBox/MainSplit/CenterSplit/EditorPane, _chat_pane]:
+		var overlay := Panel.new()
+		overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		overlay.z_index = 100
+		add_child(overlay)
+		_panel_outline_overlays.append(overlay)
+
+
+func _update_panel_outline_overlays() -> void:
+	var panes: Array[Control] = [$RootVBox/MainSplit/ExplorerPane, $RootVBox/MainSplit/CenterSplit/EditorPane, _chat_pane]
+	for i in _panel_outline_overlays.size():
+		var overlay := _panel_outline_overlays[i]
+		var pane := panes[i]
+		if not pane.visible:
+			overlay.visible = false
+			continue
+		overlay.visible = true
+		overlay.position = pane.get_global_position() - global_position
+		overlay.size = pane.size
+		var focus_owner := get_viewport().gui_get_focus_owner()
+		var active := focus_owner != null and (focus_owner == pane or pane.is_ancestor_of(focus_owner))
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0, 0, 0, 0)
+		style.set_border_width_all(2 if active else 1)
+		style.border_color = Color("#62a0ea") if active else Color("#34343d")
+		overlay.add_theme_stylebox_override("panel", style)
+
+
 func _refresh_thinking_panel() -> void:
 	if _chat_thinking_label == null:
 		return
-	var body: String = _thinking_text.strip_edges()
+	_chat_thinking_label.add_theme_font_size_override("normal_font_size", 11)
+	_chat_thinking_label.add_theme_font_size_override("italics_font_size", 11)
+	_chat_thinking_label.add_theme_font_size_override("bold_font_size", 11)
+	var body: String = _format_thinking_text(_thinking_text)
 	if body.is_empty():
 		body = "Waiting for the model’s reasoning tokens…"
 	_chat_thinking_label.text = "[color=#9a9996][i]%s[/i][/color]" % body.replace("[", "[lb]")
+
+
+func _format_thinking_text(raw: String) -> String:
+	## Reasoning streams often contain Markdown, XML tags and excessive whitespace.
+	## Keep this preview short and readable; the final answer remains untouched.
+	var body := raw.replace("\r\n", "\n").replace("\r", "\n")
+	body = body.replace("<think>", "").replace("</think>", "")
+	var lines: PackedStringArray = []
+	for line in body.split("\n"):
+		var clean := line.strip_edges()
+		clean = clean.trim_prefix("###").strip_edges()
+		clean = clean.trim_prefix("**").trim_suffix("**").strip_edges()
+		if clean.is_empty() or (not lines.is_empty() and lines[-1] == clean):
+			continue
+		lines.append(clean)
+	var result := "\n".join(lines)
+	# Some providers omit whitespace between streamed reasoning tokens.
+	var spacing := RegEx.new()
+	spacing.compile("([a-z])([A-Z])")
+	result = spacing.sub(result, "$1 $2", true)
+	if result.length() > 1800:
+		result = result.substr(result.length() - 1800, 1800)
+		result = "… " + result
+	return result
 
 
 func _extract_reasoning(msg: Dictionary) -> String:
@@ -403,13 +463,16 @@ func _consume_sse_buffer() -> void:
 				if thought.begins_with(_thinking_text):
 					_thinking_text = thought
 				else:
-					_thinking_text += thought
+					var separator := "" if _thinking_text.is_empty() or _thinking_text.ends_with(" ") or thought.begins_with(" ") else " "
+					_thinking_text += separator + thought
 			var piece := str(src.get("content", ""))
 			if not piece.is_empty() and piece != "<null>":
 				_stream_reply += piece
 
 
 func _finish_chat_stream() -> void:
+	if _response_rendered:
+		return
 	if not _stream_active and _stream_reply.is_empty() and _thinking_text.is_empty():
 		return
 	_stop_chat_stream()
@@ -428,6 +491,8 @@ func _finish_chat_stream() -> void:
 			return
 		_append_chat(_ai_provider.to_upper(), "Empty server response. Please retry.", Color("#ed333b"))
 		return
+	_response_rendered = true
+	reply = _execute_agent_file_writes(reply)
 	_chat_history.append({"role": "assistant", "content": reply})
 	_clear_ai_busy()
 	_append_ai_response(_ai_provider, reply, elapsed)
@@ -520,8 +585,10 @@ func _wire_signals() -> void:
 	_tab_bar.tab_changed.connect(_on_tab_changed)
 	_tab_bar.tab_close_pressed.connect(_on_tab_close)
 	_code_edit.text_changed.connect(_on_code_changed)
+	_code_edit.gui_input.connect(_on_code_editor_gui_input)
 	_code_edit.caret_changed.connect(_on_caret_changed)
 	_chat_input.text_submitted.connect(_on_chat_submitted)
+	_chat_log.meta_clicked.connect(_on_chat_meta_clicked)
 	_chat_input.text_changed.connect(_on_chat_input_text_changed)
 	_chat_input.gui_input.connect(_on_chat_input_gui_input)
 	_chat_send.pressed.connect(_on_chat_send_pressed)
@@ -597,6 +664,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	var ctrl: bool = key.ctrl_pressed
 	var shift: bool = key.shift_pressed
 	var alt: bool = key.alt_pressed
+	if key.keycode == KEY_DELETE and _file_tree.has_focus():
+		_delete_selected_file()
+		get_viewport().set_input_as_handled()
+		return
 
 	# Code completion (Ctrl+Space)
 	if ctrl and key.keycode == KEY_SPACE:
@@ -737,6 +808,37 @@ func _unhandled_input(event: InputEvent) -> void:
 		_move_line(1)
 		get_viewport().set_input_as_handled()
 		return
+
+
+func _on_code_editor_gui_input(event: InputEvent) -> void:
+	if not event is InputEventKey or not event.pressed or event.echo:
+		return
+	var key: InputEventKey = event
+	if key.ctrl_pressed and key.keycode == KEY_F:
+		_find_row.visible = true
+		_find_input.grab_focus()
+		get_viewport().set_input_as_handled()
+	elif key.ctrl_pressed and key.keycode == KEY_H:
+		_find_row.visible = true
+		_replace_input.visible = true
+		_replace_all.visible = true
+		_find_input.grab_focus()
+		get_viewport().set_input_as_handled()
+
+
+func _delete_selected_file() -> void:
+	var item := _file_tree.get_selected()
+	if not item:
+		return
+	var meta: Variant = item.get_metadata(0)
+	if not (meta is Dictionary) or bool(meta.get("is_dir", false)):
+		return
+	var path := str(meta.get("path", ""))
+	if path.is_empty() or not path.begins_with(_workspace_root.simplify_path() + "/"):
+		return
+	if DirAccess.remove_absolute(path) == OK:
+		_refresh_file_tree()
+		_status_left.text = "DELETED: " + path.get_file()
 
 
 func _select_tab(tab_idx: int) -> void:
@@ -1380,6 +1482,11 @@ func _apply_kitty_fish_theme() -> void:
 	## CodeEdit — palette-driven colours (styleboxes fill gutter/minimap, not just font bg)
 	var code_sb := StyleBoxFlat.new()
 	code_sb.bg_color = bg_black
+	code_sb.border_width_left = 1
+	code_sb.border_width_top = 1
+	code_sb.border_width_right = 1
+	code_sb.border_width_bottom = 1
+	code_sb.border_color = blue
 	_code_edit.add_theme_stylebox_override("normal", code_sb)
 	_code_edit.add_theme_stylebox_override("focus", code_sb)
 	_code_edit.add_theme_stylebox_override("read_only", code_sb)
@@ -1398,8 +1505,14 @@ func _apply_kitty_fish_theme() -> void:
 
 	## Markdown Preview
 	var md_sb := StyleBoxFlat.new()
-	md_sb.bg_color = bg_black
-	md_sb.set_content_margin_all(24)
+	md_sb.bg_color = bg_surface
+	md_sb.border_width_left = 1
+	md_sb.border_width_top = 1
+	md_sb.border_width_right = 1
+	md_sb.border_width_bottom = 1
+	md_sb.border_color = bg_lighter
+	md_sb.set_corner_radius_all(8)
+	md_sb.set_content_margin_all(28)
 	_markdown_preview.add_theme_stylebox_override("normal", md_sb)
 	_markdown_preview.add_theme_color_override("default_color", fg)
 	_markdown_preview.add_theme_font_size_override("normal_font_size", 15)
@@ -1438,7 +1551,15 @@ func _apply_kitty_fish_theme() -> void:
 	var chat_input_sb := StyleBoxEmpty.new()
 	chat_input_sb.set_content_margin_all(4)
 	_chat_input.add_theme_stylebox_override("normal", chat_input_sb)
-	_chat_input.add_theme_stylebox_override("focus", chat_input_sb)
+	var input_focus_sb := StyleBoxFlat.new()
+	input_focus_sb.bg_color = bg_black
+	input_focus_sb.border_width_left = 1
+	input_focus_sb.border_width_top = 1
+	input_focus_sb.border_width_right = 1
+	input_focus_sb.border_width_bottom = 1
+	input_focus_sb.border_color = blue
+	input_focus_sb.set_corner_radius_all(5)
+	_chat_input.add_theme_stylebox_override("focus", input_focus_sb)
 	_chat_input.add_theme_color_override("font_color", fg_bright)
 	_chat_input.add_theme_color_override("font_placeholder_color", muted)
 
@@ -2789,6 +2910,7 @@ func _get_workspace_context() -> String:
 
 func _ask_ai(prompt: String) -> void:
 	_ai_busy = true
+	_response_rendered = false
 	_request_start_time = Time.get_ticks_msec() / 1000.0
 	_spinner_time = 0.0
 	_chat_status_banner.visible = true
@@ -2851,6 +2973,8 @@ func _send_chat_completion() -> void:
 				"4. However, ALL projects, source code, variable names, functions, docstrings, and technical code comments MUST ALWAYS be in technical British English (en-GB) (e.g., 'colour', 'behaviour', 'initialise', 'serialisation', 'optimise', 'centre').\n" +
 				"===============================================\n\n" +
 				"Provide detailed technical guidance, plan development tasks with checklists, review code, execute slash commands, and format responses clearly with Markdown/BBCode.\n" +
+				"When you need to create or edit a workspace file, emit one or more blocks exactly as `<sscode-write path=\"relative/path\">file contents</sscode-write>`. Use workspace-relative paths only. The IDE executes these blocks; do not merely describe the change.\n" +
+				"To delete a file, emit `<sscode-delete path=\"relative/path\"/>`. Use this only when the user explicitly requests deletion.\n" +
 				"Always consider the full workspace context and active file contents when responding."
 			)
 		else:
@@ -2977,6 +3101,8 @@ func _try_next_ai_candidate(toast_message: String) -> bool:
 
 
 func _on_ai_chat_http_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	if _response_rendered:
+		return
 	var is_smart_commit := _current_prompt.begins_with("__SMART_COMMIT__:")
 	var elapsed: float = maxf(0.1, (Time.get_ticks_msec() / 1000.0) - _request_start_time)
 
@@ -3018,6 +3144,7 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 			if reply_text.is_empty() and not thought.is_empty():
 				reply_text = thought
 			if not reply_text.is_empty():
+				reply_text = _execute_agent_file_writes(reply_text)
 
 				## ── Smart Commit intercept ──────────────────────────────────────
 				if _current_prompt.begins_with("__SMART_COMMIT__:"):
@@ -3038,9 +3165,10 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 				_append_ai_response(_ai_provider, reply_text, elapsed, prompt_tokens, completion_tokens)
 				return
 	elif response_code in [200, 201] and not text.strip_edges().is_empty() and not text.begins_with("{"):
-		_chat_history.append({"role": "assistant", "content": text.strip_edges()})
+		var plain_reply := _execute_agent_file_writes(text.strip_edges())
+		_chat_history.append({"role": "assistant", "content": plain_reply})
 		_clear_ai_busy()
-		_append_ai_response(_ai_provider, text.strip_edges(), elapsed)
+		_append_ai_response(_ai_provider, plain_reply, elapsed)
 		return
 
 	# 401 is the key, not the model — do not cycle candidates with the same secret.
@@ -3082,6 +3210,13 @@ func _append_user_message(prompt: String) -> void:
 	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
 
 
+func _on_chat_meta_clicked(meta: Variant) -> void:
+	var value := str(meta)
+	if value.begins_with("copy:"):
+		DisplayServer.clipboard_set(Marshalls.base64_to_raw(value.trim_prefix("copy:")).get_string_from_utf8())
+		_show_toast("Code copied to clipboard.", false)
+
+
 func _append_ai_response(_provider: String, reply_text: String, elapsed: float, tokens_in: int = 0, tokens_out: int = 0) -> void:
 	var stats_header := ""
 	if tokens_in > 0 and tokens_out > 0:
@@ -3092,6 +3227,73 @@ func _append_ai_response(_provider: String, reply_text: String, elapsed: float, 
 	var formatted_body := _format_markdown_to_bbcode(reply_text)
 	_chat_log.append_text("%s%s\n\n[color=#202024]────────────────────────────────────────────────[/color]\n\n" % [stats_header, formatted_body])
 	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
+
+
+func _execute_agent_file_writes(reply: String) -> String:
+	## Execute the small, explicit file-write protocol emitted by Agent mode.
+	var regex := RegEx.new()
+	regex.compile("(?s)<sscode-write\\s+path=\\\"([^\\\"]+)\\\">(.*?)</sscode-write>")
+	var matches := regex.search_all(reply)
+	if matches.is_empty():
+		return reply
+	var report := ""
+	for match: RegExMatch in matches:
+		var relative := match.get_string(1).strip_edges().replace("\\", "/")
+		var valid := not relative.is_empty() and not relative.begins_with("/") and not relative.contains("..")
+		if not valid:
+			report += "\n[color=#ed333b]Rejected unsafe path: %s[/color]" % relative
+			continue
+		var target := _workspace_root.path_join(relative).simplify_path()
+		if not target.begins_with(_workspace_root.simplify_path() + "/"):
+			report += "\n[color=#ed333b]Rejected path outside workspace: %s[/color]" % relative
+			continue
+		var parent := target.get_base_dir()
+		if not DirAccess.dir_exists_absolute(parent):
+			DirAccess.make_dir_recursive_absolute(parent)
+		var file := FileAccess.open(target, FileAccess.WRITE)
+		if file == null:
+			report += "\n[color=#ed333b]Could not write: %s[/color]" % relative
+			continue
+		file.store_string(match.get_string(2).trim_prefix("\n"))
+		file.close()
+		_reload_open_file(target)
+		report += "\n[color=#57e389]Written: %s[/color]" % relative
+	_refresh_file_tree()
+	var delete_regex := RegEx.new()
+	delete_regex.compile("<sscode-delete\\s+path=\\\"([^\\\"]+)\\\"\\s*/?>")
+	for match: RegExMatch in delete_regex.search_all(reply):
+		var relative := match.get_string(1).strip_edges().replace("\\", "/")
+		var target := _workspace_root.path_join(relative).simplify_path()
+		if relative.is_empty() or relative.begins_with("/") or relative.contains("..") or not target.begins_with(_workspace_root.simplify_path() + "/"):
+			report += "\n[color=#ed333b]Rejected unsafe delete path: %s[/color]" % relative
+		elif FileAccess.file_exists(target) and DirAccess.remove_absolute(target) == OK:
+			report += "\n[color=#57e389]Deleted: %s[/color]" % relative
+			_close_open_file_path(target)
+		else:
+			report += "\n[color=#ed333b]Could not delete: %s[/color]" % relative
+	_refresh_file_tree()
+	return delete_regex.sub(regex.sub(reply, "", true), "", true).strip_edges() + report
+
+
+func _reload_open_file(path: String) -> void:
+	for i in _open_files.size():
+		if str(_open_files[i].get("path", "")).simplify_path() == path.simplify_path():
+			var f := FileAccess.open(path, FileAccess.READ)
+			if f:
+				_open_files[i]["content"] = f.get_as_text()
+				_open_files[i]["dirty"] = false
+				if i == _active_index:
+					_suppress_tab = true
+					_code_edit.text = _open_files[i]["content"]
+					_suppress_tab = false
+					_update_cursor_status()
+				_tab_bar.set_tab_title(i, str(_open_files[i].get("title", "")))
+
+
+func _close_open_file_path(path: String) -> void:
+	for i in range(_open_files.size() - 1, -1, -1):
+		if str(_open_files[i].get("path", "")).simplify_path() == path.simplify_path():
+			_on_tab_close(i)
 
 
 func _append_tool_badge(action: String, target: String) -> void:
@@ -3123,8 +3325,7 @@ func _format_markdown_to_bbcode(raw_text: String) -> String:
 				var code_content := "\n".join(code_block_lines)
 				code_block_lines.clear()
 				var lang_tag := code_block_lang if not code_block_lang.is_empty() else "code"
-				output += "\n[bgcolor=#1e1e24][color=#9a9996]  " + lang_tag + "                         [color=#62a0ea]Copy[/color]  [/color][/bgcolor]\n"
-				output += "[bgcolor=#121216][color=#57e389]  " + code_content.replace("\n", "\n  ") + "\n[/color][/bgcolor]\n\n"
+				output += _format_code_block(code_content, lang_tag)
 			else:
 				in_code_block = true
 				code_block_lang = trimmed.substr(3).strip_edges()
@@ -3165,10 +3366,16 @@ func _format_markdown_to_bbcode(raw_text: String) -> String:
 	if in_code_block and not code_block_lines.is_empty():
 		var code_content := "\n".join(code_block_lines)
 		var lang_tag := code_block_lang if not code_block_lang.is_empty() else "code"
-		output += "\n[bgcolor=#1e1e24][color=#9a9996]  " + lang_tag + "                         [color=#62a0ea]Copy[/color]  [/color][/bgcolor]\n"
-		output += "[bgcolor=#121216][color=#57e389]  " + code_content.replace("\n", "\n  ") + "\n[/color][/bgcolor]\n\n"
+		output += _format_code_block(code_content, lang_tag)
 
 	return output.strip_edges(false, true)
+
+
+func _format_code_block(code: String, language: String) -> String:
+	var safe_code := code.replace("[", "[lb]").replace("]", "[rb]")
+	var copy_id := Marshalls.raw_to_base64(code.to_utf8_buffer())
+	var label := language if not language.is_empty() else "code"
+	return "\n[bgcolor=#25292e][color=#8b949e]  %s[/color]  [url=copy:%s][color=#58a6ff][u]Copy[/u][/color][/url]\n[bgcolor=#161b22][color=#e6edf3]  %s\n[/color][/bgcolor]\n\n" % [label, copy_id, safe_code.replace("\n", "\n  ")]
 
 
 func _replace_bold(text: String) -> String:

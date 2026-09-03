@@ -42,6 +42,8 @@ In the AI panel: `/git status`, `/git diff`, `/git log`, `/git commit`, `/git pu
 
 The side panel talks to NVIDIA NIM. Choose a provider in Config. On first Chat or Smart Commit the editor asks for an API key and saves it on this machine. Change or clear it under **Config → NVIDIA NIM API key…**. Requests are asynchronous; **Esc** cancels.
 
+In Agent mode, the assistant can create or edit workspace files using `<sscode-write path="relative/path">…</sscode-write>` blocks. Paths outside the active workspace are rejected.
+
 See [credentials-and-export.md](credentials-and-export.md).
 
 ## Themes
