@@ -6,70 +6,74 @@ const ChatMarkdown = preload("res://scripts/chat_markdown_renderer.gd")
 const AgentWorkspace = preload("res://scripts/agent_workspace_service.gd")
 const CodeEditorTools = preload("res://scripts/code_editor_service.gd")
 const MarkdownPreview = preload("res://scripts/markdown_preview_renderer.gd")
+const ThemeResources = preload("res://scripts/theme_resource_registry.gd")
 
-@onready var _file_tree: Tree = $RootVBox/MainSplit/ExplorerPane/FileTree
+@onready var _root_vbox: VBoxContainer = %RootVBox
+@onready var _file_tree: Tree = %FileTree
 @onready var _tab_bar: TabBar = %TabBar
-@onready var _code_edit: CodeEdit = $RootVBox/MainSplit/CenterSplit/EditorPane/CodeEdit
-@onready var _chat_log: RichTextLabel = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatLog
-@onready var _chat_header: Label = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatHeader
-@onready var _chat_context_badge: Label = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatHeaderRow/ChatContextBadge
-@onready var _chat_input_card: PanelContainer = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard
-@onready var _chat_context_chip: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatContextChip
-@onready var _chat_input: LineEdit = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInput
-@onready var _attach_btn: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow/AttachBtn
-@onready var _agent_mode_btn: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow/AgentModeBtn
-@onready var _provider_select: OptionButton = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow/ProviderSelect
-@onready var _smart_commit_btn: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow/SmartCommitBtn
-@onready var _chat_send: Button = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatInputCard/ChatInputVBox/ChatInputBottomRow/ChatSend
-@onready var _status_left: Label = $RootVBox/StatusBar/StatusRow/StatusLeft
-@onready var _status_git: Button = $RootVBox/StatusBar/StatusRow/StatusGit
-@onready var _status_cursor: Label = $RootVBox/StatusBar/StatusRow/StatusCursor
-@onready var _status_lang: Label = $RootVBox/StatusBar/StatusRow/StatusLang
-@onready var _status_enc: Label = $RootVBox/StatusBar/StatusRow/StatusEnc
-@onready var _status_ai: Label = $RootVBox/StatusBar/StatusRow/StatusAI
-@onready var _main_split: HSplitContainer = $RootVBox/MainSplit
-@onready var _center_split: HSplitContainer = $RootVBox/MainSplit/CenterSplit
-@onready var _explorer_pane: VBoxContainer = $RootVBox/MainSplit/ExplorerPane
-@onready var _chat_pane: VBoxContainer = $RootVBox/MainSplit/CenterSplit/ChatPane
+@onready var _code_edit: CodeEdit = %CodeEdit
+@onready var _chat_log: RichTextLabel = %ChatLog
+@onready var _chat_header: Label = %ChatHeader
+@onready var _chat_context_badge: Label = %ChatContextBadge
+@onready var _chat_input_card: PanelContainer = %ChatInputCard
+@onready var _chat_context_chip: Button = %ChatContextChip
+@onready var _chat_input: LineEdit = %ChatInput
+@onready var _attach_btn: Button = %AttachBtn
+@onready var _agent_mode_btn: Button = %AgentModeBtn
+@onready var _provider_select: OptionButton = %ProviderSelect
+@onready var _smart_commit_btn: Button = %SmartCommitBtn
+@onready var _chat_send: Button = %ChatSend
+@onready var _status_left: Label = %StatusLeft
+@onready var _status_git: Button = %StatusGit
+@onready var _status_cursor: Label = %StatusCursor
+@onready var _status_lang: Label = %StatusLang
+@onready var _status_enc: Label = %StatusEnc
+@onready var _status_ai: Label = %StatusAI
+@onready var _main_split: HSplitContainer = %MainSplit
+@onready var _center_split: HSplitContainer = %CenterSplit
+@onready var _explorer_pane: PanelContainer = %ExplorerPane
+@onready var _chat_pane: PanelContainer = %ChatPane
 @onready var _explorer_toggle_btn: Button = %ExplorerToggleBtn
 @onready var _chat_toggle_btn: Button = %ChatToggleBtn
-@onready var _file_menu: PopupMenu = $RootVBox/NavBar/MenuBar/File
-@onready var _edit_menu: PopupMenu = $RootVBox/NavBar/MenuBar/Edit
-@onready var _git_menu: PopupMenu = $RootVBox/NavBar/MenuBar/Git
-@onready var _config_menu: PopupMenu = $RootVBox/NavBar/MenuBar/Config
-@onready var _help_menu: PopupMenu = $RootVBox/NavBar/MenuBar/Help
-@onready var _about_menu: PopupMenu = $RootVBox/NavBar/MenuBar/About
-@onready var _open_file_dlg: FileDialog = $OpenFileDialog
-@onready var _open_dir_dlg: FileDialog = $OpenDirDialog
-@onready var _save_as_dlg: FileDialog = $SaveAsDialog
-@onready var _open_theme_xml_dlg: FileDialog = $OpenThemeXmlDialog
-@onready var _overlay: ColorRect = $Overlay
-@onready var _dialog_panel: PanelContainer = $Overlay/DialogPanel
-@onready var _dialog_title: Label = $Overlay/DialogPanel/DialogVBox/DialogTitle
-@onready var _dialog_body: RichTextLabel = $Overlay/DialogPanel/DialogVBox/DialogScroll/DialogBody
-@onready var _dialog_input_row: HBoxContainer = $Overlay/DialogPanel/DialogVBox/DialogInputRow
-@onready var _dialog_input: LineEdit = $Overlay/DialogPanel/DialogVBox/DialogInputRow/DialogInput
-@onready var _dialog_action_btn: Button = $Overlay/DialogPanel/DialogVBox/DialogInputRow/DialogActionBtn
-@onready var _dialog_close: Button = $Overlay/DialogPanel/DialogVBox/DialogClose
-@onready var _ai_chat_http: HTTPRequest = $AIChatHttp
-@onready var _chat_status_banner: PanelContainer = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner
-@onready var _chat_status_label: RichTextLabel = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner/ChatStatusVBox/ChatStatusLabel
-@onready var _chat_thinking_label: RichTextLabel = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatStatusBanner/ChatStatusVBox/ChatThinkingLabel
-@onready var _chat_suggestions_popup: PanelContainer = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatSuggestionsPopup
-@onready var _chat_suggestions_list: ItemList = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatSuggestionsPopup/ChatSuggestionsList
-@onready var _find_row: HBoxContainer = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow
-@onready var _find_input: LineEdit = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindInput
-@onready var _replace_input: LineEdit = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/ReplaceInput
-@onready var _replace_all: Button = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/ReplaceAll
-@onready var _find_next: Button = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindNext
-@onready var _find_close: Button = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindClose
-@onready var _markdown_preview: RichTextLabel = $RootVBox/MainSplit/CenterSplit/EditorPane/MarkdownPreview
+@onready var _file_menu: PopupMenu = %File
+@onready var _edit_menu: PopupMenu = %Edit
+@onready var _git_menu: PopupMenu = %Git
+@onready var _config_menu: PopupMenu = %Config
+@onready var _help_menu: PopupMenu = %Help
+@onready var _about_menu: PopupMenu = %About
+@onready var _themes_menu: PopupMenu = %Themes
+@onready var _open_file_dlg: FileDialog = %OpenFileDialog
+@onready var _open_dir_dlg: FileDialog = %OpenDirDialog
+@onready var _save_as_dlg: FileDialog = %SaveAsDialog
+@onready var _open_theme_xml_dlg: FileDialog = %OpenThemeXmlDialog
+@onready var _overlay: ColorRect = %Overlay
+@onready var _dialog_panel: PanelContainer = %DialogPanel
+@onready var _dialog_title: Label = %DialogTitle
+@onready var _dialog_body: RichTextLabel = %DialogBody
+@onready var _dialog_input_row: HBoxContainer = %DialogInputRow
+@onready var _dialog_input: LineEdit = %DialogInput
+@onready var _dialog_action_btn: Button = %DialogActionBtn
+@onready var _dialog_close: Button = %DialogClose
+@onready var _ai_chat_http: HTTPRequest = %AIChatHttp
+@onready var _chat_status_banner: PanelContainer = %ChatStatusBanner
+@onready var _chat_status_label: RichTextLabel = %ChatStatusLabel
+@onready var _chat_thinking_label: RichTextLabel = %ChatThinkingLabel
+@onready var _chat_suggestions_popup: PanelContainer = %ChatSuggestionsPopup
+@onready var _chat_suggestions_list: ItemList = %ChatSuggestionsList
+@onready var _find_row: HBoxContainer = %FindRow
+@onready var _find_input: LineEdit = %FindInput
+@onready var _replace_input: LineEdit = %ReplaceInput
+@onready var _replace_all: Button = %ReplaceAll
+@onready var _find_next: Button = %FindNext
+@onready var _find_close: Button = %FindClose
+@onready var _markdown_preview: RichTextLabel = %MarkdownPreview
 
 var _dialog_action_callback: Callable = Callable()
 
 var _workspace_root: String = ""
-var _custom_themes: Dictionary = {}  ## User-installed themes loaded from XML files
-var _open_files: Array = []
+var _custom_themes: Dictionary[String, Dictionary] = {}  ## User-installed themes loaded from XML files
+var _theme_menu_keys: Array[String] = []
+var _open_files: Array = []  ## Publicly mutable; entries are normalised as Dictionary on use.
 var _active_index: int = -1
 var _suppress_tab: bool = false
 var _md_preview_active: bool = false
@@ -102,6 +106,7 @@ const SPINNER_FRAMES: Array[String] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴",
 const OS_NOTIFY_EXPIRE_MS: int = 4000
 const OS_NOTIFY_REPLACE_ID: int = 424242
 const SPLIT_COLLAPSE_PX: int = 32
+const THEME_MENU_IMPORT_ID: int = 10_000
 
 const THEMES: Dictionary = {
 	"adwaita_darker": {
@@ -164,6 +169,26 @@ const THEMES: Dictionary = {
 		"hl_member":  "#81a1c1", "hl_comment": "#616e88", "hl_string":  "#a3be8c",
 		"hl_keyword": "#81a1c1", "hl_type":    "#8fbcbb", "hl_const":   "#b48ead",
 	},
+	"jakes_theme": {
+		"label": "Jake's Theme",
+		"bg_black": "#000000", "bg_darker": "#000000", "bg_surface": "#000000",
+		"bg_card": "#0a0a0a", "bg_lighter": "#080808",
+		"fg": "#e0e0e0", "fg_bright": "#ffffff", "muted": "#858585",
+		"blue": "#8be9fd", "green": "#57e389", "cyan": "#62a0ea", "red": "#ed333b",
+		"hl_number": "#ffa348", "hl_symbol": "#9a9996", "hl_func": "#62a0ea",
+		"hl_member": "#99c1f1", "hl_comment": "#9a9996", "hl_string": "#57e389",
+		"hl_keyword": "#8be9fd", "hl_type": "#62a0ea", "hl_const": "#ffa348",
+	},
+	"solarized_dark": {
+		"label": "Solarized Dark",
+		"bg_black": "#001e26", "bg_darker": "#002731", "bg_surface": "#002b36",
+		"bg_card": "#073642", "bg_lighter": "#0e4a5a",
+		"fg": "#839496", "fg_bright": "#fdf6e3", "muted": "#586e75",
+		"blue": "#268bd2", "green": "#859900", "cyan": "#2aa198", "red": "#dc322f",
+		"hl_number": "#d33682", "hl_symbol": "#657b83", "hl_func": "#268bd2",
+		"hl_member": "#b58900", "hl_comment": "#586e75", "hl_string": "#859900",
+		"hl_keyword": "#cb4b16", "hl_type": "#2aa198", "hl_const": "#6c71c4",
+	},
 }
 
 const CHAT_SLASH_COMMANDS: Array[Dictionary] = [
@@ -189,7 +214,6 @@ const CHAT_SLASH_COMMANDS: Array[Dictionary] = [
 	{"cmd": "/clear", "desc": "Clear conversation history & chat context"},
 	{"cmd": "/compact", "desc": "Compact older conversation context while preserving recent messages"},
 	{"cmd": "/cancel", "desc": "Abort running AI request"},
-	{"cmd": "/theme", "desc": "Select or import IDE colour theme (/theme list | /theme <name> | /theme import)"},
 	{"cmd": "/quit", "desc": "Quit SSCodeIDE"},
 ]
 
@@ -238,7 +262,7 @@ const HELP_TEXT := """[b]SSCodeIDE Shortcuts[/b]
 const ABOUT_TEXT := """[b]SSCodeIDE[/b]
 IDE in 100% native GDScript (Godot 4.7) — Kitty Adwaita Darker & Fish theme.
 
-Default Font: FiraCode Nerd Font
+Interface: system sans-serif · Code editor: FiraCode Nerd Font
 AI Chat: Nemotron · Kimi K3 · DeepSeek V4 · Laguna Code via NVIDIA NIM API
 Automatic Toast · Multi-Turn Context Memory · Intelligent Candidate Fallback
 
@@ -546,6 +570,8 @@ func _wire_signals() -> void:
 	_edit_menu.id_pressed.connect(_on_edit_menu)
 	if _git_menu:
 		_git_menu.id_pressed.connect(_on_git_menu)
+	_populate_themes_menu()
+	_themes_menu.id_pressed.connect(_on_theme_menu_id_pressed)
 	if _status_git:
 		_status_git.pressed.connect(_show_git_status_dialog)
 	_config_menu.id_pressed.connect(_on_config_menu)
@@ -1141,7 +1167,7 @@ func _show_config() -> void:
 	var key_state := "saved on this machine" if not AIService._read_stored_api_key().is_empty() else "not saved"
 	if not OS.get_environment(AIService.NVIDIA_API_KEY_ENV).strip_edges().is_empty():
 		key_state = "set via process environment"
-	var body := "[b]Settings[/b]\n\n• [b]Typography:[/b] FiraCode Nerd Font\n• [b]Workspace:[/b] %s\n• [b]Active Model:[/b] %s (NVIDIA NIM)\n• [b]API key:[/b] %s\n• [b]Status:[/b] %s\n\nUse Config → NVIDIA NIM API key… to change the stored key." % [
+	var body := "[b]Settings[/b]\n\n• [b]Typography:[/b] system interface font · FiraCode in editor\n• [b]Workspace:[/b] %s\n• [b]Active Model:[/b] %s (NVIDIA NIM)\n• [b]API key:[/b] %s\n• [b]Status:[/b] %s\n\nUse Config → NVIDIA NIM API key… to change the stored key." % [
 		_workspace_root,
 		_ai_provider.replace("_", " ").to_upper(),
 		key_state,
@@ -1234,7 +1260,7 @@ func _load_theme_config() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load("user://ui_config.cfg") == OK:
 		_active_theme = str(cfg.get_value("theme", "name", "adwaita_darker"))
-	if not _all_themes().has(_active_theme):
+	if not _all_themes().has(_active_theme) or ThemeResources.load_theme(_active_theme) == null:
 		_active_theme = "adwaita_darker"
 
 
@@ -1246,25 +1272,58 @@ func _save_theme_config() -> void:
 
 
 func _apply_theme_by_name(_name: String) -> void:
+	var previous_theme := _active_theme
 	_active_theme = _name
+	if not _apply_kitty_fish_theme():
+		_active_theme = previous_theme
+		_append_chat("IDE", "[color=#ed333b]Theme not found:[/color] " + _name, Color("#ed333b"))
+		_show_toast("Theme not found: " + _name, true)
+		return
 	_save_theme_config()
-	_apply_kitty_fish_theme()
 	var label: String = str(_all_themes().get(_name, {}).get("label", _name))
+	_populate_themes_menu()
 	_append_chat("IDE", "[color=#57e389]Theme applied:[/color] [b]" + label + "[/b]", Color("#57e389"))
 	_show_toast("Theme: " + label, false)
 
 
-func _show_theme_picker() -> void:
-	var all := _all_themes()
-	var body := "[b][color=#62a0ea]Available themes:[/color][/b]\n\n"
-	for key: String in all.keys():
-		var t: Dictionary = all[key]
-		var active_mark := "  [color=#57e389]✓ active[/color]" if key == _active_theme else ""
-		var custom_mark := "  [color=#ffa348]⬡ XML[/color]" if _custom_themes.has(key) else ""
-		body += "• [b]%s[/b]%s%s\n  [color=#9a9996]/theme %s[/color]\n\n" % [str(t.get("label", key)), active_mark, custom_mark, key]
-	body += "[color=#9a9996]Usage: /theme <name>   e.g. /theme dracula\n"
-	body += "/theme import — install a theme from a .xml file[/color]"
-	_show_overlay("Select theme", body)
+func _populate_themes_menu() -> void:
+	## The NavBar is the single visible theme selector. Theme resources supply
+	## their visual treatment, including this popup, rather than runtime styles.
+	if _themes_menu == null:
+		return
+	_themes_menu.clear()
+	_theme_menu_keys.clear()
+	var keys: Array[String] = []
+	for raw_key in _all_themes().keys():
+		var key := str(raw_key)
+		if ThemeResources.load_theme(key) != null:
+			keys.append(key)
+	keys.sort_custom(func(left: String, right: String) -> bool:
+		return str(_all_themes()[left].get("label", left)).naturalnocasecmp_to(str(_all_themes()[right].get("label", right))) < 0
+	)
+	for key in keys:
+		var info: Dictionary = _all_themes()[key]
+		var item_index := _themes_menu.item_count
+		var label: String = str(info.get("label", key))
+		if _custom_themes.has(key):
+			label += "  (XML)"
+		_themes_menu.add_radio_check_item(label, _theme_menu_keys.size())
+		_themes_menu.set_item_checked(item_index, key == _active_theme)
+		_themes_menu.set_item_tooltip(item_index, "Currently selected" if key == _active_theme else "Apply " + str(info.get("label", key)))
+		_theme_menu_keys.append(key)
+	if _theme_menu_keys.is_empty():
+		_themes_menu.add_item("No theme resources available")
+		_themes_menu.set_item_disabled(0, true)
+	_themes_menu.add_separator()
+	_themes_menu.add_item("Import XML theme…", THEME_MENU_IMPORT_ID)
+
+
+func _on_theme_menu_id_pressed(id: int) -> void:
+	if id == THEME_MENU_IMPORT_ID:
+		_import_theme_xml_dialog()
+		return
+	if id >= 0 and id < _theme_menu_keys.size():
+		_apply_theme_by_name(_theme_menu_keys[id])
 
 
 func _load_custom_themes() -> void:
@@ -1272,7 +1331,7 @@ func _load_custom_themes() -> void:
 	_custom_themes.clear()
 	var dir := DirAccess.open("user://themes")
 	if dir == null:
-		DirAccess.make_dir_absolute(ProjectSettings.globalize_path("user://themes"))
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://themes"))
 		return
 	dir.list_dir_begin()
 	var fname := dir.get_next()
@@ -1281,8 +1340,11 @@ func _load_custom_themes() -> void:
 			var path := "user://themes/" + fname
 			var result := _parse_theme_xml(path)
 			if not result.is_empty():
-				var key: String = str(result.get("key", fname.trim_suffix(".xml")))
+				var key: String = ThemeResources.safe_key(str(result.get("key", fname.trim_suffix(".xml"))))
+				result["key"] = key
 				_custom_themes[key] = result
+				if ThemeResources.load_theme(key) == null:
+					ThemeResources.save_custom_theme(key, result)
 		fname = dir.get_next()
 	dir.list_dir_end()
 
@@ -1342,9 +1404,11 @@ func _import_theme_from_xml(xml_path: String) -> void:
 		_show_toast("Theme XML: invalid format.", true)
 		return
 	## Copy file into user://themes/
-	var dest_name: String = str(parsed.get("key", "custom")) + ".xml"
+	var key: String = ThemeResources.safe_key(str(parsed.get("key", "custom")))
+	parsed["key"] = key
+	var dest_name: String = key + ".xml"
 	var dest_path := "user://themes/" + dest_name
-	DirAccess.make_dir_absolute(ProjectSettings.globalize_path("user://themes"))
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://themes"))
 	var src := FileAccess.open(xml_path, FileAccess.READ)
 	if src == null:
 		_append_chat("IDE", "[color=#ed333b]Could not read the XML file.[/color]", Color("#ed333b"))
@@ -1357,12 +1421,16 @@ func _import_theme_from_xml(xml_path: String) -> void:
 		return
 	dst.store_string(content)
 	dst.close()
+	if ThemeResources.save_custom_theme(key, parsed) != OK:
+		_append_chat("IDE", "[color=#ed333b]Could not compile the imported theme resource.[/color]", Color("#ed333b"))
+		_show_toast("Theme import failed.", true)
+		return
 	## Reload and apply
 	_load_custom_themes()
-	var key: String = str(parsed.get("key", "custom"))
+	_populate_themes_menu()
 	var label: String = str(parsed.get("label", key))
 	_apply_theme_by_name(key)
-	_append_chat("IDE", "[color=#57e389]Theme imported:[/color] [b]" + label + "[/b]\nSaved to: [color=#9a9996]" + dest_path + "[/color]", Color("#57e389"))
+	_append_chat("IDE", "[color=#57e389]Theme imported:[/color] [b]" + label + "[/b]\nSaved as XML and Theme resource in: [color=#9a9996]user://themes/[/color]", Color("#57e389"))
 	_show_toast("Theme installed: " + label, false)
 
 
@@ -1383,10 +1451,22 @@ func _update_ai_status() -> void:
 	_chat_input.placeholder_text = "Describe what to build or ask %s…" % display_title
 
 
-func _apply_kitty_fish_theme() -> void:
-	## Persistent visual styling is authored in ui_grid_outline.theme and
-	## assigned from the scene Inspector. Code only supplies syntax metadata.
+func _apply_kitty_fish_theme() -> bool:
+	## Theme assets are authored in Godot resources. This only selects one;
+	## it deliberately does not build or override any visual styles at runtime.
+	if not _apply_theme_resource(_active_theme):
+		return false
 	_code_edit.syntax_highlighter = _create_adwaita_fish_highlighter()
+	return true
+
+
+func _apply_theme_resource(theme_name: String) -> bool:
+	var selected := ThemeResources.load_theme(theme_name)
+	if selected == null:
+		return false
+	theme = selected
+	_root_vbox.theme = selected
+	return true
 
 func _on_context_chip_pressed() -> void:
 	if _active_index >= 0 and _active_index < _open_files.size():
@@ -1465,7 +1545,9 @@ func _create_adwaita_fish_highlighter() -> CodeHighlighter:
 
 
 func _active_palette() -> Dictionary:
-	return THEMES.get(_active_theme, THEMES["adwaita_darker"])
+	## XML themes carry the same palette schema as built-ins, so syntax and
+	## editor affordances follow the visual resource selected from the NavBar.
+	return _all_themes().get(_active_theme, THEMES["adwaita_darker"])
 
 
 func _refresh_file_tree() -> void:
@@ -1995,16 +2077,7 @@ func _handle_slash(cmd: String) -> void:
 					_append_chat("GIT", "```bash\n" + out_txt + "\n```", Color("#62a0ea"))
 					_update_git_status_bar()
 		"/theme":
-			var theme_arg: String = parts[1].strip_edges().to_lower() if parts.size() > 1 else ""
-			if theme_arg.is_empty() or theme_arg == "list":
-				_show_theme_picker()
-			elif theme_arg == "import":
-				_import_theme_xml_dialog()
-			elif _all_themes().has(theme_arg):
-				_apply_theme_by_name(theme_arg)
-			else:
-				var names := ", ".join(_all_themes().keys())
-				_append_chat("IDE", "[color=#ffa348]Theme not found:[/color] " + theme_arg + "\nAvailable themes: " + names, Color("#ffa348"))
+			_append_chat("IDE", "[color=#9a9996]Themes are now selected from the [b]Themes[/b] menu in the navigation bar.[/color]", Color("#9a9996"))
 		"/save":
 			_save_active()
 			var p: String = _open_files[_active_index]["path"] if _active_index >= 0 else "untitled"

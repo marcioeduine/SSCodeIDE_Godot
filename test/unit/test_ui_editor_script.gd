@@ -22,6 +22,37 @@ func test_main_scene_exists() -> void:
 	assert_true(ResourceLoader.exists("res://scene/ui_editor.tscn"))
 
 
+func test_theme_menu_is_scene_backed_and_replaces_slash_selector() -> void:
+	var scene := load("res://scene/ui_editor.tscn") as PackedScene
+	var editor := scene.instantiate()
+	add_child_autofree(editor)
+	await get_tree().process_frame
+	var menu := editor.get_node_or_null("RootVBox/NavBar/NavRow/MenuBar/Themes") as PopupMenu
+	assert_not_null(menu)
+	assert_gt(menu.item_count, 1)
+	assert_eq(menu.get_item_text(menu.item_count - 1), "Import XML theme…")
+	var commands: Array[String] = []
+	for entry: Dictionary in editor.CHAT_SLASH_COMMANDS:
+		commands.append(str(entry.get("cmd", "")))
+	assert_false(commands.has("/theme"))
+
+
+func test_theme_menu_applies_a_resource_and_marks_the_active_choice() -> void:
+	var scene := load("res://scene/ui_editor.tscn") as PackedScene
+	var editor := scene.instantiate()
+	add_child_autofree(editor)
+	await get_tree().process_frame
+	var previous: String = editor._active_theme
+	var monokai_id: int = editor._theme_menu_keys.find("monokai")
+	assert_ne(monokai_id, -1)
+	editor._on_theme_menu_id_pressed(monokai_id)
+	assert_eq(editor._active_theme, "monokai")
+	assert_eq((editor.theme as Theme).resource_path, "res://themes/ui_material3_monokai.theme")
+	var menu := editor.get_node("RootVBox/NavBar/NavRow/MenuBar/Themes") as PopupMenu
+	assert_true(menu.is_item_checked(monokai_id))
+	editor._apply_theme_by_name(previous)
+
+
 func test_markdown_formatting_helpers() -> void:
 	var editor_script = load("res://scripts/ui_editor.gd").new()
 	assert_not_null(editor_script)
@@ -172,4 +203,3 @@ func test_git_service_script_integration() -> void:
 	assert_true(cmds.has("/github"))
 	
 	editor_script.free()
-
