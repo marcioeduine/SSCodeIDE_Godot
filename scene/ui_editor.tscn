@@ -228,6 +228,17 @@ placeholder_text = "Find…"
 layout_mode = 2
 text = "Next"
 
+[node name="ReplaceInput" type="LineEdit" parent="RootVBox/MainSplit/CenterSplit/EditorPane/FindRow"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Replace…"
+
+[node name="ReplaceAll" type="Button" parent="RootVBox/MainSplit/CenterSplit/EditorPane/FindRow"]
+visible = false
+layout_mode = 2
+text = "Replace All"
+
 [node name="FindClose" type="Button" parent="RootVBox/MainSplit/CenterSplit/EditorPane/FindRow" unique_id=1962445891]
 layout_mode = 2
 text = "×"

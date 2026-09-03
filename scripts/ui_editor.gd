@@ -54,6 +54,8 @@ extends Control
 @onready var _chat_suggestions_list: ItemList = $RootVBox/MainSplit/CenterSplit/ChatPane/ChatSuggestionsPopup/ChatSuggestionsList
 @onready var _find_row: HBoxContainer = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow
 @onready var _find_input: LineEdit = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindInput
+@onready var _replace_input: LineEdit = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/ReplaceInput
+@onready var _replace_all: Button = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/ReplaceAll
 @onready var _find_next: Button = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindNext
 @onready var _find_close: Button = $RootVBox/MainSplit/CenterSplit/EditorPane/FindRow/FindClose
 @onready var _markdown_preview: RichTextLabel = $RootVBox/MainSplit/CenterSplit/EditorPane/MarkdownPreview
@@ -550,6 +552,7 @@ func _wire_signals() -> void:
 	_provider_select.item_selected.connect(_on_provider_selected)
 	_find_input.text_submitted.connect(_do_find)
 	_find_next.pressed.connect(_on_find_next)
+	_replace_all.pressed.connect(_replace_all_matches)
 	_find_close.pressed.connect(func() -> void: _find_row.visible = false)
 	_chat_suggestions_list.item_selected.connect(_on_chat_suggestion_selected)
 	_chat_suggestions_list.item_activated.connect(_on_chat_suggestion_selected)
@@ -698,6 +701,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Find & Replace (Ctrl+F)
 	if ctrl and key.keycode == KEY_F:
 		_find_row.visible = true
+		_find_input.grab_focus()
+		get_viewport().set_input_as_handled()
+		return
+	if ctrl and key.keycode == KEY_H:
+		_find_row.visible = true
+		_replace_input.visible = true
+		_replace_all.visible = true
 		_find_input.grab_focus()
 		get_viewport().set_input_as_handled()
 		return
@@ -2230,6 +2240,16 @@ func _do_find(query: String) -> void:
 
 func _on_find_next() -> void:
 	_do_find(_find_input.text)
+
+
+func _replace_all_matches() -> void:
+	var query := _find_input.text
+	if query.is_empty():
+		return
+	var old_text := _code_edit.text
+	var new_text := old_text.replace(query, _replace_input.text)
+	if new_text != old_text:
+		_code_edit.text = new_text
 
 
 func _toggle_comment() -> void:

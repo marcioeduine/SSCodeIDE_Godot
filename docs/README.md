@@ -21,7 +21,7 @@ Technical documentation for **SSCodeIDE**, a lightweight IDE written in native G
 | `scripts/ai_service.gd` | NVIDIA NIM HTTP client, models, credential loader |
 | `scripts/git_service.gd` | Git / GitHub CLI wrapper |
 | `scripts/file_kind.gd` | Workspace icon mapping by extension |
-| `scene/ui_editor.scn` | Editor UI scene |
+| `scene/ui_editor.tscn` | Editor UI scene |
 | `test/unit/` | GUT unit tests |
 | `addons/gut/` | Godot Unit Test |
 | `addons/at-icons/` | Icon set used by the file tree |

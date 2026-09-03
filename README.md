@@ -23,7 +23,7 @@ Full technical documentation lives in [`docs/`](docs/README.md).
 - **Multi-Tab Code Editor (`CodeEdit`)**:
   - Multi-tab management with active file tracking and modification state indicators.
   - Line numbers, syntax highlighting, and dynamic auto-indentation.
-  - Built-in search panel (`Find`) with match navigation.
+  - Built-in Find & Replace panel (`Ctrl+F` / `Ctrl+H`) with match navigation and replace-all.
   - Fast line operations: duplication (<kbd>Ctrl</kbd>+<kbd>D</kbd>), upward/downward line shifting (<kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>Alt</kbd>+<kbd>↓</kbd>), and comment toggling (<kbd>Ctrl</kbd>+<kbd>/</kbd>).
 
 - **Workspace File Explorer (`FileTree`)**:
