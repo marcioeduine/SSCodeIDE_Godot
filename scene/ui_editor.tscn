@@ -1,18 +1,23 @@
 [gd_scene format=3 uid="uid://b6s1hdqcbjksc"]
 
+[ext_resource type="Theme" path="res://themes/ui_grid_outline.theme" id="1_0cx3e"]
 [ext_resource type="Script" uid="uid://dm57wbc3c6m76" path="res://scripts/ui_editor.gd" id="1_editor"]
+[ext_resource type="Shader" uid="uid://crhc3gwj4ct3f" path="res://themes/glass_backdrop.gdshader" id="2_backdrop"]
+[ext_resource type="Shader" uid="uid://bnsua868xl556" path="res://themes/glass_surface.gdshader" id="3_surface"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q2u7n"]
-content_margin_left = 10.0
-content_margin_top = 5.0
-content_margin_right = 10.0
-content_margin_bottom = 5.0
-draw_center = false
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(1, 1, 1, 1)
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_backdrop"]
+shader = ExtResource("2_backdrop")
+shader_parameter/deep_colour = Color(0.018, 0.027, 0.055, 1)
+shader_parameter/aurora_colour = Color(0.08, 0.3, 0.52, 1)
+shader_parameter/violet_colour = Color(0.24, 0.11, 0.42, 1)
+shader_parameter/glow_strength = 0.28
+shader_parameter/motion_speed = 0.025
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_surface"]
+shader = ExtResource("3_surface")
+shader_parameter/upper_tint = Color(0.26, 0.62, 0.98, 1)
+shader_parameter/lower_tint = Color(0.45, 0.3, 0.88, 1)
+shader_parameter/sheen_strength = 0.045
 
 [node name="UI_Editor" type="Control" unique_id=1791161152]
 layout_mode = 3
@@ -23,9 +28,11 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+theme = ExtResource("1_0cx3e")
 script = ExtResource("1_editor")
 
 [node name="Background" type="ColorRect" parent="." unique_id=970540564]
+material = SubResource("ShaderMaterial_backdrop")
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -44,21 +51,19 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+theme = ExtResource("1_0cx3e")
 
-[node name="NavBar" type="HBoxContainer" parent="RootVBox" unique_id=1955057909]
+[node name="NavBar" type="PanelContainer" parent="RootVBox" unique_id=402821925]
+material = SubResource("ShaderMaterial_surface")
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 
 [node name="MenuBar" type="MenuBar" parent="RootVBox/NavBar" unique_id=302529279]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/normal = SubResource("StyleBoxFlat_q2u7n")
-flat = true
 
 [node name="File" type="PopupMenu" parent="RootVBox/NavBar/MenuBar" unique_id=728694481]
-oversampling_override = 1.0
 size = Vector2i(266, 213)
-force_native = true
 item_count = 8
 item_0/text = "Open File…	Ctrl+O"
 item_0/id = 0
@@ -162,7 +167,6 @@ text = "  EXPLORER"
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("StyleBoxFlat_q2u7n")
 
 [node name="CenterSplit" type="HSplitContainer" parent="RootVBox/MainSplit" unique_id=270599731]
 layout_mode = 2
@@ -239,7 +243,6 @@ text = "×"
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_styles/normal = SubResource("StyleBoxFlat_q2u7n")
 wrap_mode = 1
 indent_wrapped_lines = true
 minimap_draw = true
@@ -284,13 +287,13 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 focus_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_q2u7n")
 bbcode_enabled = true
 scroll_following = true
 selection_enabled = true
 
 [node name="ChatStatusBanner" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane" unique_id=896163620]
 visible = false
+material = SubResource("ShaderMaterial_surface")
 custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 
@@ -319,6 +322,7 @@ selection_enabled = true
 
 [node name="ChatSuggestionsPopup" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane" unique_id=705864052]
 visible = false
+material = SubResource("ShaderMaterial_surface")
 custom_minimum_size = Vector2(0, 110)
 layout_mode = 2
 
@@ -329,6 +333,7 @@ size_flags_vertical = 3
 allow_reselect = true
 
 [node name="ChatInputCard" type="PanelContainer" parent="RootVBox/MainSplit/CenterSplit/ChatPane" unique_id=1363750561]
+material = SubResource("ShaderMaterial_surface")
 custom_minimum_size = Vector2(0, 78)
 layout_mode = 2
 
@@ -390,14 +395,13 @@ layout_mode = 2
 text = "Send"
 
 [node name="StatusBar" type="PanelContainer" parent="RootVBox" unique_id=374397806]
-custom_minimum_size = Vector2(0, 26)
+material = SubResource("ShaderMaterial_surface")
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_q2u7n")
 
 [node name="StatusRow" type="HBoxContainer" parent="RootVBox/StatusBar" unique_id=976935217]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 16
+theme_override_constants/separation = 24
 
 [node name="StatusLeft" type="Label" parent="RootVBox/StatusBar/StatusRow" unique_id=1079174229]
 layout_mode = 2
@@ -432,20 +436,17 @@ title = "Open a File"
 size = Vector2i(800, 520)
 file_mode = 0
 access = 2
-use_native_dialog = true
 
 [node name="OpenDirDialog" type="FileDialog" parent="." unique_id=1020381893]
 title = "Open a Directory"
 size = Vector2i(800, 520)
 file_mode = 2
 access = 2
-use_native_dialog = true
 
 [node name="SaveAsDialog" type="FileDialog" parent="." unique_id=1940201679]
 title = "Save As"
 size = Vector2i(800, 520)
 access = 2
-use_native_dialog = true
 
 [node name="OpenThemeXmlDialog" type="FileDialog" parent="." unique_id=237338479]
 oversampling_override = 1.0
@@ -454,7 +455,6 @@ size = Vector2i(800, 520)
 file_mode = 0
 access = 2
 filters = PackedStringArray("*.xml ; Theme XML files")
-use_native_dialog = true
 
 [node name="Overlay" type="ColorRect" parent="." unique_id=1597586422]
 visible = false
@@ -467,6 +467,7 @@ grow_vertical = 2
 color = Color(0, 0, 0, 0.55)
 
 [node name="DialogPanel" type="PanelContainer" parent="Overlay" unique_id=577446710]
+material = SubResource("ShaderMaterial_surface")
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.5

@@ -2,6 +2,11 @@ extends Control
 
 ## SSCodeIDE — root controller. All nodes live in ui_editor.tscn.
 
+const ChatMarkdown = preload("res://scripts/chat_markdown_renderer.gd")
+const AgentWorkspace = preload("res://scripts/agent_workspace_service.gd")
+const CodeEditorTools = preload("res://scripts/code_editor_service.gd")
+const MarkdownPreview = preload("res://scripts/markdown_preview_renderer.gd")
+
 @onready var _file_tree: Tree = $RootVBox/MainSplit/ExplorerPane/FileTree
 @onready var _tab_bar: TabBar = %TabBar
 @onready var _code_edit: CodeEdit = $RootVBox/MainSplit/CenterSplit/EditorPane/CodeEdit
@@ -62,17 +67,15 @@ extends Control
 
 var _dialog_action_callback: Callable = Callable()
 
-var _nerd_font: FontFile
 var _workspace_root: String = ""
 var _custom_themes: Dictionary = {}  ## User-installed themes loaded from XML files
-var _open_files: Array[Dictionary] = []
+var _open_files: Array = []
 var _active_index: int = -1
 var _suppress_tab: bool = false
 var _md_preview_active: bool = false
 var _agent_mode: bool = true
 var _ai_busy: bool = false
 var _response_rendered: bool = false
-var _panel_outline_overlays: Array[Panel] = []
 var _ai_provider: String = "nemotron"
 var _active_theme: String = "adwaita_darker"
 var _current_prompt: String = ""
@@ -190,27 +193,6 @@ const CHAT_SLASH_COMMANDS: Array[Dictionary] = [
 	{"cmd": "/quit", "desc": "Quit SSCodeIDE"},
 ]
 
-const GD_KEYWORDS: Array[String] = [
-	"func", "var", "const", "extends", "class_name", "if", "elif", "else",
-	"for", "while", "match", "return", "signal", "enum", "static", "void",
-	"int", "float", "bool", "String", "Array", "Dictionary", "true", "false", "null",
-	"@onready", "@export", "preload", "load", "print", "push_error", "await"
-]
-
-const GD_BUILTIN_FUNCS: Array[String] = [
-	"print", "push_error", "push_warning", "len", "range", "str", "int", "float",
-	"bool", "min", "max", "clamp", "abs", "sin", "cos", "sqrt", "randf", "randi",
-	"load", "preload", "get_node", "has_node", "find_child", "add_child", "remove_child",
-	"queue_free", "emit_signal", "connect", "disconnect", "is_connected"
-]
-
-const GD_TYPES: Array[String] = [
-	"Node", "Control", "Panel", "PanelContainer", "Label", "Button", "LineEdit",
-	"TextEdit", "CodeEdit", "Tree", "TreeItem", "ItemList", "TabBar", "RichTextLabel",
-	"HTTPRequest", "ColorRect", "TextureRect", "Vector2", "Vector3", "Color", "Rect2",
-	"Transform2D", "Transform3D", "PackedStringArray", "PackedByteArray", "Variant"
-]
-
 const HELP_TEXT := """[b]SSCodeIDE Shortcuts[/b]
 
 [b]File[/b]
@@ -265,8 +247,6 @@ Automatic Toast · Multi-Turn Context Memory · Intelligent Candidate Fallback
 
 
 func _ready() -> void:
-	_nerd_font = FontFile.new()
-	_nerd_font.load_dynamic_font(ProjectSettings.globalize_path("res://fonts/FiraCodeNerdFont-Regular.ttf"))
 	var base_res := ProjectSettings.globalize_path("res://").rstrip("/")
 	if DirAccess.dir_exists_absolute(base_res):
 		_workspace_root = base_res
@@ -276,7 +256,6 @@ func _ready() -> void:
 	_load_theme_config()
 	_apply_kitty_fish_theme()
 	_wire_signals()
-	_create_panel_outline_overlays()
 	_configure_code_edit()
 	_refresh_file_tree()
 	_open_untitled()
@@ -288,7 +267,6 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	_update_panel_outline_overlays()
 	if _stream_active:
 		_poll_chat_stream()
 	if _ai_busy:
@@ -301,41 +279,9 @@ func _process(delta: float) -> void:
 		_refresh_thinking_panel()
 
 
-func _create_panel_outline_overlays() -> void:
-	for pane: Control in [$RootVBox/MainSplit/ExplorerPane, $RootVBox/MainSplit/CenterSplit/EditorPane, _chat_pane]:
-		var overlay := Panel.new()
-		overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		overlay.z_index = 100
-		add_child(overlay)
-		_panel_outline_overlays.append(overlay)
-
-
-func _update_panel_outline_overlays() -> void:
-	var panes: Array[Control] = [$RootVBox/MainSplit/ExplorerPane, $RootVBox/MainSplit/CenterSplit/EditorPane, _chat_pane]
-	for i in _panel_outline_overlays.size():
-		var overlay := _panel_outline_overlays[i]
-		var pane := panes[i]
-		if not pane.visible:
-			overlay.visible = false
-			continue
-		overlay.visible = true
-		overlay.position = pane.get_global_position() - global_position
-		overlay.size = pane.size
-		var focus_owner := get_viewport().gui_get_focus_owner()
-		var active := focus_owner != null and (focus_owner == pane or pane.is_ancestor_of(focus_owner))
-		var style := StyleBoxFlat.new()
-		style.bg_color = Color(0, 0, 0, 0)
-		style.set_border_width_all(2 if active else 1)
-		style.border_color = Color("#62a0ea") if active else Color("#34343d")
-		overlay.add_theme_stylebox_override("panel", style)
-
-
 func _refresh_thinking_panel() -> void:
 	if _chat_thinking_label == null:
 		return
-	_chat_thinking_label.add_theme_font_size_override("normal_font_size", 11)
-	_chat_thinking_label.add_theme_font_size_override("italics_font_size", 11)
-	_chat_thinking_label.add_theme_font_size_override("bold_font_size", 11)
 	var body: String = _format_thinking_text(_thinking_text)
 	if body.is_empty():
 		body = "Waiting for the model’s reasoning tokens…"
@@ -1437,278 +1383,10 @@ func _update_ai_status() -> void:
 	_chat_input.placeholder_text = "Describe what to build or ask %s…" % display_title
 
 
-func _apply_style_if_unset(control: Control, _name: StringName, style: StyleBox) -> void:
-	if not control.has_theme_stylebox_override(_name):
-		control.add_theme_stylebox_override(_name, style)
-
-
 func _apply_kitty_fish_theme() -> void:
-	## Resolve active palette from THEMES dict
-	var p: Dictionary = THEMES.get(_active_theme, THEMES["adwaita_darker"])
-	var bg_black   := Color(str(p.get("bg_black",   "#000000")))
-	var bg_surface := Color(str(p.get("bg_surface", "#16161b")))
-	var bg_card    := Color(str(p.get("bg_card",    "#1c1c22")))
-	var bg_lighter := Color(str(p.get("bg_lighter", "#26262e")))
-	var fg         := Color(str(p.get("fg",         "#deddda")))
-	var fg_bright  := Color(str(p.get("fg_bright",  "#f6f5f4")))
-	var muted      := Color(str(p.get("muted",      "#9a9996")))
-	var blue       := Color(str(p.get("blue",       "#62a0ea")))
-	var green      := Color(str(p.get("green",      "#57e389")))
-	var cyan       := Color(str(p.get("cyan",       "#5bc8af")))
-	var red        := Color(str(p.get("red",        "#ed333b")))
-
-	## Background
-	$Background.color = bg_black
-
-	## NavBar
-	var nav_bar: HBoxContainer = $RootVBox/NavBar
-	var nav_sb := StyleBoxFlat.new()
-	nav_sb.bg_color = bg_black
-	nav_bar.add_theme_stylebox_override("panel", nav_sb)
-
-	## Explorer
-	var explorer_header: Label = $RootVBox/MainSplit/ExplorerPane/ExplorerHeader
-	explorer_header.add_theme_color_override("font_color", muted)
-	var explorer_sb := StyleBoxFlat.new()
-	explorer_sb.bg_color = bg_black
-	_apply_style_if_unset($RootVBox/MainSplit/ExplorerPane, "panel", explorer_sb)
-	_file_tree.add_theme_color_override("font_color", fg)
-	_file_tree.add_theme_color_override("font_selected_color", blue)
-	var tree_bg_sb := StyleBoxFlat.new()
-	tree_bg_sb.bg_color = bg_black
-	_file_tree.add_theme_stylebox_override("panel", tree_bg_sb)
-	_file_tree.add_theme_stylebox_override("focus", tree_bg_sb)
-
-	## CodeEdit — palette-driven colours (styleboxes fill gutter/minimap, not just font bg)
-	var code_sb := StyleBoxFlat.new()
-	code_sb.bg_color = bg_black
-	code_sb.border_width_left = 1
-	code_sb.border_width_top = 1
-	code_sb.border_width_right = 1
-	code_sb.border_width_bottom = 1
-	code_sb.border_color = blue
-	_code_edit.add_theme_stylebox_override("normal", code_sb)
-	_code_edit.add_theme_stylebox_override("focus", code_sb)
-	_code_edit.add_theme_stylebox_override("read_only", code_sb)
-	_code_edit.add_theme_color_override("background_color", bg_black)
-	_code_edit.add_theme_color_override("caret_background_color", bg_black)
-	_code_edit.add_theme_color_override("gutter_background_color", bg_black)
-	_code_edit.add_theme_color_override("minimap_background_color", bg_black)
-	_code_edit.add_theme_color_override("font_color", fg)
-	_code_edit.add_theme_color_override("current_line_color", bg_surface)
-	_code_edit.add_theme_color_override("selection_color", bg_lighter)
-	_code_edit.add_theme_color_override("line_number_color", muted.darkened(0.2))
-	_code_edit.add_theme_color_override("caret_color", fg_bright)
-	_code_edit.add_theme_color_override("word_highlighted_color", bg_lighter)
-	_code_edit.add_theme_color_override("brace_mismatch_color", red)
+	## Persistent visual styling is authored in ui_grid_outline.theme and
+	## assigned from the scene Inspector. Code only supplies syntax metadata.
 	_code_edit.syntax_highlighter = _create_adwaita_fish_highlighter()
-
-	## Markdown Preview
-	var md_sb := StyleBoxFlat.new()
-	md_sb.bg_color = bg_surface
-	md_sb.border_width_left = 1
-	md_sb.border_width_top = 1
-	md_sb.border_width_right = 1
-	md_sb.border_width_bottom = 1
-	md_sb.border_color = bg_lighter
-	md_sb.set_corner_radius_all(8)
-	md_sb.set_content_margin_all(28)
-	_markdown_preview.add_theme_stylebox_override("normal", md_sb)
-	_markdown_preview.add_theme_color_override("default_color", fg)
-	_markdown_preview.add_theme_font_size_override("normal_font_size", 15)
-	_markdown_preview.add_theme_font_size_override("bold_font_size", 15)
-	_markdown_preview.add_theme_font_size_override("italics_font_size", 15)
-
-	## TabBar
-	_tab_bar.add_theme_color_override("font_selected_color", fg_bright)
-	_tab_bar.add_theme_color_override("font_unselected_color", muted)
-	var tab_bg := StyleBoxFlat.new()
-	tab_bg.bg_color = bg_black
-	var tab_selected := StyleBoxFlat.new()
-	tab_selected.bg_color = bg_black
-	tab_selected.border_color = blue
-	tab_selected.border_width_bottom = 1
-	_tab_bar.add_theme_stylebox_override("tab_unselected", tab_bg)
-	_tab_bar.add_theme_stylebox_override("tab_selected", tab_selected)
-	_tab_bar.add_theme_stylebox_override("tab_hovered", tab_bg)
-
-	## Chat pane
-	_chat_log.add_theme_color_override("default_color", fg)
-	var chat_log_sb := StyleBoxFlat.new()
-	chat_log_sb.bg_color = bg_black
-	chat_log_sb.set_content_margin_all(10)
-	_apply_style_if_unset(_chat_log, "normal", chat_log_sb)
-
-	## Chat Input Card
-	var input_card_sb := StyleBoxFlat.new()
-	input_card_sb.bg_color = bg_black
-	input_card_sb.border_color = bg_lighter
-	input_card_sb.set_border_width_all(1)
-	input_card_sb.set_corner_radius_all(14)
-	input_card_sb.set_content_margin_all(8)
-	_apply_style_if_unset(_chat_input_card, "panel", input_card_sb)
-
-	var chat_input_sb := StyleBoxEmpty.new()
-	chat_input_sb.set_content_margin_all(4)
-	_chat_input.add_theme_stylebox_override("normal", chat_input_sb)
-	var input_focus_sb := StyleBoxFlat.new()
-	input_focus_sb.bg_color = bg_black
-	input_focus_sb.border_width_left = 1
-	input_focus_sb.border_width_top = 1
-	input_focus_sb.border_width_right = 1
-	input_focus_sb.border_width_bottom = 1
-	input_focus_sb.border_color = blue
-	input_focus_sb.set_corner_radius_all(5)
-	_chat_input.add_theme_stylebox_override("focus", input_focus_sb)
-	_chat_input.add_theme_color_override("font_color", fg_bright)
-	_chat_input.add_theme_color_override("font_placeholder_color", muted)
-
-	## Action toolbar buttons
-	var btn_tool_sb := StyleBoxFlat.new()
-	btn_tool_sb.bg_color = bg_lighter
-	btn_tool_sb.set_corner_radius_all(6)
-	btn_tool_sb.set_content_margin_all(4)
-	for btn: Button in [_attach_btn, _agent_mode_btn, _smart_commit_btn, _chat_context_chip]:
-		if btn:
-			btn.add_theme_stylebox_override("normal", btn_tool_sb)
-			btn.add_theme_color_override("font_color", fg_bright)
-
-	## Send button
-	var send_sb := StyleBoxFlat.new()
-	send_sb.bg_color = blue
-	send_sb.set_corner_radius_all(12)
-	send_sb.set_content_margin_all(4)
-	_chat_send.add_theme_stylebox_override("normal", send_sb)
-	_chat_send.add_theme_stylebox_override("hover", send_sb)
-	_chat_send.add_theme_stylebox_override("pressed", send_sb)
-	_chat_send.add_theme_color_override("font_color", Color("#ffffff"))
-	_chat_send.add_theme_color_override("font_hover_color", Color("#ffffff"))
-	_chat_send.add_theme_color_override("font_pressed_color", Color("#ffffff"))
-
-	## Chat header & actions
-	_chat_header.add_theme_color_override("font_color", fg_bright)
-	_chat_context_badge.add_theme_color_override("font_color", cyan)
-
-	var btn_pill_sb := StyleBoxFlat.new()
-	btn_pill_sb.bg_color = bg_lighter
-	btn_pill_sb.set_corner_radius_all(6)
-	btn_pill_sb.set_content_margin_all(4)
-	for btn: Button in [_chat_context_chip, _attach_btn, _agent_mode_btn, _smart_commit_btn]:
-		btn.add_theme_stylebox_override("normal", btn_pill_sb)
-		btn.add_theme_stylebox_override("hover", btn_pill_sb)
-		btn.add_theme_color_override("font_color", fg)
-
-	## Status bar
-	var status_sb := StyleBoxFlat.new()
-	status_sb.bg_color = bg_surface
-	$RootVBox/StatusBar.add_theme_stylebox_override("panel", status_sb)
-	_status_left.add_theme_color_override("font_color", green)
-	if _status_git:
-		_status_git.add_theme_color_override("font_color", green)
-		_status_git.add_theme_color_override("font_hover_color", fg_bright)
-		_status_git.add_theme_color_override("font_pressed_color", blue)
-	_status_cursor.add_theme_color_override("font_color", muted)
-	_status_lang.add_theme_color_override("font_color", muted)
-	_status_enc.add_theme_color_override("font_color", muted)
-	_status_ai.add_theme_color_override("font_color", blue)
-
-	## Dialog and modal input styling
-	var dialog_sb := StyleBoxFlat.new()
-	dialog_sb.bg_color = bg_card
-	dialog_sb.border_color = bg_lighter
-	dialog_sb.set_border_width_all(1)
-	dialog_sb.set_corner_radius_all(10)
-	dialog_sb.set_content_margin_all(14)
-	_dialog_panel.add_theme_stylebox_override("panel", dialog_sb)
-	_dialog_title.add_theme_color_override("font_color", fg_bright)
-	_dialog_body.add_theme_color_override("default_color", fg)
-	var dlg_body_sb := StyleBoxEmpty.new()
-	_dialog_body.add_theme_stylebox_override("normal", dlg_body_sb)
-	var dlg_scroll_node: ScrollContainer = _dialog_body.get_parent() as ScrollContainer
-	if dlg_scroll_node:
-		dlg_scroll_node.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
-	if _dialog_input:
-		var dlg_in_sb := StyleBoxFlat.new()
-		dlg_in_sb.bg_color = bg_surface
-		dlg_in_sb.border_color = bg_lighter
-		dlg_in_sb.set_border_width_all(1)
-		dlg_in_sb.set_corner_radius_all(6)
-		dlg_in_sb.set_content_margin_all(6)
-		_dialog_input.add_theme_stylebox_override("normal", dlg_in_sb)
-		_dialog_input.add_theme_stylebox_override("focus", dlg_in_sb)
-		_dialog_input.add_theme_color_override("font_color", fg_bright)
-	if _dialog_action_btn:
-		var dlg_act_sb := StyleBoxFlat.new()
-		dlg_act_sb.bg_color = blue
-		dlg_act_sb.set_corner_radius_all(6)
-		dlg_act_sb.set_content_margin_all(6)
-		_dialog_action_btn.add_theme_stylebox_override("normal", dlg_act_sb)
-		_dialog_action_btn.add_theme_color_override("font_color", Color("#ffffff"))
-	if _dialog_close:
-		var dlg_cls_sb := StyleBoxFlat.new()
-		dlg_cls_sb.bg_color = bg_lighter
-		dlg_cls_sb.set_corner_radius_all(6)
-		dlg_cls_sb.set_content_margin_all(6)
-		_dialog_close.add_theme_stylebox_override("normal", dlg_cls_sb)
-		_dialog_close.add_theme_color_override("font_color", fg)
-
-	## Provider select dropdown
-	var provider_sb := StyleBoxFlat.new()
-	provider_sb.bg_color = bg_card
-	provider_sb.border_color = bg_lighter
-	provider_sb.set_border_width_all(1)
-	provider_sb.set_corner_radius_all(6)
-	provider_sb.set_content_margin_all(4)
-	_provider_select.add_theme_stylebox_override("normal", provider_sb)
-	_provider_select.add_theme_color_override("font_color", fg)
-
-	## Chat status banner
-	var status_banner_sb := StyleBoxFlat.new()
-	status_banner_sb.bg_color = bg_card
-	status_banner_sb.border_color = bg_lighter
-	status_banner_sb.set_border_width_all(1)
-	status_banner_sb.set_corner_radius_all(8)
-	status_banner_sb.set_content_margin_all(8)
-	_apply_style_if_unset(_chat_status_banner, "panel", status_banner_sb)
-	if _chat_thinking_label:
-		_chat_thinking_label.add_theme_color_override("default_color", muted)
-		_chat_thinking_label.add_theme_font_size_override("normal_font_size", 11)
-
-	## Chat suggestions popup & list
-	var suggestions_sb := StyleBoxFlat.new()
-	suggestions_sb.bg_color = bg_card
-	suggestions_sb.border_color = bg_lighter
-	suggestions_sb.set_border_width_all(1)
-	suggestions_sb.set_corner_radius_all(8)
-	suggestions_sb.set_content_margin_all(4)
-	_chat_suggestions_popup.add_theme_stylebox_override("panel", suggestions_sb)
-	_chat_suggestions_list.add_theme_color_override("font_color", fg)
-	_chat_suggestions_list.add_theme_color_override("font_selected_color", blue)
-	var list_bg_sb := StyleBoxFlat.new()
-	list_bg_sb.bg_color = bg_card
-	_chat_suggestions_list.add_theme_stylebox_override("panel", list_bg_sb)
-
-	## Apply font everywhere
-	if _nerd_font:
-		for node: Control in [_code_edit, _file_tree, _chat_log, _chat_input,
-				_status_left, _status_git, _status_cursor, _status_lang, _status_enc,
-				_chat_context_chip,
-				_attach_btn, _agent_mode_btn, _smart_commit_btn,
-				_provider_select, explorer_header,
-				_chat_status_label, _chat_thinking_label, _chat_send, _chat_suggestions_list,
-				_dialog_title, _dialog_input, _dialog_action_btn, _dialog_close]:
-			if node:
-				node.add_theme_font_override("font", _nerd_font)
-		_code_edit.add_theme_font_size_override("font_size", 14)
-		_chat_log.add_theme_font_size_override("normal_font_size", 13)
-		_chat_input.add_theme_font_size_override("font_size", 13)
-		_chat_status_label.add_theme_font_size_override("normal_font_size", 12)
-		_chat_suggestions_list.add_theme_font_size_override("font_size", 11)
-		_provider_select.add_theme_font_size_override("font_size", 11)
-		_smart_commit_btn.add_theme_font_size_override("font_size", 11)
-		_agent_mode_btn.add_theme_font_size_override("font_size", 11)
-		if _status_git:
-			_status_git.add_theme_font_size_override("font_size", 12)
 
 func _on_context_chip_pressed() -> void:
 	if _active_index >= 0 and _active_index < _open_files.size():
@@ -1750,355 +1428,44 @@ func _set_markdown_preview(enabled: bool, raw_md: String) -> void:
 		_code_edit.visible = true
 
 
-func _markdown_to_bbcode(md: String) -> String:
-	var lines: PackedStringArray = md.replace("\r\n", "\n").split("\n")
-	var out: String = ""
-	var in_code_block: bool = false
-	var code_lang: String = ""
-	var code_buffer: String = ""
-	var i: int = 0
-	while i < lines.size():
-		var line: String = lines[i]
-
-		# Fenced code blocks (``` or ~~~)
-		if line.strip_edges().begins_with("```") or line.strip_edges().begins_with("~~~"):
-			if not in_code_block:
-				in_code_block = true
-				code_lang = line.strip_edges().substr(3).strip_edges()
-				code_buffer = ""
-			else:
-				in_code_block = false
-				var lang_label: String = ""
-				if not code_lang.is_empty():
-					lang_label = "[color=#8b949e][i]" + code_lang.to_upper() + "[/i][/color]\n"
-				out += lang_label + "[bgcolor=#161b22][color=#7ee787][code]" + code_buffer.strip_edges() + "[/code][/color][/bgcolor]\n\n"
-			i += 1
-			continue
-
-		if in_code_block:
-			code_buffer += line + "\n"
-			i += 1
-			continue
-
-		var stripped: String = line.strip_edges()
-
-		# Tables (| col1 | col2 |)
-		if _is_table_row(stripped):
-			var table_lines: Array[String] = []
-			while i < lines.size() and _is_table_row(lines[i]):
-				table_lines.append(lines[i])
-				i += 1
-			out += _render_preview_table(table_lines)
-			continue
-
-		# Horizontal rules (---, ***, ___)
-		if stripped.length() >= 3:
-			var is_hr: bool = true
-			var hr_ch: String = stripped[0]
-			if hr_ch in ["-", "*", "_"]:
-				for c_idx in range(stripped.length()):
-					if stripped[c_idx] != hr_ch:
-						is_hr = false
-						break
-			else:
-				is_hr = false
-			if is_hr and stripped.length() >= 3:
-				out += "[color=#30363d]────────────────────────────────────────────────[/color]\n\n"
-				i += 1
-				continue
-
-		# Headings (# to ######) - GitHub Markdown style
-		if stripped.begins_with("#"):
-			var level: int = 0
-			while level < stripped.length() and stripped[level] == "#":
-				level += 1
-			if level >= 1 and level <= 6 and level < stripped.length() and stripped[level] == " ":
-				var heading_text: String = _md_inline(stripped.substr(level + 1))
-				var sizes: Array[int] = [24, 20, 17, 15, 14, 13]
-				var sz: int = sizes[mini(level - 1, 5)]
-				if level == 1:
-					out += "\n[font_size=" + str(sz) + "][b][color=#f0f6fc]" + heading_text + "[/color][/b][/font_size]\n"
-					out += "[color=#30363d]────────────────────────────────────────────────[/color]\n\n"
-				elif level == 2:
-					out += "\n[font_size=" + str(sz) + "][b][color=#58a6ff]" + heading_text + "[/color][/b][/font_size]\n"
-					out += "[color=#21262d]────────────────────────────────────────────────[/color]\n\n"
-				elif level == 3:
-					out += "\n[font_size=" + str(sz) + "][b][color=#79c0ff]" + heading_text + "[/b][/color][/font_size]\n\n"
-				else:
-					out += "\n[font_size=" + str(sz) + "][b][color=#d2a8ff]" + heading_text + "[/b][/color][/font_size]\n\n"
-				i += 1
-				continue
-
-		# Blockquotes (>) - GitHub style
-		if stripped.begins_with(">"):
-			var quote_lines: String = ""
-			while i < lines.size() and lines[i].strip_edges().begins_with(">"):
-				var ql: String = lines[i].strip_edges()
-				if ql.begins_with("> "):
-					ql = ql.substr(2)
-				elif ql == ">":
-					ql = ""
-				else:
-					ql = ql.substr(1)
-				quote_lines += _md_inline(ql) + "\n"
-				i += 1
-			out += "[indent][color=#388bfd]▎ [/color][color=#8b949e][i]" + quote_lines.strip_edges() + "[/i][/color][/indent]\n\n"
-			continue
-
-		# Unordered lists (-, *, +) & Task lists - GitHub style
-		if stripped.begins_with("- ") or stripped.begins_with("* ") or stripped.begins_with("+ "):
-			while i < lines.size():
-				var ul_line: String = lines[i].strip_edges()
-				if ul_line.begins_with("- [ ] ") or ul_line.begins_with("- [x] ") or ul_line.begins_with("- [X] "):
-					var checked: bool = ul_line.begins_with("- [x] ") or ul_line.begins_with("- [X] ")
-					var task_text: String = _md_inline(ul_line.substr(6))
-					var marker: String = "[color=#3fb950]☑[/color] " if checked else "[color=#8b949e]☐[/color] "
-					out += "  " + marker + task_text + "\n"
-				elif ul_line.begins_with("- ") or ul_line.begins_with("* ") or ul_line.begins_with("+ "):
-					out += "  [color=#58a6ff]•[/color] " + _md_inline(ul_line.substr(2)) + "\n"
-				else:
-					break
-				i += 1
-			out += "\n"
-			continue
-
-		# Ordered lists (1. 2. etc)
-		if stripped.length() > 2:
-			var dot_pos: int = stripped.find(". ")
-			if dot_pos > 0 and dot_pos <= 4 and stripped.substr(0, dot_pos).is_valid_int():
-				var list_num: int = 1
-				while i < lines.size():
-					var ol_line: String = lines[i].strip_edges()
-					var dp: int = ol_line.find(". ")
-					if dp > 0 and dp <= 4 and ol_line.substr(0, dp).is_valid_int():
-						out += "  [color=#58a6ff]" + str(list_num) + ".[/color] " + _md_inline(ol_line.substr(dp + 2)) + "\n"
-						list_num += 1
-					else:
-						break
-					i += 1
-				out += "\n"
-				continue
-
-		# Empty line = paragraph break
-		if stripped.is_empty():
-			out += "\n"
-			i += 1
-			continue
-
-		# Regular paragraph text with inline formatting
-		out += _md_inline(stripped) + "\n\n"
-		i += 1
-
-	return out
+func _markdown_to_bbcode(markdown: String) -> String:
+	return MarkdownPreview.render(markdown)
 
 
 func _is_table_row(line: String) -> bool:
-	var s: String = line.strip_edges()
-	return s.begins_with("|") and s.ends_with("|") and s.length() >= 3
+	return MarkdownPreview.is_table_row(line)
 
 
 func _is_table_separator(line: String) -> bool:
-	var s: String = line.strip_edges()
-	if not (s.begins_with("|") and s.ends_with("|")):
-		return false
-	var inner: String = s.replace(" ", "").replace(":", "").replace("-", "").replace("|", "")
-	return inner.is_empty()
+	return MarkdownPreview.is_table_separator(line)
 
 
-func _render_preview_table(table_lines: Array[String]) -> String:
-	if table_lines.is_empty():
-		return ""
-	var header_cells: Array[String] = _split_table_row(table_lines[0])
-	if header_cells.is_empty():
-		return ""
-	var cols: int = header_cells.size()
-	
-	var row_start: int = 1
-	if table_lines.size() > 1 and _is_table_separator(table_lines[1]):
-		row_start = 2
-	
-	var table_out: String = "\n[table=%d]\n" % cols
-	
-	# Header Row
-	for h: String in header_cells:
-		var formatted_h: String = _md_inline(h)
-		table_out += "[cell][bgcolor=#161b22][color=#58a6ff][b]  " + formatted_h + "  [/b][/color][/bgcolor][/cell]"
-	table_out += "\n"
-	
-	# Data Rows
-	var row_count: int = 0
-	for r_idx: int in range(row_start, table_lines.size()):
-		var row_line: String = table_lines[r_idx]
-		var cells: Array[String] = _split_table_row(row_line)
-		if cells.is_empty():
-			continue
-		var row_bg: String = "#0d1117" if (row_count % 2 == 0) else "#161b22"
-		for c_idx: int in range(cols):
-			var cell_val: String = cells[c_idx] if c_idx < cells.size() else ""
-			var formatted_cell: String = _md_inline(cell_val)
-			table_out += "[cell][bgcolor=" + row_bg + "][color=#c9d1d9]  " + formatted_cell + "  [/color][/bgcolor][/cell]"
-		table_out += "\n"
-		row_count += 1
-	
-	table_out += "[/table]\n\n"
-	return table_out
+func _render_preview_table(rows: Array[String]) -> String:
+	return MarkdownPreview.render_table(rows)
 
 
 func _split_table_row(row: String) -> Array[String]:
-	var trimmed: String = row.strip_edges()
-	if trimmed.begins_with("|"):
-		trimmed = trimmed.substr(1)
-	if trimmed.ends_with("|"):
-		trimmed = trimmed.substr(0, trimmed.length() - 1)
-	var parts: PackedStringArray = trimmed.split("|")
-	var result: Array[String] = []
-	for p: String in parts:
-		result.append(p.strip_edges())
-	return result
+	return MarkdownPreview.split_table_row(row)
 
 
 func _md_inline(text: String) -> String:
-	var result: String = text
-
-	# HTML <kbd>key</kbd> -> GitHub Keyboard Badge
-	var kbd_regex := RegEx.new()
-	kbd_regex.compile("(?i)<kbd>(.*?)</kbd>")
-	result = kbd_regex.sub(result, "[bgcolor=#21262d][color=#f0f6fc][b] $1 [/b][/color][/bgcolor]", true)
-
-	# HTML <code>...</code>
-	var html_code_regex := RegEx.new()
-	html_code_regex.compile("(?i)<code>(.*?)</code>")
-	result = html_code_regex.sub(result, "[bgcolor=#161b22][color=#79c0ff][code] $1 [/code][/color][/bgcolor]", true)
-
-	# HTML <b>, <strong>, <i>, <em>, <s>, <del>, <br>
-	var strong_regex := RegEx.new()
-	strong_regex.compile("(?i)<(?:b|strong)>(.*?)</(?:b|strong)>")
-	result = strong_regex.sub(result, "[b]$1[/b]", true)
-
-	var em_regex := RegEx.new()
-	em_regex.compile("(?i)<(?:i|em)>(.*?)</(?:i|em)>")
-	result = em_regex.sub(result, "[i]$1[/i]", true)
-
-	var del_regex := RegEx.new()
-	del_regex.compile("(?i)<(?:s|del|strike)>(.*?)</(?:s|del|strike)>")
-	result = del_regex.sub(result, "[s]$1[/s]", true)
-
-	var br_regex := RegEx.new()
-	br_regex.compile("(?i)<br\\s*/?>")
-	result = br_regex.sub(result, "\n", true)
-
-	# Inline code (`code`)
-	var code_regex := RegEx.new()
-	code_regex.compile("`([^`]+)`")
-	result = code_regex.sub(result, "[bgcolor=#1f242c][color=#79c0ff][code] $1 [/code][/color][/bgcolor]", true)
-
-	# Bold + Italic (***text*** or ___text___)
-	var bold_italic_regex := RegEx.new()
-	bold_italic_regex.compile("\\*\\*\\*(.+?)\\*\\*\\*")
-	result = bold_italic_regex.sub(result, "[b][i]$1[/i][/b]", true)
-	var bold_italic_regex2 := RegEx.new()
-	bold_italic_regex2.compile("___(.+?)___")
-	result = bold_italic_regex2.sub(result, "[b][i]$1[/i][/b]", true)
-
-	# Bold (**text** or __text__)
-	var bold_regex := RegEx.new()
-	bold_regex.compile("\\*\\*(.+?)\\*\\*")
-	result = bold_regex.sub(result, "[b]$1[/b]", true)
-	var bold_regex2 := RegEx.new()
-	bold_regex2.compile("__(.+?)__")
-	result = bold_regex2.sub(result, "[b]$1[/b]", true)
-
-	# Italic (*text* or _text_)
-	var italic_regex := RegEx.new()
-	italic_regex.compile("\\*(.+?)\\*")
-	result = italic_regex.sub(result, "[i]$1[/i]", true)
-	var italic_regex2 := RegEx.new()
-	italic_regex2.compile("(?<![\\w])_(.+?)_(?![\\w])")
-	result = italic_regex2.sub(result, "[i]$1[/i]", true)
-
-	# Strikethrough (~~text~~)
-	var strike_regex := RegEx.new()
-	strike_regex.compile("~~(.+?)~~")
-	result = strike_regex.sub(result, "[s]$1[/s]", true)
-
-	# Links [text](url)
-	var link_regex := RegEx.new()
-	link_regex.compile("\\[([^\\]]+)\\]\\(([^)]+)\\)")
-	result = link_regex.sub(result, "[color=#58a6ff][url=$2]$1[/url][/color]", true)
-
-	# Images ![alt](url) — show as labelled placeholder
-	var img_regex := RegEx.new()
-	img_regex.compile("!\\[([^\\]]*?)\\]\\(([^)]+)\\)")
-	result = img_regex.sub(result, "[color=#79c0ff]🖼 $1[/color]", true)
-
-	# Strip any remaining raw HTML tags
-	var tag_strip_regex := RegEx.new()
-	tag_strip_regex.compile("<[^>]+>")
-	result = tag_strip_regex.sub(result, "", true)
-
-	return result
+	return MarkdownPreview.inline(text)
 
 
 func _configure_code_edit() -> void:
-	_code_edit.syntax_highlighter = _create_adwaita_fish_highlighter()
-	_code_edit.draw_tabs = true
-	_code_edit.draw_spaces = false
-	_code_edit.indent_size = 4
-	_code_edit.indent_use_spaces = false
-	_code_edit.auto_brace_completion_enabled = true
-	_code_edit.code_completion_enabled = true
-	_code_edit.code_completion_prefixes = [".", "(", "@", "$", " ", ":"]
-	_update_code_completion()
+	CodeEditorTools.configure(_code_edit, _active_palette(), _open_files)
 
 
 func _update_code_completion() -> void:
-	for kw in GD_KEYWORDS:
-		_code_edit.add_code_completion_option(CodeEdit.KIND_KEYWORD, kw, kw, Color("#dc8add"))
-	for fn_name in GD_BUILTIN_FUNCS:
-		_code_edit.add_code_completion_option(CodeEdit.KIND_FUNCTION, fn_name, fn_name + "()", Color("#62a0ea"))
-	for type_name in GD_TYPES:
-		_code_edit.add_code_completion_option(CodeEdit.KIND_CLASS, type_name, type_name, Color("#93ddc2"))
-	for file_info in _open_files:
-		var fname: String = file_info.get("path", "").get_file()
-		if not fname.is_empty():
-			_code_edit.add_code_completion_option(CodeEdit.KIND_FILE_PATH, fname, '"' + fname + '"', Color("#57e389"))
-	_code_edit.update_code_completion_options(false)
+	CodeEditorTools.update_completion(_code_edit, _open_files)
 
 
 func _create_adwaita_fish_highlighter() -> CodeHighlighter:
-	var p: Dictionary = THEMES.get(_active_theme, THEMES["adwaita_darker"])
-	var hl := CodeHighlighter.new()
-	hl.number_color = Color(str(p.get("hl_number", "#ffa348")))
-	hl.symbol_color = Color(str(p.get("hl_symbol", "#5bc8af")))
-	hl.function_color = Color(str(p.get("hl_func", "#62a0ea")))
-	hl.member_variable_color = Color(str(p.get("hl_member", "#99c1f1")))
-	var comment_col := Color(str(p.get("hl_comment", "#9a9996")))
-	var string_col  := Color(str(p.get("hl_string",  "#57e389")))
-	var kw_col      := Color(str(p.get("hl_keyword", "#dc8add")))
-	var type_col    := Color(str(p.get("hl_type",    "#93ddc2")))
-	var const_col   := Color(str(p.get("hl_const",   "#ffa348")))
-	hl.add_color_region("#", "", comment_col, true)
-	hl.add_color_region('"', '"', string_col)
-	hl.add_color_region("'", "'", string_col)
-	hl.add_color_region('"""', '"""', string_col)
-	var kws := [
-		"extends", "class_name", "var", "const", "func", "static", "signal", "enum",
-		"if", "elif", "else", "for", "while", "match", "return", "pass", "break",
-		"continue", "await", "self", "void", "int", "float", "bool", "String",
-		"Vector2", "Vector3", "Color", "Array", "Dictionary", "true", "false", "null",
-		"@onready", "@export", "preload", "load", "print", "push_error", "in", "not",
-		"and", "or", "is", "as", "class", "super", "get", "set",
-	]
-	for kw in kws:
-		hl.add_keyword_color(kw, kw_col)
-	var types := ["int", "float", "bool", "String", "Vector2", "Vector3", "Color",
-		"Array", "Dictionary", "void", "PackedStringArray", "PackedByteArray",
-		"Variant", "Error", "NodePath", "StringName"]
-	for t in types:
-		hl.add_keyword_color(t, type_col)
-	for c in ["true", "false", "null", "self", "PI", "TAU", "INF", "NAN"]:
-		hl.add_keyword_color(c, const_col)
-	return hl
+	return CodeEditorTools.create_highlighter(_active_palette())
+
+
+func _active_palette() -> Dictionary:
+	return THEMES.get(_active_theme, THEMES["adwaita_darker"])
 
 
 func _refresh_file_tree() -> void:
@@ -3230,49 +2597,14 @@ func _append_ai_response(_provider: String, reply_text: String, elapsed: float, 
 
 
 func _execute_agent_file_writes(reply: String) -> String:
-	## Execute the small, explicit file-write protocol emitted by Agent mode.
-	var regex := RegEx.new()
-	regex.compile("(?s)<sscode-write\\s+path=\\\"([^\\\"]+)\\\">(.*?)</sscode-write>")
-	var matches := regex.search_all(reply)
-	if matches.is_empty():
-		return reply
-	var report := ""
-	for match: RegExMatch in matches:
-		var relative := match.get_string(1).strip_edges().replace("\\", "/")
-		var valid := not relative.is_empty() and not relative.begins_with("/") and not relative.contains("..")
-		if not valid:
-			report += "\n[color=#ed333b]Rejected unsafe path: %s[/color]" % relative
-			continue
-		var target := _workspace_root.path_join(relative).simplify_path()
-		if not target.begins_with(_workspace_root.simplify_path() + "/"):
-			report += "\n[color=#ed333b]Rejected path outside workspace: %s[/color]" % relative
-			continue
-		var parent := target.get_base_dir()
-		if not DirAccess.dir_exists_absolute(parent):
-			DirAccess.make_dir_recursive_absolute(parent)
-		var file := FileAccess.open(target, FileAccess.WRITE)
-		if file == null:
-			report += "\n[color=#ed333b]Could not write: %s[/color]" % relative
-			continue
-		file.store_string(match.get_string(2).trim_prefix("\n"))
-		file.close()
-		_reload_open_file(target)
-		report += "\n[color=#57e389]Written: %s[/color]" % relative
-	_refresh_file_tree()
-	var delete_regex := RegEx.new()
-	delete_regex.compile("<sscode-delete\\s+path=\\\"([^\\\"]+)\\\"\\s*/?>")
-	for match: RegExMatch in delete_regex.search_all(reply):
-		var relative := match.get_string(1).strip_edges().replace("\\", "/")
-		var target := _workspace_root.path_join(relative).simplify_path()
-		if relative.is_empty() or relative.begins_with("/") or relative.contains("..") or not target.begins_with(_workspace_root.simplify_path() + "/"):
-			report += "\n[color=#ed333b]Rejected unsafe delete path: %s[/color]" % relative
-		elif FileAccess.file_exists(target) and DirAccess.remove_absolute(target) == OK:
-			report += "\n[color=#57e389]Deleted: %s[/color]" % relative
-			_close_open_file_path(target)
-		else:
-			report += "\n[color=#ed333b]Could not delete: %s[/color]" % relative
-	_refresh_file_tree()
-	return delete_regex.sub(regex.sub(reply, "", true), "", true).strip_edges() + report
+	var result := AgentWorkspace.execute_markup(reply, _workspace_root)
+	for path: String in result.written_paths:
+		_reload_open_file(path)
+	for path: String in result.deleted_paths:
+		_close_open_file_path(path)
+	if not result.written_paths.is_empty() or not result.deleted_paths.is_empty():
+		_refresh_file_tree()
+	return str(result.reply) + str(result.report)
 
 
 func _reload_open_file(path: String) -> void:
@@ -3308,131 +2640,24 @@ func _append_chat(who: String, msg_body: String, color: Color) -> void:
 
 
 func _format_markdown_to_bbcode(raw_text: String) -> String:
-	if raw_text.is_empty():
-		return ""
-
-	var output: String = ""
-	var in_code_block: bool = false
-	var code_block_lang: String = ""
-	var code_block_lines: Array[String] = []
-
-	var lines := raw_text.split("\n")
-	for line in lines:
-		var trimmed := line.strip_edges()
-		if trimmed.begins_with("```"):
-			if in_code_block:
-				in_code_block = false
-				var code_content := "\n".join(code_block_lines)
-				code_block_lines.clear()
-				var lang_tag := code_block_lang if not code_block_lang.is_empty() else "code"
-				output += _format_code_block(code_content, lang_tag)
-			else:
-				in_code_block = true
-				code_block_lang = trimmed.substr(3).strip_edges()
-				code_block_lines.clear()
-			continue
-
-		if in_code_block:
-			code_block_lines.append(line)
-			continue
-
-		var formatted_line: String = line
-
-		# Headers
-		if formatted_line.begins_with("### "):
-			formatted_line = "[color=#ffffff][b]" + formatted_line.substr(4) + "[/b][/color]"
-		elif formatted_line.begins_with("## "):
-			formatted_line = "[font_size=14][color=#ffffff][b]" + formatted_line.substr(3) + "[/b][/color][/font_size]"
-		elif formatted_line.begins_with("# "):
-			formatted_line = "[font_size=16][color=#ffffff][b]" + formatted_line.substr(2) + "[/b][/color][/font_size]"
-		elif formatted_line.begins_with("> "):
-			# Blockquote / Callout
-			formatted_line = "[color=#5bc8af]▎[/color] [color=#c0bfbc]" + formatted_line.substr(2) + "[/color]"
-		elif formatted_line.begins_with("- [ ] ") or formatted_line.begins_with("* [ ] "):
-			formatted_line = "  [color=#9a9996]☐[/color] " + formatted_line.substr(6)
-		elif formatted_line.begins_with("- [x] ") or formatted_line.begins_with("* [x] ") or formatted_line.begins_with("- [X] "):
-			formatted_line = "  [color=#57e389]✔[/color] " + formatted_line.substr(6)
-		elif formatted_line.begins_with("- ") or formatted_line.begins_with("* "):
-			# Unordered list item
-			formatted_line = "  [color=#57e389]•[/color] " + formatted_line.substr(2)
-
-		formatted_line = _replace_inline_code(formatted_line)
-		formatted_line = _replace_bold(formatted_line)
-		formatted_line = _replace_italic(formatted_line)
-		formatted_line = _replace_links(formatted_line)
-
-		output += formatted_line + "\n"
-
-	if in_code_block and not code_block_lines.is_empty():
-		var code_content := "\n".join(code_block_lines)
-		var lang_tag := code_block_lang if not code_block_lang.is_empty() else "code"
-		output += _format_code_block(code_content, lang_tag)
-
-	return output.strip_edges(false, true)
+	return ChatMarkdown.render(raw_text)
 
 
 func _format_code_block(code: String, language: String) -> String:
-	var safe_code := code.replace("[", "[lb]").replace("]", "[rb]")
-	var copy_id := Marshalls.raw_to_base64(code.to_utf8_buffer())
-	var label := language if not language.is_empty() else "code"
-	return "\n[bgcolor=#25292e][color=#8b949e]  %s[/color]  [url=copy:%s][color=#58a6ff][u]Copy[/u][/color][/url]\n[bgcolor=#161b22][color=#e6edf3]  %s\n[/color][/bgcolor]\n\n" % [label, copy_id, safe_code.replace("\n", "\n  ")]
+	return ChatMarkdown.format_code_block(code, language)
 
 
 func _replace_bold(text: String) -> String:
-	var result := text
-	while true:
-		var first := result.find("**")
-		if first == -1:
-			break
-		var second := result.find("**", first + 2)
-		if second == -1:
-			break
-		var inner := result.substr(first + 2, second - (first + 2))
-		result = result.substr(0, first) + "[b]" + inner + "[/b]" + result.substr(second + 2)
-	return result
+	return ChatMarkdown.replace_bold(text)
 
 
 func _replace_inline_code(text: String) -> String:
-	var result := text
-	while true:
-		var first := result.find("`")
-		if first == -1:
-			break
-		var second := result.find("`", first + 1)
-		if second == -1:
-			break
-		var inner := result.substr(first + 1, second - (first + 1))
-		result = result.substr(0, first) + "[bgcolor=#23232b][color=#99c1f1] " + inner + " [/color][/bgcolor]" + result.substr(second + 1)
-	return result
+	return ChatMarkdown.replace_inline_code(text)
 
 
 func _replace_italic(text: String) -> String:
-	var result := text
-	while true:
-		var first := result.find("*")
-		if first == -1:
-			break
-		var second := result.find("*", first + 1)
-		if second == -1:
-			break
-		var inner := result.substr(first + 1, second - (first + 1))
-		result = result.substr(0, first) + "[i]" + inner + "[/i]" + result.substr(second + 1)
-	return result
+	return ChatMarkdown.replace_italic(text)
 
 
 func _replace_links(text: String) -> String:
-	var result := text
-	while true:
-		var b_open := result.find("[")
-		if b_open == -1:
-			break
-		var b_close := result.find("]", b_open + 1)
-		if b_close == -1 or b_close + 1 >= result.length() or result[b_close + 1] != "(":
-			break
-		var p_close := result.find(")", b_close + 2)
-		if p_close == -1:
-			break
-		var label := result.substr(b_open + 1, b_close - (b_open + 1))
-		var url_target := result.substr(b_close + 2, p_close - (b_close + 2))
-		result = result.substr(0, b_open) + "[url=" + url_target + "][color=#62a0ea][u]" + label + "[/u][/color][/url]" + result.substr(p_close + 1)
-	return result
+	return ChatMarkdown.replace_links(text)
