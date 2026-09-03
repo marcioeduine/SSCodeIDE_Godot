@@ -91,7 +91,7 @@ static func _build_material3_theme(palette: Dictionary) -> Theme:
 	var on_variant := _colour(palette, "muted", on_surface.darkened(0.28))
 	var outline := on_variant.darkened(0.40) if background.get_luminance() < 0.5 else on_variant.lightened(0.35)
 	var primary := _colour(palette, "blue", Color("#4c8bf5"))
-	var secondary := _colour(palette, "cyan", Color("#3bbdbd"))
+	var _secondary := _colour(palette, "cyan", Color("#3bbdbd"))
 	var on_primary := Color.WHITE if primary.get_luminance() < 0.4 else background
 	var is_light := str(palette.get("variant", "dark")) == "light"
 

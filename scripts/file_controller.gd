@@ -78,13 +78,13 @@ func on_tree_item_collapsed(item: TreeItem) -> void:
 			item.set_icon(0, folder_tex)
 			item.set_icon_max_width(0, 16)
 
-func on_tree_item_activated(tree: Tree) -> void:
+func on_tree_item_activated(tree: Tree) -> String:
 	var item: TreeItem = tree.get_selected()
 	if not item:
-		return
+		return ""
 	var meta: Variant = item.get_metadata(0)
 	if meta is Dictionary and not meta.get("is_dir", false):
-		return meta.get("path", "")
+		return str(meta.get("path", ""))
 	return ""
 
 func on_tree_item_selected(tree: Tree) -> bool:
@@ -138,9 +138,9 @@ func open_path(path: String, tab_bar: TabBar) -> bool:
 	tab_bar.current_tab = active_index
 	return true
 
-func load_active_into_editor(code_edit: CodeEdit, status_lang: Label, context_chip: Button) -> void:
+func load_active_into_editor(code_edit: CodeEdit, status_lang: Label, context_chip: Button) -> String:
 	if active_index < 0 or active_index >= open_files.size():
-		return
+		return ""
 	suppress_tab = true
 	var info: Dictionary = open_files[active_index]
 	code_edit.text = str(info.get("content", ""))
@@ -151,7 +151,6 @@ func load_active_into_editor(code_edit: CodeEdit, status_lang: Label, context_ch
 	var path: String = str(info.get("path", ""))
 	if status_lang:
 		status_lang.text = FileKind.label_for_path(path)
-	var title: String = str(info.get("title", "untitled"))
 	if context_chip:
 		context_chip.text = "+ " + (path.get_file() if not path.is_empty() else "Untitled")
 	return path
