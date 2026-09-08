@@ -650,51 +650,26 @@ func _setup_sidebar_panels() -> void:
 	var git_vsplit := VSplitContainer.new()
 	git_vsplit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	git_vsplit.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	git_vsplit.split_offset = 280
+	git_vsplit.split_offset = 240
 	_sidebar_git_panel.add_child(git_vsplit)
 
 	var top_git_vbox := VBoxContainer.new()
-	top_git_vbox.add_theme_constant_override("separation", 6)
+	top_git_vbox.add_theme_constant_override("separation", 8)
 	top_git_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top_git_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
-	var git_hdr_margin := MarginContainer.new()
-	git_hdr_margin.add_theme_constant_override("margin_left", 8)
-	git_hdr_margin.add_theme_constant_override("margin_right", 8)
-	git_hdr_margin.add_theme_constant_override("margin_top", 6)
-	git_hdr_margin.add_theme_constant_override("margin_bottom", 2)
-	var git_hdr_hbox := HBoxContainer.new()
-	var git_hdr_lbl := Label.new()
-	git_hdr_lbl.text = "SOURCE CONTROL"
-	git_hdr_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	git_hdr_lbl.add_theme_color_override("font_color", Color("#A1A1A6"))
-	git_hdr_lbl.add_theme_font_size_override("font_size", 11)
-	git_hdr_hbox.add_child(git_hdr_lbl)
-
-	var refresh_b := Button.new()
-	refresh_b.text = "Refresh"
-	refresh_b.flat = true
-	refresh_b.add_theme_color_override("font_color", Color("#8E8E93"))
-	refresh_b.add_theme_font_size_override("font_size", 11)
-	var icon_refresh: Texture2D = _load_svg_icon("res://icons/git_sync.svg")
-	if icon_refresh:
-		refresh_b.icon = icon_refresh
-		refresh_b.expand_icon = true
-	refresh_b.pressed.connect(func() -> void: _refresh_git_panel())
-	git_hdr_hbox.add_child(refresh_b)
-	git_hdr_margin.add_child(git_hdr_hbox)
-	top_git_vbox.add_child(git_hdr_margin)
-
+	# Commit Input & Actions Box
 	var git_margin := MarginContainer.new()
 	git_margin.add_theme_constant_override("margin_left", 8)
 	git_margin.add_theme_constant_override("margin_right", 8)
-	git_margin.add_theme_constant_override("margin_top", 2)
+	git_margin.add_theme_constant_override("margin_top", 6)
 	git_margin.add_theme_constant_override("margin_bottom", 4)
 	var git_vbox := VBoxContainer.new()
-	git_vbox.add_theme_constant_override("separation", 6)
+	git_vbox.add_theme_constant_override("separation", 8)
 
 	_git_commit_msg_input = LineEdit.new()
 	_git_commit_msg_input.placeholder_text = "Message (Ctrl+Enter to commit)"
+	_git_commit_msg_input.custom_minimum_size = Vector2(0, 32)
 	_git_commit_msg_input.clear_button_enabled = true
 	_git_commit_msg_input.text_submitted.connect(func(msg: String) -> void: _commit_git_message(msg))
 	git_vbox.add_child(_git_commit_msg_input)
@@ -704,6 +679,7 @@ func _setup_sidebar_panels() -> void:
 
 	_git_commit_btn = Button.new()
 	_git_commit_btn.text = "Commit"
+	_git_commit_btn.custom_minimum_size = Vector2(0, 32)
 	var icon_commit: Texture2D = _load_svg_icon("res://icons/git_commit.svg")
 	if icon_commit:
 		_git_commit_btn.icon = icon_commit
@@ -718,28 +694,35 @@ func _setup_sidebar_panels() -> void:
 
 	_git_smart_commit_btn = Button.new()
 	_git_smart_commit_btn.text = "Smart Commit"
+	_git_smart_commit_btn.custom_minimum_size = Vector2(0, 32)
 	var icon_sparkle: Texture2D = _load_svg_icon("res://icons/git_sparkle.svg")
 	if icon_sparkle:
 		_git_smart_commit_btn.icon = icon_sparkle
 		_git_smart_commit_btn.expand_icon = true
+	_git_smart_commit_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_git_smart_commit_btn.theme_type_variation = &"M3NavPillButton"
 	_git_smart_commit_btn.pressed.connect(_generate_smart_commit)
 	commit_row.add_child(_git_smart_commit_btn)
 	git_vbox.add_child(commit_row)
 
-	# Emergent SmartCommit Progress / Thinking Panel
+	# Emergent SmartCommit Progress / Thinking Panel (Generous Padding & Height)
 	_git_progress_panel = PanelContainer.new()
-	_git_progress_panel.custom_minimum_size = Vector2(0, 64)
+	_git_progress_panel.custom_minimum_size = Vector2(0, 76)
 	_git_progress_panel.visible = false
 	_git_progress_panel.theme_type_variation = &"M3Composer"
 	var prog_margin := MarginContainer.new()
-	prog_margin.add_theme_constant_override("margin_left", 8)
-	prog_margin.add_theme_constant_override("margin_right", 8)
-	prog_margin.add_theme_constant_override("margin_top", 6)
-	prog_margin.add_theme_constant_override("margin_bottom", 6)
+	prog_margin.add_theme_constant_override("margin_left", 10)
+	prog_margin.add_theme_constant_override("margin_right", 10)
+	prog_margin.add_theme_constant_override("margin_top", 8)
+	prog_margin.add_theme_constant_override("margin_bottom", 8)
 
 	_git_progress_label = RichTextLabel.new()
 	_git_progress_label.bbcode_enabled = true
 	_git_progress_label.scroll_following = true
+	_git_progress_label.fit_content = false
+	_git_progress_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_git_progress_label.add_theme_font_size_override("normal_font_size", 12)
+	_git_progress_label.add_theme_color_override("default_color", Color("#EDEDED"))
 	_git_progress_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_git_progress_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	prog_margin.add_child(_git_progress_label)
@@ -749,6 +732,7 @@ func _setup_sidebar_panels() -> void:
 	git_margin.add_child(git_vbox)
 	top_git_vbox.add_child(git_margin)
 
+	# Git Status Tree
 	_git_status_tree = Tree.new()
 	_git_status_tree.hide_root = true
 	_git_status_tree.columns = 2
@@ -760,6 +744,7 @@ func _setup_sidebar_panels() -> void:
 	_git_status_tree.item_activated.connect(_on_git_status_item_activated)
 	top_git_vbox.add_child(_git_status_tree)
 
+	# Git Push, Pull, Sync Action Buttons
 	var git_actions_margin := MarginContainer.new()
 	git_actions_margin.add_theme_constant_override("margin_left", 8)
 	git_actions_margin.add_theme_constant_override("margin_right", 8)
@@ -769,6 +754,8 @@ func _setup_sidebar_panels() -> void:
 
 	_git_push_btn = Button.new()
 	_git_push_btn.text = "Push"
+	_git_push_btn.custom_minimum_size = Vector2(0, 30)
+	_git_push_btn.theme_type_variation = &"M3NavPillButton"
 	var icon_push: Texture2D = _load_svg_icon("res://icons/git_push.svg")
 	if icon_push:
 		_git_push_btn.icon = icon_push
@@ -779,6 +766,8 @@ func _setup_sidebar_panels() -> void:
 
 	_git_pull_btn = Button.new()
 	_git_pull_btn.text = "Pull"
+	_git_pull_btn.custom_minimum_size = Vector2(0, 30)
+	_git_pull_btn.theme_type_variation = &"M3NavPillButton"
 	var icon_pull: Texture2D = _load_svg_icon("res://icons/git_pull.svg")
 	if icon_pull:
 		_git_pull_btn.icon = icon_pull
@@ -789,6 +778,8 @@ func _setup_sidebar_panels() -> void:
 
 	_git_sync_btn = Button.new()
 	_git_sync_btn.text = "Sync"
+	_git_sync_btn.custom_minimum_size = Vector2(0, 30)
+	_git_sync_btn.theme_type_variation = &"M3NavPillButton"
 	var icon_sync: Texture2D = _load_svg_icon("res://icons/git_sync.svg")
 	if icon_sync:
 		_git_sync_btn.icon = icon_sync
@@ -801,18 +792,19 @@ func _setup_sidebar_panels() -> void:
 	top_git_vbox.add_child(git_actions_margin)
 	git_vsplit.add_child(top_git_vbox)
 
+	# Dedicated Git Output Console (Clean Borderless Inner Log)
 	_git_console_panel = PanelContainer.new()
-	_git_console_panel.custom_minimum_size = Vector2(0, 100)
+	_git_console_panel.custom_minimum_size = Vector2(0, 130)
 	_git_console_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_git_console_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_git_console_panel.theme_type_variation = &"M3Composer"
 	var console_margin := MarginContainer.new()
 	console_margin.add_theme_constant_override("margin_left", 8)
 	console_margin.add_theme_constant_override("margin_right", 8)
-	console_margin.add_theme_constant_override("margin_top", 4)
-	console_margin.add_theme_constant_override("margin_bottom", 4)
+	console_margin.add_theme_constant_override("margin_top", 6)
+	console_margin.add_theme_constant_override("margin_bottom", 6)
 	var console_vbox := VBoxContainer.new()
-	console_vbox.add_theme_constant_override("separation", 2)
+	console_vbox.add_theme_constant_override("separation", 4)
 
 	var console_hdr := HBoxContainer.new()
 	var console_lbl := Label.new()
@@ -839,6 +831,13 @@ func _setup_sidebar_panels() -> void:
 	_git_console_log.scroll_following = true
 	_git_console_log.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_git_console_log.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var empty_box := StyleBoxEmpty.new()
+	_git_console_log.add_theme_stylebox_override("normal", empty_box)
+	_git_console_log.add_theme_stylebox_override("focus", empty_box)
+	var fira_font: Font = load("res://fonts/FiraCodeNerdFont-Regular.ttf") as Font
+	if fira_font:
+		_git_console_log.add_theme_font_override("normal_font", fira_font)
+	_git_console_log.add_theme_font_size_override("normal_font_size", 12)
 	console_vbox.add_child(_git_console_log)
 	console_margin.add_child(console_vbox)
 	_git_console_panel.add_child(console_margin)
