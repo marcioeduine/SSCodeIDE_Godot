@@ -42,38 +42,43 @@ static func search_web(query: String, max_results: int = 5) -> Array[Dictionary]
 	var curl_output: Array = []
 	var curl_exit := OS.execute("curl", [
 		"-s", "-L", "https://html.duckduckgo.com/html/",
-		"--data", "q=" + q,
+		"--data-urlencode", "q=" + q,
 		"-A", "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/119.0"
 	], curl_output, true)
 
 	if curl_exit == 0 and not curl_output.is_empty():
 		var html_content: String = str(curl_output[0])
-		var regex := RegEx.new()
-		regex.compile("<a[^>]+class=\"[^\"]*result__snippet[^\"]*\"[^>]*href=\"([^\"]*)\"[^>]*>(.*?)</a>")
-		var matches := regex.search_all(html_content)
+		var title_regex := RegEx.new()
+		title_regex.compile("<a[^>]+class=\"[^\"]*result__a[^\"]*\"[^>]+href=\"([^\"]+)\"[^>]*>(.*?)</a>")
+		var snip_regex := RegEx.new()
+		snip_regex.compile("<a[^>]+class=\"[^\"]*result__snippet[^\"]*\"[^>]*>(.*?)</a>")
 		var tag_regex := RegEx.new()
 		tag_regex.compile("<[^>]+>")
 
-		for m in matches:
-			if results.size() >= max_results:
-				break
-			var href := m.get_string(1)
-			var snip_raw := m.get_string(2)
-			var clean_text := tag_regex.sub(snip_raw, "", true).strip_edges()
-			if not clean_text.is_empty():
-				var title := clean_text.substr(0, 60) + ("..." if clean_text.length() > 60 else "")
-				var actual_url := href
-				if "uddg=" in href:
-					var uddg_start := href.find("uddg=") + 5
-					var uddg_end := href.find("&", uddg_start)
-					if uddg_end < 0:
-						uddg_end = href.length()
-					actual_url = href.substr(uddg_start, uddg_end - uddg_start).uri_decode()
-				results.append({
-					"title": title,
-					"snippet": clean_text,
-					"url": actual_url
-				})
+		var title_matches := title_regex.search_all(html_content)
+		var snip_matches := snip_regex.search_all(html_content)
+		var count: int = mini(mini(title_matches.size(), snip_matches.size()), max_results)
+
+		for i in range(count):
+			var href := title_matches[i].get_string(1)
+			var title_raw := title_matches[i].get_string(2)
+			var snip_raw := snip_matches[i].get_string(1)
+			var clean_title := tag_regex.sub(title_raw, "", true).strip_edges()
+			var clean_snippet := tag_regex.sub(snip_raw, "", true).strip_edges()
+
+			var actual_url := href
+			if "uddg=" in href:
+				var uddg_start := href.find("uddg=") + 5
+				var uddg_end := href.find("&", uddg_start)
+				if uddg_end < 0:
+					uddg_end = href.length()
+				actual_url = href.substr(uddg_start, uddg_end - uddg_start).uri_decode()
+
+			results.append({
+				"title": clean_title,
+				"snippet": clean_snippet,
+				"url": actual_url
+			})
 
 	return results
 
