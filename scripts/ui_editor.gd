@@ -13,7 +13,7 @@ const ThemeResources = preload("res://scripts/theme_resource_registry.gd")
 @onready var _tab_bar: TabBar = %TabBar
 @onready var _code_edit: CodeEdit = %CodeEdit
 @onready var _chat_log: RichTextLabel = %ChatLog
-@onready var _chat_context_badge: Label = %ChatContextBadge
+@onready var _chat_context_badge: Label = get_node_or_null("%ChatContextBadge") as Label
 @onready var _chat_context_chip: Button = %ChatContextChip
 @onready var _chat_input: LineEdit = %ChatInput
 @onready var _attach_btn: Button = %AttachBtn
@@ -120,6 +120,8 @@ var _sidebar_config_panel: VBoxContainer = null
 var _sidebar_help_panel: VBoxContainer = null
 var _git_status_tree: Tree = null
 var _git_commit_msg_input: LineEdit = null
+var _git_progress_panel: PanelContainer = null
+var _git_progress_label: RichTextLabel = null
 var _themes_list: ItemList = null
 var _search_query_input: LineEdit = null
 var _search_replace_input: LineEdit = null
@@ -129,6 +131,15 @@ var _search_include_input: LineEdit = null
 var _search_exclude_input: LineEdit = null
 var _search_results_tree: Tree = null
 var _search_summary_label: Label = null
+var _clear_chat_btn: Button = null
+var _compact_chat_btn: Button = null
+enum MdViewMode { SOURCE, PREVIEW, SPLIT }
+var _md_view_mode: MdViewMode = MdViewMode.SPLIT
+var _md_toolbar: HBoxContainer = null
+var _md_btn_source: Button = null
+var _md_btn_preview: Button = null
+var _md_btn_split: Button = null
+var _editor_split: HSplitContainer = null
 
 const SPINNER_FRAMES: Array[String] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 const OS_NOTIFY_EXPIRE_MS: int = 4000
@@ -247,9 +258,16 @@ func _process(delta: float) -> void:
 		var frame_idx: int = int(_spinner_time * 10.0) % SPINNER_FRAMES.size()
 		var elapsed: float = (Time.get_ticks_msec() / 1000.0) - _request_start_time
 		var frame: String = SPINNER_FRAMES[frame_idx]
-		_chat_status_label.text = "[color=#ffa348]%s[/color] [b]Thinking…[/b] [color=#858585](%.1fs)[/color]\n[color=#858585]AI thoughts (live) · Tip: Use /save, /files, /open, /cancel, /clear[/color]" % [frame, elapsed]
-		_status_left.text = "%s Thinking · %s (%.1fs) · esc to cancel" % [frame, _ai_provider, elapsed]
-		_refresh_thinking_panel()
+		if _current_prompt.begins_with("__SMART_COMMIT__:"):
+			if _git_progress_panel and _git_progress_label:
+				_git_progress_panel.visible = true
+				var snippet: String = _thinking_text.strip_edges()
+				_git_progress_label.text = "[color=#ffa348]%s[/color] [b]Generating commit message…[/b] [color=#858585](%.1fs)[/color]\n[color=#858585]%s[/color]" % [frame, elapsed, snippet if not snippet.is_empty() else "Analyzing git diff…"]
+			_status_left.text = "%s Smart Commit · %s (%.1fs)" % [frame, _ai_provider, elapsed]
+		else:
+			_chat_status_label.text = "[color=#ffa348]%s[/color] [b]Thinking…[/b] [color=#858585](%.1fs)[/color]\n[color=#858585]AI thoughts (live) · Tip: Use /save, /files, /open, /cancel, /clear[/color]" % [frame, elapsed]
+			_status_left.text = "%s Thinking · %s (%.1fs) · esc to cancel" % [frame, _ai_provider, elapsed]
+			_refresh_thinking_panel()
 
 
 func _refresh_thinking_panel() -> void:
@@ -657,8 +675,19 @@ func _setup_sidebar_panels() -> void:
 	smart_commit_b.text = "✨ Smart Commit"
 	smart_commit_b.pressed.connect(_generate_smart_commit)
 	commit_row.add_child(smart_commit_b)
-
 	git_vbox.add_child(commit_row)
+
+	_git_progress_panel = PanelContainer.new()
+	_git_progress_panel.custom_minimum_size = Vector2(0, 60)
+	_git_progress_panel.visible = false
+	_git_progress_panel.theme_type_variation = &"M3Composer"
+	_git_progress_label = RichTextLabel.new()
+	_git_progress_label.bbcode_enabled = true
+	_git_progress_label.scroll_following = true
+	_git_progress_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_git_progress_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_git_progress_panel.add_child(_git_progress_label)
+	git_vbox.add_child(_git_progress_panel)
 	git_margin.add_child(git_vbox)
 	_sidebar_git_panel.add_child(git_margin)
 
@@ -1123,6 +1152,12 @@ func _wire_signals() -> void:
 	_chat_context_chip.pressed.connect(_on_context_chip_pressed)
 	_attach_btn.pressed.connect(_on_attach_btn_pressed)
 	_agent_mode_btn.pressed.connect(_on_agent_mode_pressed)
+	_clear_chat_btn = get_node_or_null("%ClearChatBtn") as Button
+	if _clear_chat_btn:
+		_clear_chat_btn.pressed.connect(_on_clear_chat_pressed)
+	_compact_chat_btn = get_node_or_null("%CompactChatBtn") as Button
+	if _compact_chat_btn:
+		_compact_chat_btn.pressed.connect(_on_compact_chat_pressed)
 	if _smart_commit_btn:
 		_smart_commit_btn.pressed.connect(_generate_smart_commit)
 	_file_menu.id_pressed.connect(_on_file_menu)
@@ -2104,8 +2139,17 @@ func _update_ai_status() -> void:
 		_status_ai.text = "AI: %s · on" % display_title
 	else:
 		_status_ai.text = "AI: %s · key needed" % display_title
-	_chat_context_badge.text = "Local · Autopilot"
 	_chat_input.placeholder_text = "Describe what to build or ask %s…" % display_title
+
+
+func _on_clear_chat_pressed() -> void:
+	_chat_log.clear()
+	_chat_history.clear()
+	_send_os_notification("Chat", "Chat history cleared.")
+
+
+func _on_compact_chat_pressed() -> void:
+	_compact_chat_history()
 
 
 func _apply_kitty_fish_theme() -> bool:
@@ -2147,10 +2191,12 @@ func _on_agent_mode_pressed() -> void:
 	_agent_mode = not _agent_mode
 	if _agent_mode:
 		_agent_mode_btn.text = "</> Agent"
-		_chat_context_badge.text = "Local · Autopilot"
+		if _chat_context_badge:
+			_chat_context_badge.text = "Local · Autopilot"
 	else:
 		_agent_mode_btn.text = "Chat"
-		_chat_context_badge.text = "Local · Chat"
+		if _chat_context_badge:
+			_chat_context_badge.text = "Local · Chat"
 
 
 func _set_markdown_preview(enabled: bool, raw_md: String) -> void:
@@ -2885,69 +2931,50 @@ func _is_smart_commit_pending() -> bool:
 
 
 func _finish_smart_commit(commit_msg: String, via_ai: bool, note: String = "") -> void:
-	var diff_stat: String = ""
-	if _current_prompt.begins_with("__SMART_COMMIT__:"):
-		diff_stat = _current_prompt.trim_prefix("__SMART_COMMIT__:")
 	_current_prompt = ""
 	_smart_commit_prompt = ""
 	_clear_ai_busy()
+	if _git_progress_panel:
+		_git_progress_panel.visible = false
 	var message: String = commit_msg.strip_edges()
 	if message.is_empty():
 		message = GitService.build_fallback_commit_message(_workspace_root)
-	var commit_res: Dictionary = GitService.commit(message, _workspace_root)
-	if bool(commit_res.get("success", false)):
-		var headline: String = message.split("\n")[0]
-		var source_label: String = "AI-generated message" if via_ai else "local Conventional Commits message"
-		var commit_report := "[b]Smart Commit completed:[/b]\n"
-		commit_report += "[bgcolor=#0d1a0d][color=#57e389]  " + headline + "\n[/color][/bgcolor]\n\n"
-		if not note.is_empty():
-			commit_report += "[color=#ffa348]%s[/color]\n\n" % note
-		if not diff_stat.is_empty():
-			commit_report += "[color=#9a9996]Change summary:\n" + diff_stat + "[/color]\n"
-		commit_report += "\n[color=#57e389]● Git[/color] [color=#62a0ea]commit with %s[/color]" % source_label
-		_append_chat("GIT", commit_report, Color("#57e389"))
-		_show_toast("Smart Commit: " + headline, false)
-	else:
-		_append_chat("GIT", "[color=#ed333b]Commit error:[/color]\n" + str(commit_res.get("output", "")), Color("#ed333b"))
-		_show_toast("Smart Commit failed.", true)
-	_update_git_status_bar()
+	if _git_commit_msg_input:
+		_git_commit_msg_input.text = message
+	var headline: String = message.split("\n")[0]
+	_send_os_notification("Smart Commit", "AI generated commit message:\n" + headline)
+	_refresh_git_panel()
 
 
 func _fallback_smart_commit(reason: String) -> void:
 	var local_msg: String = GitService.build_fallback_commit_message(_workspace_root)
-	_finish_smart_commit(local_msg, false, reason + " Using a local message.")
+	_finish_smart_commit(local_msg, false, reason + " Using local message.")
 
 
 func _generate_smart_commit() -> void:
 	if not GitService.is_git_repository(_workspace_root):
-		_append_chat("GIT", "[color=#ffa348]Not a Git repository.[/color]", Color("#ffa348"))
-		_show_toast("Not a Git repository.", true)
+		_send_os_notification("Git Error", "Not a Git repository.", true)
 		return
 	_continue_smart_commit()
 
 
 func _continue_smart_commit() -> void:
-
 	var st: Dictionary = GitService.get_status(_workspace_root)
 	var staged: Array   = st.get("staged",    [])
 	var unstaged: Array = st.get("unstaged",  [])
 	var untracked: Array= st.get("untracked", [])
 	if staged.is_empty() and unstaged.is_empty() and untracked.is_empty():
-		_append_chat("GIT", "[color=#9a9996]Nothing to commit.[/color]", Color("#9a9996"))
-		_show_toast("Git: nothing to commit.", false)
+		_send_os_notification("Git", "Nothing to commit.", false)
 		return
 
-	## Stage everything (git add -A)
 	var stage_res: Dictionary = GitService.stage_all(_workspace_root)
 	if not bool(stage_res.get("success", false)):
-		_append_chat("GIT", "[color=#ed333b]Failed to run git add -A:[/color]\n" + str(stage_res.get("output", "")), Color("#ed333b"))
+		_send_os_notification("Git Error", "Failed to stage changes.", true)
 		return
 
-	## Gather diff stat for context
 	var diff_stat_res: Dictionary = GitService.get_diff_stat(_workspace_root)
 	var diff_stat: String = str(diff_stat_res.get("output", "")).strip_edges()
 
-	## Gather a compact diff (limit to ~3000 chars to fit model context)
 	var diff_res: Dictionary = GitService.get_diff("", true, _workspace_root)
 	var diff_text: String = str(diff_res.get("output", "")).strip_edges()
 	if diff_text.length() > 3000:
@@ -2960,11 +2987,11 @@ func _continue_smart_commit() -> void:
 		_finish_smart_commit(GitService.build_fallback_commit_message(_workspace_root), false, "No NVIDIA NIM key.")
 		return
 
-	## Show spinner while AI generates the commit message
-	_show_toast("Generating commit message with AI…", false)
-	_append_chat("GIT", "[color=#62a0ea]⠙ Generating commit message with AI…[/color]", Color("#62a0ea"))
+	if _git_progress_panel:
+		_git_progress_panel.visible = true
+	if _git_progress_label:
+		_git_progress_label.text = "[color=#ffa348]⠋[/color] [b]Generating commit message with AI…[/b]"
 
-	## Build AI prompt for Conventional Commits
 	var commit_prompt := (
 		"You are an expert software engineer. Analyse the following `git diff --cached` output " +
 		"and produce ONE concise Git commit message following the Conventional Commits specification " +
@@ -2972,18 +2999,14 @@ func _continue_smart_commit() -> void:
 		"Rules:\n" +
 		"- Use one of: feat, fix, docs, style, refactor, perf, test, chore, build, ci\n" +
 		"- First line: type(scope): short summary in imperative mood, max 72 chars\n" +
-		"- Optionally add a blank line then a short body (max 3 lines) describing WHY\n" +
 		"- Output ONLY the commit message — no explanation, no markdown fences\n\n" +
 		"Git diff:\n```\n" + diff_text + "\n```"
 	)
 
-	## Send one-shot request to the AI (bypassing chat history)
 	_ai_smart_commit_request(commit_prompt, diff_stat)
 
 
 func _ai_smart_commit_request(prompt: String, diff_stat: String) -> void:
-	## Reuse the same HTTPRequest as chat. Candidate fallback must send this
-	## compact payload — not the chat workspace dump — or the retry will hang.
 	if _ai_busy:
 		_finish_smart_commit(GitService.build_fallback_commit_message(_workspace_root), false, "AI is busy.")
 		return
@@ -2991,9 +3014,10 @@ func _ai_smart_commit_request(prompt: String, diff_stat: String) -> void:
 	_ai_busy = true
 	_request_start_time = Time.get_ticks_msec() / 1000.0
 	_spinner_time = 0.0
-	_chat_status_banner.visible = true
-	_chat_thinking_label.text = "[color=#858585][i]Waiting for the model's reasoning…[/i][/color]"
-	_chat_send.text = "■"
+	if _git_progress_panel:
+		_git_progress_panel.visible = true
+	if _git_progress_label:
+		_git_progress_label.text = "[color=#ffa348]⠋[/color] [b]Analyzing repository changes…[/b]"
 	_status_left.text = "Smart Commit: generating AI message…"
 	_current_prompt = "__SMART_COMMIT__:" + diff_stat
 	_smart_commit_prompt = prompt
@@ -3452,7 +3476,13 @@ func _append_tool_badge(action: String, target: String) -> void:
 
 func _append_chat(who: String, msg_body: String, color: Color) -> void:
 	var formatted := _format_markdown_to_bbcode(msg_body)
-	_chat_log.append_text("[color=#%s][b]● %s[/b][/color] %s\n\n[color=#202024]────────────────────────────────────────────────[/color]\n\n" % [color.to_html(false), who, formatted])
+	var tag := who.to_upper()
+	if tag in ["YOU", "USER"]:
+		_chat_log.append_text("[bgcolor=#1C1C1E][color=#0A84FF][b]✦ You[/b][/color]\n%s[/bgcolor]\n\n" % formatted)
+	elif tag in ["SYSTEM", "TOOL"]:
+		_chat_log.append_text("[color=#8E8E93]⚡ %s[/color]\n\n" % formatted)
+	else:
+		_chat_log.append_text("[bgcolor=#161618][color=#57E389][b]🤖 SSBot (%s)[/b][/color]\n%s[/bgcolor]\n\n" % [_ai_provider.to_upper(), formatted])
 	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
 
 

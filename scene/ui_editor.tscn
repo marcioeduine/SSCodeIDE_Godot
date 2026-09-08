@@ -373,23 +373,48 @@ layout_mode = 2
 theme_override_constants/separation = 4
 
 [node name="ChatHeaderRow" type="HBoxContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=440622983]
-custom_minimum_size = Vector2(0, 26)
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
+theme_override_constants/separation = 4
 
 [node name="ChatHeader" type="Label" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatHeaderRow" unique_id=1421141929]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
 theme_type_variation = &"M3SidebarHeader"
-text = "chat"
+text = "CHAT"
 clip_text = true
 uppercase = true
 
-[node name="ChatContextBadge" type="Label" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatHeaderRow" unique_id=1082829237]
+[node name="ProviderSelect" type="OptionButton" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatHeaderRow" unique_id=656410950]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+item_count = 5
+popup/item_0/text = "Nemotron 3 Omni"
+popup/item_0/id = 0
+popup/item_1/text = "Nemotron 3.5"
+popup/item_1/id = 1
+popup/item_2/text = "Kimi K3"
+popup/item_2/id = 2
+popup/item_3/text = "DeepSeek V4"
+popup/item_3/id = 3
+popup/item_4/text = "Laguna Code"
+popup/item_4/id = 4
+
+[node name="ClearChatBtn" type="Button" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatHeaderRow" unique_id=1082829237]
 unique_name_in_owner = true
 layout_mode = 2
-theme_type_variation = &"M3StatusText"
-text = "SSBot · Workspace"
+tooltip_text = "Clear chat history"
+theme_type_variation = &"M3RailButton"
+text = "🗑"
+
+[node name="CompactChatBtn" type="Button" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatHeaderRow" unique_id=1082829238]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Compact context"
+theme_type_variation = &"M3RailButton"
+text = "🧹"
 
 [node name="ChatLog" type="RichTextLabel" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=1541749788]
 unique_name_in_owner = true
@@ -467,7 +492,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "Ask SSBot about the code, errors, or new ideas…"
+placeholder_text = "Ask SSBot about code, or type / for commands…"
 keep_editing_on_text_submit = true
 clear_button_enabled = true
 caret_blink = true
@@ -485,22 +510,6 @@ text = "📎"
 unique_name_in_owner = true
 layout_mode = 2
 text = "</> Agent"
-
-[node name="ProviderSelect" type="OptionButton" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=656410950]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(172, 0)
-layout_mode = 2
-item_count = 5
-popup/item_0/text = "Nemotron 3 Omni"
-popup/item_0/id = 0
-popup/item_1/text = "Nemotron 3.5"
-popup/item_1/id = 1
-popup/item_2/text = "Kimi K3"
-popup/item_2/id = 2
-popup/item_3/text = "DeepSeek V4"
-popup/item_3/id = 3
-popup/item_4/text = "Laguna Code"
-popup/item_4/id = 4
 
 [node name="InputSpacer" type="Control" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=1877726678]
 layout_mode = 2
