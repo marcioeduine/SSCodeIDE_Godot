@@ -146,7 +146,7 @@ static func texture_for_path(path: String, is_dir: bool = false, is_open: bool =
 
 	# 1. Try to load from res://icons/<key>.svg if it exists
 	var res_path: String = "res://icons/%s.svg" % key
-	if ResourceLoader.exists(res_path):
+	if ResourceLoader.has_cached(res_path) or ResourceLoader.exists(res_path):
 		var loaded_tex: Texture2D = load(res_path) as Texture2D
 		if loaded_tex:
 			_texture_cache[key] = loaded_tex
@@ -161,6 +161,7 @@ static func texture_for_path(path: String, is_dir: bool = false, is_open: bool =
 		_texture_cache[key] = tex
 		return tex
 
+	_texture_cache[key] = null
 	return null
 
 

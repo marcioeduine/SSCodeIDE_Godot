@@ -1,0 +1,46 @@
+[gd_scene format=3 uid="uid://sqailnoxc1h4"]
+
+[node name="ExplorerPane" type="PanelContainer" unique_id=263987688]
+size_flags_vertical = 3
+theme_type_variation = &"M3SidePanel"
+
+[node name="ExplorerContent" type="VBoxContainer" parent="." unique_id=1474645753]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="ExplorerContent" unique_id=487538398]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_right = 10
+
+[node name="DrawerHeader" type="HBoxContainer" parent="ExplorerContent/MarginContainer" unique_id=1363369614]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+
+[node name="WorkspaceState" type="Label" parent="ExplorerContent/MarginContainer/DrawerHeader" unique_id=644836456]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_type_variation = &"M3SidebarHeader"
+text = "EXPLORER"
+vertical_alignment = 1
+uppercase = true
+
+[node name="SwitchWorkspaceBtn" type="Button" parent="ExplorerContent/MarginContainer/DrawerHeader" unique_id=1528915929]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 24)
+layout_mode = 2
+tooltip_text = "Switch workspace folder"
+theme_type_variation = &"M3RailButton"
+text = "⇄"
+flat = true
+
+[node name="FileTree" type="Tree" parent="ExplorerContent" unique_id=142051846]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+hide_root = true

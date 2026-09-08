@@ -8,74 +8,80 @@ const CodeEditorTools = preload("res://scripts/code_editor_service.gd")
 const MarkdownPreview = preload("res://scripts/markdown_preview_renderer.gd")
 const ThemeResources = preload("res://scripts/theme_resource_registry.gd")
 
-@onready var _root_vbox: Control = (get_node_or_null("%AppHBox") if get_node_or_null("%AppHBox") else get_node_or_null("%RootVBox")) as Control
-@onready var _file_tree: Tree = %FileTree
-@onready var _tab_bar: TabBar = %TabBar
-@onready var _code_edit: CodeEdit = %CodeEdit
-@onready var _chat_log: RichTextLabel = %ChatLog
-@onready var _chat_context_badge: Label = get_node_or_null("%ChatContextBadge") as Label
-@onready var _chat_context_chip: Button = %ChatContextChip
-@onready var _chat_input: LineEdit = %ChatInput
-@onready var _attach_btn: Button = %AttachBtn
-@onready var _agent_mode_btn: MenuButton = get_node_or_null("%AgentModeBtn") as MenuButton
-@onready var _model_badge_btn: MenuButton = get_node_or_null("%ModelBadgeBtn") as MenuButton
-@onready var _provider_select: OptionButton = %ProviderSelect
-@onready var _smart_commit_btn: Button = get_node_or_null("%SmartCommitBtn") as Button
-@onready var _chat_send: Button = %ChatSend
-@onready var _status_left: Label = %StatusLeft
-@onready var _status_git: Button = %StatusGit
-@onready var _status_cursor: Label = %StatusCursor
-@onready var _status_lang: Label = %StatusLang
-@onready var _status_enc: Label = %StatusEnc
-@onready var _status_ai: Label = %StatusAI
-@onready var _main_split: HSplitContainer = %MainSplit
-@onready var _center_split: HSplitContainer = %CenterSplit
-@onready var _explorer_pane: PanelContainer = %ExplorerPane
-@onready var _chat_pane: PanelContainer = %ChatPane
-@onready var _explorer_rail_btn: Button = get_node_or_null("%ExplorerRailBtn") as Button
-@onready var _edit_rail_btn: Button = get_node_or_null("%EditRailBtn") as Button
-@onready var _git_rail_btn: Button = get_node_or_null("%GitRailBtn") as Button
-@onready var _themes_rail_btn: Button = get_node_or_null("%ThemesRailBtn") as Button
-@onready var _chat_rail_btn: Button = get_node_or_null("%ChatRailBtn") as Button
-@onready var _config_rail_btn: Button = get_node_or_null("%ConfigRailBtn") as Button
-@onready var _help_rail_btn: Button = get_node_or_null("%HelpRailBtn") as Button
-@onready var _drawer_collapse_btn: Button = get_node_or_null("%DrawerCollapseBtn") as Button
-@onready var _switch_workspace_btn: Button = get_node_or_null("%SwitchWorkspaceBtn") as Button
-@onready var _workspace_state: Label = get_node_or_null("%WorkspaceState") as Label
-@onready var _file_menu: PopupMenu = %File
-@onready var _edit_menu: PopupMenu = %Edit
-@onready var _git_menu: PopupMenu = %Git
-@onready var _config_menu: PopupMenu = %Config
-@onready var _help_menu: PopupMenu = %Help
-@onready var _about_menu: PopupMenu = get_node_or_null("%About") as PopupMenu
-@onready var _app_brand: MenuButton = get_node_or_null("%AppBrand") as MenuButton
-@onready var _theme_toggle_btn: Button = get_node_or_null("%ThemeToggleBtn") as Button
-@onready var _themes_menu: PopupMenu = %Themes
-@onready var _open_file_dlg: FileDialog = %OpenFileDialog
-@onready var _open_dir_dlg: FileDialog = %OpenDirDialog
-@onready var _save_as_dlg: FileDialog = %SaveAsDialog
-@onready var _open_theme_xml_dlg: FileDialog = %OpenThemeXmlDialog
-@onready var _overlay: ColorRect = %Overlay
-@onready var _dialog_panel: PanelContainer = %DialogPanel
-@onready var _dialog_title: Label = %DialogTitle
-@onready var _dialog_body: RichTextLabel = %DialogBody
-@onready var _dialog_input_row: HBoxContainer = %DialogInputRow
-@onready var _dialog_input: LineEdit = %DialogInput
-@onready var _dialog_action_btn: Button = %DialogActionBtn
-@onready var _dialog_close: Button = %DialogClose
-@onready var _ai_chat_http: HTTPRequest = %AIChatHttp
-@onready var _chat_status_banner: PanelContainer = %ChatStatusBanner
-@onready var _chat_status_label: RichTextLabel = %ChatStatusLabel
-@onready var _chat_thinking_label: RichTextLabel = %ChatThinkingLabel
-@onready var _chat_suggestions_popup: PanelContainer = %ChatSuggestionsPopup
-@onready var _chat_suggestions_list: ItemList = %ChatSuggestionsList
-@onready var _find_row: HBoxContainer = %FindRow
-@onready var _find_input: LineEdit = %FindInput
-@onready var _replace_input: LineEdit = %ReplaceInput
-@onready var _replace_all: Button = %ReplaceAll
-@onready var _find_next: Button = %FindNext
-@onready var _find_close: Button = %FindClose
-@onready var _markdown_preview: RichTextLabel = %MarkdownPreview
+func _find_node(node_name: String) -> Node:
+	var n: Node = get_node_or_null("%" + node_name)
+	if n != null:
+		return n
+	return find_child(node_name, true, false)
+
+@onready var _root_vbox: Control = (_find_node("AppHBox") if _find_node("AppHBox") else _find_node("RootVBox")) as Control
+@onready var _file_tree: Tree = _find_node("FileTree") as Tree
+@onready var _tab_bar: TabBar = _find_node("TabBar") as TabBar
+@onready var _code_edit: CodeEdit = _find_node("CodeEdit") as CodeEdit
+@onready var _chat_log: RichTextLabel = _find_node("ChatLog") as RichTextLabel
+@onready var _chat_context_badge: Label = _find_node("ChatContextBadge") as Label
+@onready var _chat_context_chip: Button = _find_node("ChatContextChip") as Button
+@onready var _chat_input: LineEdit = _find_node("ChatInput") as LineEdit
+@onready var _attach_btn: Button = _find_node("AttachBtn") as Button
+@onready var _agent_mode_btn: MenuButton = _find_node("AgentModeBtn") as MenuButton
+@onready var _model_badge_btn: MenuButton = _find_node("ModelBadgeBtn") as MenuButton
+@onready var _provider_select: OptionButton = _find_node("ProviderSelect") as OptionButton
+@onready var _smart_commit_btn: Button = _find_node("SmartCommitBtn") as Button
+@onready var _chat_send: Button = _find_node("ChatSend") as Button
+@onready var _status_left: Label = _find_node("StatusLeft") as Label
+@onready var _status_git: Button = _find_node("StatusGit") as Button
+@onready var _status_cursor: Label = _find_node("StatusCursor") as Label
+@onready var _status_lang: Label = _find_node("StatusLang") as Label
+@onready var _status_enc: Label = _find_node("StatusEnc") as Label
+@onready var _status_ai: Label = _find_node("StatusAI") as Label
+@onready var _main_split: HSplitContainer = _find_node("MainSplit") as HSplitContainer
+@onready var _center_split: HSplitContainer = _find_node("CenterSplit") as HSplitContainer
+@onready var _explorer_pane: PanelContainer = _find_node("ExplorerPane") as PanelContainer
+@onready var _chat_pane: PanelContainer = _find_node("ChatPane") as PanelContainer
+@onready var _explorer_rail_btn: Button = _find_node("ExplorerRailBtn") as Button
+@onready var _edit_rail_btn: Button = _find_node("EditRailBtn") as Button
+@onready var _git_rail_btn: Button = _find_node("GitRailBtn") as Button
+@onready var _themes_rail_btn: Button = _find_node("ThemesRailBtn") as Button
+@onready var _chat_rail_btn: Button = _find_node("ChatRailBtn") as Button
+@onready var _config_rail_btn: Button = _find_node("ConfigRailBtn") as Button
+@onready var _help_rail_btn: Button = _find_node("HelpRailBtn") as Button
+@onready var _drawer_collapse_btn: Button = _find_node("DrawerCollapseBtn") as Button
+@onready var _switch_workspace_btn: Button = _find_node("SwitchWorkspaceBtn") as Button
+@onready var _workspace_state: Label = _find_node("WorkspaceState") as Label
+@onready var _file_menu: PopupMenu = _find_node("File") as PopupMenu
+@onready var _edit_menu: PopupMenu = _find_node("Edit") as PopupMenu
+@onready var _git_menu: PopupMenu = _find_node("Git") as PopupMenu
+@onready var _config_menu: PopupMenu = _find_node("Config") as PopupMenu
+@onready var _help_menu: PopupMenu = _find_node("Help") as PopupMenu
+@onready var _about_menu: PopupMenu = _find_node("About") as PopupMenu
+@onready var _app_brand: MenuButton = _find_node("AppBrand") as MenuButton
+@onready var _theme_toggle_btn: Button = _find_node("ThemeToggleBtn") as Button
+@onready var _themes_menu: PopupMenu = _find_node("Themes") as PopupMenu
+var _open_file_dlg: FileDialog = null
+var _open_dir_dlg: FileDialog = null
+var _save_as_dlg: FileDialog = null
+var _open_theme_xml_dlg: FileDialog = null
+@onready var _overlay: ColorRect = _find_node("Overlay") as ColorRect
+@onready var _dialog_panel: PanelContainer = _find_node("DialogPanel") as PanelContainer
+@onready var _dialog_title: Label = _find_node("DialogTitle") as Label
+@onready var _dialog_body: RichTextLabel = _find_node("DialogBody") as RichTextLabel
+@onready var _dialog_input_row: HBoxContainer = _find_node("DialogInputRow") as HBoxContainer
+@onready var _dialog_input: LineEdit = _find_node("DialogInput") as LineEdit
+@onready var _dialog_action_btn: Button = _find_node("DialogActionBtn") as Button
+@onready var _dialog_close: Button = _find_node("DialogClose") as Button
+@onready var _ai_chat_http: HTTPRequest = _find_node("AIChatHttp") as HTTPRequest
+@onready var _chat_status_banner: PanelContainer = _find_node("ChatStatusBanner") as PanelContainer
+@onready var _chat_status_label: RichTextLabel = _find_node("ChatStatusLabel") as RichTextLabel
+@onready var _chat_thinking_label: RichTextLabel = _find_node("ChatThinkingLabel") as RichTextLabel
+@onready var _chat_suggestions_popup: PanelContainer = _find_node("ChatSuggestionsPopup") as PanelContainer
+@onready var _chat_suggestions_list: ItemList = _find_node("ChatSuggestionsList") as ItemList
+@onready var _find_row: HBoxContainer = _find_node("FindRow") as HBoxContainer
+@onready var _find_input: LineEdit = _find_node("FindInput") as LineEdit
+@onready var _replace_input: LineEdit = _find_node("ReplaceInput") as LineEdit
+@onready var _replace_all: Button = _find_node("ReplaceAll") as Button
+@onready var _find_next: Button = _find_node("FindNext") as Button
+@onready var _find_close: Button = _find_node("FindClose") as Button
+@onready var _markdown_preview: RichTextLabel = _find_node("MarkdownPreview") as RichTextLabel
 
 var _dialog_action_callback: Callable = Callable()
 
@@ -241,7 +247,6 @@ func _ready() -> void:
 	_load_ai_config()
 	_load_theme_config()
 	_apply_kitty_fish_theme()
-	_setup_sidebar_panels()
 	_wire_signals()
 	_configure_code_edit()
 	_open_untitled()
@@ -249,6 +254,7 @@ func _ready() -> void:
 	_status_left.text = "READY"
 	_status_enc.text = "UTF-8"
 	call_deferred("_apply_split_offsets")
+	call_deferred("_setup_sidebar_panels")
 	call_deferred("_refresh_file_tree")
 	call_deferred("_update_git_status_bar")
 
@@ -268,7 +274,7 @@ func _process(delta: float) -> void:
 				var cycle_val: float = fmod(elapsed * 50.0, 100.0)
 				_git_progress_bar.value = cycle_val
 			if _git_progress_label:
-				_git_progress_label.text = "⚡ A gerar mensagem de commit com IA... (%.1fs)" % elapsed
+				_git_progress_label.text = "⚡ Generating AI commit message... (%.1fs)" % elapsed
 			_status_left.text = "%s Smart Commit · %s (%.1fs)" % [frame, _ai_provider, elapsed]
 		else:
 			_chat_status_label.text = "[color=#ffa348]%s[/color] [b]Thinking…[/b] [color=#858585](%.1fs)[/color]\n[color=#858585]AI thoughts (live) · Tip: Use /save, /files, /open, /cancel, /clear[/color]" % [frame, elapsed]
@@ -740,7 +746,7 @@ func _setup_sidebar_panels() -> void:
 	prog_status_row.add_theme_constant_override("separation", 6)
 
 	_git_progress_label = Label.new()
-	_git_progress_label.text = "A gerar mensagem de commit com IA..."
+	_git_progress_label.text = "Generating AI commit message..."
 	_git_progress_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_git_progress_label.add_theme_font_size_override("font_size", 11)
 	_git_progress_label.add_theme_color_override("font_color", Color("#A1A1A6"))
@@ -946,17 +952,24 @@ func _setup_sidebar_panels() -> void:
 	help_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	help_info.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	help_info.text = HELP_TEXT
+static var _icon_cache: Dictionary = {}
+
 static func _load_svg_icon(path: String) -> Texture2D:
-	if ResourceLoader.exists(path):
+	if _icon_cache.has(path):
+		return _icon_cache[path]
+	var tex: Texture2D = null
+	if ResourceLoader.has_cached(path) or ResourceLoader.exists(path):
 		var res := ResourceLoader.load(path)
 		if res is Texture2D:
-			return res as Texture2D
-	var abs_p := ProjectSettings.globalize_path(path)
-	if FileAccess.file_exists(abs_p):
-		var img := Image.load_from_file(abs_p)
-		if img and not img.is_empty():
-			return ImageTexture.create_from_image(img)
-	return null
+			tex = res as Texture2D
+	if tex == null:
+		var abs_p := ProjectSettings.globalize_path(path)
+		if FileAccess.file_exists(abs_p):
+			var img := Image.load_from_file(abs_p)
+			if img and not img.is_empty():
+				tex = ImageTexture.create_from_image(img)
+	_icon_cache[path] = tex
+	return tex
 
 
 func _set_git_panel_busy(busy: bool) -> void:
@@ -1376,9 +1389,12 @@ func _wire_signals() -> void:
 		_setup_app_brand_menu()
 	if _chat_history.is_empty():
 		_show_chat_welcome()
-	_open_file_dlg.file_selected.connect(_open_path)
-	_open_dir_dlg.dir_selected.connect(_on_dir_selected)
-	_save_as_dlg.file_selected.connect(_save_as_path)
+	if _open_file_dlg:
+		_open_file_dlg.file_selected.connect(_open_path)
+	if _open_dir_dlg:
+		_open_dir_dlg.dir_selected.connect(_on_dir_selected)
+	if _save_as_dlg:
+		_save_as_dlg.file_selected.connect(_save_as_path)
 	if _open_theme_xml_dlg:
 		_open_theme_xml_dlg.file_selected.connect(_import_theme_from_xml)
 	_dialog_close.pressed.connect(_hide_overlay)
@@ -1500,15 +1516,15 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	# File Operations
 	if ctrl and shift and key.keycode == KEY_O:
-		_open_dir_dlg.popup_centered()
+		_get_open_dir_dlg().popup_centered()
 		get_viewport().set_input_as_handled()
 		return
 	if ctrl and key.keycode == KEY_O:
-		_open_file_dlg.popup_centered()
+		_get_open_file_dlg().popup_centered()
 		get_viewport().set_input_as_handled()
 		return
 	if ctrl and shift and key.keycode == KEY_S:
-		_save_as_dlg.popup_centered()
+		_get_save_as_dlg().popup_centered()
 		get_viewport().set_input_as_handled()
 		return
 	if ctrl and key.keycode == KEY_S:
@@ -2353,12 +2369,57 @@ func _parse_theme_xml(path: String) -> Dictionary:
 	return result
 
 
+func _get_open_file_dlg() -> FileDialog:
+	if _open_file_dlg == null:
+		_open_file_dlg = FileDialog.new()
+		_open_file_dlg.title = "Open a File"
+		_open_file_dlg.size = Vector2i(800, 520)
+		_open_file_dlg.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+		_open_file_dlg.access = FileDialog.ACCESS_FILESYSTEM
+		_open_file_dlg.file_selected.connect(_open_path)
+		add_child(_open_file_dlg)
+	return _open_file_dlg
+
+
+func _get_open_dir_dlg() -> FileDialog:
+	if _open_dir_dlg == null:
+		_open_dir_dlg = FileDialog.new()
+		_open_dir_dlg.title = "Open a Directory"
+		_open_dir_dlg.size = Vector2i(800, 520)
+		_open_dir_dlg.file_mode = FileDialog.FILE_MODE_OPEN_DIR
+		_open_dir_dlg.access = FileDialog.ACCESS_FILESYSTEM
+		_open_dir_dlg.dir_selected.connect(_on_dir_selected)
+		add_child(_open_dir_dlg)
+	return _open_dir_dlg
+
+
+func _get_save_as_dlg() -> FileDialog:
+	if _save_as_dlg == null:
+		_save_as_dlg = FileDialog.new()
+		_save_as_dlg.title = "Save As"
+		_save_as_dlg.size = Vector2i(800, 520)
+		_save_as_dlg.access = FileDialog.ACCESS_FILESYSTEM
+		_save_as_dlg.file_selected.connect(_save_as_path)
+		add_child(_save_as_dlg)
+	return _save_as_dlg
+
+
+func _get_open_theme_xml_dlg() -> FileDialog:
+	if _open_theme_xml_dlg == null:
+		_open_theme_xml_dlg = FileDialog.new()
+		_open_theme_xml_dlg.title = "Open Theme XML"
+		_open_theme_xml_dlg.size = Vector2i(800, 520)
+		_open_theme_xml_dlg.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+		_open_theme_xml_dlg.access = FileDialog.ACCESS_FILESYSTEM
+		_open_theme_xml_dlg.filters = PackedStringArray(["*.xml ; Theme XML files"])
+		_open_theme_xml_dlg.file_selected.connect(_import_theme_from_xml)
+		add_child(_open_theme_xml_dlg)
+	return _open_theme_xml_dlg
+
+
 func _import_theme_xml_dialog() -> void:
 	## Opens a file picker to select a .xml theme file for import
-	if _open_theme_xml_dlg:
-		_open_theme_xml_dlg.popup_centered(Vector2i(800, 500))
-	else:
-		_append_chat("IDE", "[color=#ed333b]Theme import dialogue is not available.[/color]", Color("#ed333b"))
+	_get_open_theme_xml_dlg().popup_centered(Vector2i(800, 500))
 
 
 func _import_theme_from_xml(xml_path: String) -> void:
@@ -2568,7 +2629,7 @@ func _populate_tree_dir(parent_item: TreeItem, dir_path: String, max_depth: int 
 	var dirs: Array[String] = []
 	var files: Array[String] = []
 	while fname != "":
-		if fname not in [".", "..", ".git", ".godot", ".gemini", "android"]:
+		if fname not in [".", "..", ".git", ".godot", ".gemini", "docs", "icons", "fonts", "test", "android", "build", "dist", "node_modules"]:
 			if dir.current_is_dir():
 				dirs.append(fname)
 			else:
@@ -3202,16 +3263,16 @@ func _compact_chat_history() -> void:
 	_chat_history.append({"role": "user", "content": summary.strip_edges()})
 	_chat_history.append({"role": "assistant", "content": "Summary recorded. Continue from the preserved recent context."})
 	_chat_history.append_array(recent)
-	_append_chat("IDE", "Context compactado: %d mensagens antigas resumidas; %d mensagens recentes preservadas." % [compact_count, RECENT_MESSAGES], Color("#57e389"))
+	_append_chat("IDE", "Context compacted: %d older messages summarised; %d recent messages preserved." % [compact_count, RECENT_MESSAGES], Color("#57e389"))
 
 
 func _show_tools_list() -> void:
-	var desc := "[b][color=#57E389]Assistente SSBot — Capacidades do IDE[/color][/b]\n\n"
-	desc += "• [b]Análise e Leitura de Código:[/b] Acesso ao workspace, estrutura de ficheiros e contexto do projecto.\n"
-	desc += "• [b]Edição Autónoma de Ficheiros:[/b] Criação, modificação e refatoração de código com verificação de sintaxe.\n"
-	desc += "• [b]Pesquisa na Internet (Tempo Real):[/b] Consulta de documentação actualizada e resultados da Web via `/web` ou `/search`.\n"
-	desc += "• [b]Integração com Git & GitHub:[/b] Controlo de versões no painel Source Control com mensagens de commit inteligentes (Smart Commit).\n"
-	desc += "\n[color=#8E8E93]Usa `/web <pesquisa>` para pesquisar na Web ou usa o chat para pedir alterações no teu projecto.[/color]"
+	var desc := "[b][color=#57E389]SSBot Assistant — IDE Capabilities[/color][/b]\n\n"
+	desc += "• [b]Code Analysis & Inspection:[/b] Full workspace access, file structure, and project context.\n"
+	desc += "• [b]Autonomous File Editing:[/b] Creation, modification, and refactoring of code with syntax validation.\n"
+	desc += "• [b]Real-Time Web Search:[/b] Query live documentation and web search results via `/web` or `/search`.\n"
+	desc += "• [b]Git & GitHub Integration:[/b] Version control in the Source Control panel with Smart Commit message generation.\n"
+	desc += "\n[color=#8E8E93]Use `/web <query>` to search the Web or use the chat to request modifications to your project.[/color]"
 	_append_chat("SSBot", desc, Color("#57E389"))
 
 
@@ -3285,7 +3346,7 @@ func _continue_smart_commit() -> void:
 	if _git_progress_panel:
 		_git_progress_panel.visible = true
 	if _git_progress_label:
-		_git_progress_label.text = "⚡ A gerar mensagem de commit com IA..."
+		_git_progress_label.text = "⚡ Generating AI commit message..."
 	if _git_progress_bar:
 		_git_progress_bar.value = 10.0
 
@@ -3314,7 +3375,7 @@ func _ai_smart_commit_request(prompt: String, diff_stat: String) -> void:
 	if _git_progress_panel:
 		_git_progress_panel.visible = true
 	if _git_progress_label:
-		_git_progress_label.text = "⚡ A analisar alterações do Git..."
+		_git_progress_label.text = "⚡ Analysing Git changes..."
 	if _git_progress_bar:
 		_git_progress_bar.value = 20.0
 	_status_left.text = "Smart Commit: generating AI message…"
@@ -3340,7 +3401,7 @@ func _collect_files_recursive(base_path: String, rel_prefix: String, out_list: A
 	dir.list_dir_begin()
 	var file_item_name := dir.get_next()
 	while not file_item_name.is_empty():
-		if file_item_name not in [".", "..", ".git", ".godot", "android", ".gemini"]:
+		if file_item_name not in [".", "..", ".git", ".godot", ".gemini", "docs", "icons", "fonts", "test", "android", "build", "dist", "node_modules"]:
 			var full_path := base_path.path_join(file_item_name)
 			var rel_path := rel_prefix.path_join(file_item_name) if not rel_prefix.is_empty() else file_item_name
 			if dir.current_is_dir():

@@ -1,0 +1,85 @@
+[gd_scene format=3 uid="uid://c8ukqr7up4o2d"]
+
+[node name="EditorPane" type="PanelContainer" unique_id=830171712]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"M3EditorSurface"
+
+[node name="EditorContent" type="VBoxContainer" parent="." unique_id=451076944]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="GridContainer" type="HBoxContainer" parent="EditorContent" unique_id=566628782]
+custom_minimum_size = Vector2(0, 15)
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="TabBar" type="TabBar" parent="EditorContent/GridContainer" unique_id=1231706495]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+tab_close_display_policy = 1
+
+[node name="FindRow" type="HBoxContainer" parent="EditorContent" unique_id=984245079]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+
+[node name="FindInput" type="LineEdit" parent="EditorContent/FindRow" unique_id=524794407]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Find…"
+
+[node name="FindNext" type="Button" parent="EditorContent/FindRow" unique_id=1560469917]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Next"
+
+[node name="ReplaceInput" type="LineEdit" parent="EditorContent/FindRow" unique_id=420374837]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Replace…"
+
+[node name="ReplaceAll" type="Button" parent="EditorContent/FindRow" unique_id=1358789734]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "Replace All"
+
+[node name="FindClose" type="Button" parent="EditorContent/FindRow" unique_id=247617787]
+unique_name_in_owner = true
+layout_mode = 2
+text = "×"
+
+[node name="CodeEdit" type="CodeEdit" parent="EditorContent" unique_id=205905636]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"M3CodeEditor"
+wrap_mode = 1
+indent_wrapped_lines = true
+minimap_draw = true
+caret_blink = true
+highlight_all_occurrences = true
+highlight_current_line = true
+gutters_draw_line_numbers = true
+code_completion_enabled = true
+indent_automatic = true
+
+[node name="MarkdownPreview" type="RichTextLabel" parent="EditorContent" unique_id=711038952]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+focus_mode = 2
+theme_type_variation = &"M3MarkdownDocument"
+bbcode_enabled = true
+selection_enabled = true

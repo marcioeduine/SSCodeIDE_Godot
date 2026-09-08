@@ -1,0 +1,130 @@
+[gd_scene format=3 uid="uid://cp2ihce813nae"]
+
+[ext_resource type="Texture2D" uid="uid://djktporhvrp26" path="res://icons/nav_explorer.svg" id="1_nav_explorer"]
+[ext_resource type="Texture2D" uid="uid://deijdrbbsi7us" path="res://icons/nav_search.svg" id="2_nav_search"]
+[ext_resource type="Texture2D" uid="uid://cdspcwkxso7nw" path="res://icons/nav_github.svg" id="3_nav_github"]
+[ext_resource type="Texture2D" uid="uid://dy2vr0ghy01ds" path="res://icons/nav_themes.svg" id="4_nav_themes"]
+[ext_resource type="Texture2D" uid="uid://jnvgumwu0age" path="res://icons/nav_chat.svg" id="5_nav_chat"]
+[ext_resource type="Texture2D" uid="uid://bvru54cisp7ec" path="res://icons/nav_sun.svg" id="6_nav_sun"]
+[ext_resource type="Texture2D" uid="uid://bhmmg2p4eq0lw" path="res://icons/nav_settings.svg" id="7_nav_settings"]
+[ext_resource type="Texture2D" uid="uid://lweabxd0tqlv" path="res://icons/nav_help.svg" id="8_nav_help"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_nav"]
+
+[node name="NavRail" type="PanelContainer" unique_id=1047170747]
+custom_minimum_size = Vector2(48, 0)
+theme_type_variation = &"M3NavRail"
+
+[node name="NavRailContent" type="VBoxContainer" parent="." unique_id=1204270540]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="ExplorerRailBtn" type="Button" parent="NavRailContent" unique_id=998362018]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Files / Explorer (Ctrl+B)"
+theme_type_variation = &"M3RailButton"
+icon = ExtResource("1_nav_explorer")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="EditRailBtn" type="Button" parent="NavRailContent" unique_id=1664689652]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Find & Search (Ctrl+F)"
+theme_type_variation = &"M3RailButton"
+icon = ExtResource("2_nav_search")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="GitRailBtn" type="Button" parent="NavRailContent" unique_id=148997315]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Source Control & GitHub (Ctrl+Shift+G)"
+theme_type_variation = &"M3RailButton"
+icon = ExtResource("3_nav_github")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="ThemesRailBtn" type="Button" parent="NavRailContent" unique_id=1624309941]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Themes & Import XML"
+theme_type_variation = &"M3RailButton"
+icon = ExtResource("4_nav_themes")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="ChatRailBtn" type="Button" parent="NavRailContent" unique_id=1834401267]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "AI Assistant Chat (Ctrl+Shift+B)"
+theme_type_variation = &"M3RailButton"
+icon = ExtResource("5_nav_chat")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="GridContainer" type="VSeparator" parent="NavRailContent" unique_id=242122466]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+theme_override_styles/separator = SubResource("StyleBoxEmpty_nav")
+
+[node name="ThemeToggleBtn" type="Button" parent="NavRailContent" unique_id=2062676098]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Toggle Light / Dark Mode"
+theme_type_variation = &"M3ThemeToggle"
+icon = ExtResource("6_nav_sun")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="ConfigRailBtn" type="Button" parent="NavRailContent" unique_id=1407661822]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Settings & Configuration (Ctrl+,)"
+theme_type_variation = &"M3RailButton"
+icon = ExtResource("7_nav_settings")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="HelpRailBtn" type="Button" parent="NavRailContent" unique_id=1434228142]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Keyboard Shortcuts & Help (F1)"
+theme_type_variation = &"M3RailButton"
+icon = ExtResource("8_nav_help")
+flat = true
+icon_alignment = 1
+expand_icon = true
