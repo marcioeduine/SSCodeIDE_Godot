@@ -10,7 +10,7 @@ const ThemeColors = preload("res://scripts/theme_color_scheme.gd")
 
 signal theme_changed(theme_name: String, label: String)
 
-var active_theme: String = "adwaita_darker"
+var active_theme: String = ThemeColors.MODE_DARK
 var custom_themes: Dictionary[String, Dictionary] = {}
 var theme_menu_keys: Array[String] = []
 var theme_menu_import_id: int = 10_000
@@ -23,9 +23,10 @@ func load_theme_config() -> void:
 	_load_custom_themes()
 	var cfg := ConfigFile.new()
 	if cfg.load("user://ui_config.cfg") == OK:
-		active_theme = str(cfg.get_value("theme", "name", "adwaita_darker"))
+		active_theme = str(cfg.get_value("theme", "name", ThemeColors.MODE_DARK))
+	active_theme = resolve_theme_name(active_theme)
 	if not all_themes().has(active_theme) or ThemeResources.load_theme(active_theme) == null:
-		active_theme = "adwaita_darker"
+		active_theme = ThemeColors.MODE_DARK
 
 func save_theme_config() -> void:
 	var cfg := ConfigFile.new()
@@ -40,15 +41,25 @@ func request_theme_change(name: String) -> bool:
 		return apply_theme_by_name(name, _root_control)
 	return false
 
+func resolve_theme_name(name: String) -> String:
+	if custom_themes.has(name) and not ThemeColors.is_builtin_mode(name):
+		return name
+	if ThemeColors.is_builtin_mode(name):
+		return name
+	return ThemeColors.canonical_mode(name)
+
 func apply_theme_by_name(name: String, root: Control) -> bool:
+	var resolved: String = resolve_theme_name(name)
+	if resolved == active_theme:
+		return false
 	var previous: String = active_theme
-	active_theme = name
-	if not apply_theme_resource(name, root):
+	active_theme = resolved
+	if not apply_theme_resource(resolved, root):
 		active_theme = previous
 		return false
 	save_theme_config()
-	var label: String = str(all_themes().get(name, {}).get("label", name))
-	theme_changed.emit(name, label)
+	var label: String = str(all_themes().get(resolved, {}).get("label", resolved))
+	theme_changed.emit(resolved, label)
 	return true
 
 func apply_theme_resource(theme_name: String, root: Control) -> bool:
@@ -59,36 +70,44 @@ func apply_theme_resource(theme_name: String, root: Control) -> bool:
 	return true
 
 func all_themes() -> Dictionary:
-	var merged := ThemeColors.ALL_THEMES.duplicate()
+	var merged := ThemeColors.MODE_THEMES.duplicate()
 	for key in custom_themes:
+		if ThemeColors.is_builtin_mode(str(key)):
+			continue
 		merged[key] = custom_themes[key]
 	return merged
 
 func active_palette() -> Dictionary:
-	return all_themes().get(active_theme, ThemeColors.DARK_THEMES.adwaita_darker)
+	return all_themes().get(active_theme, ThemeColors.MODE_THEMES[ThemeColors.MODE_DARK])
 
 func populate_themes_menu(menu: PopupMenu) -> void:
 	if menu == null:
 		return
 	menu.clear()
 	theme_menu_keys.clear()
-	var keys: Array[String] = []
-	for raw_key in all_themes().keys():
+	var keys: Array[String] = [ThemeColors.MODE_DARK, ThemeColors.MODE_LIGHT]
+	var custom_keys: Array[String] = []
+	for raw_key in custom_themes.keys():
 		var key := str(raw_key)
-		if ThemeResources.load_theme(key) != null or ThemeResources.save_custom_theme(key, all_themes()[key]) == OK:
-			keys.append(key)
-	keys.sort_custom(func(a: String, b: String) -> bool:
-		return str(all_themes()[a].get("label", a)).naturalnocasecmp_to(str(all_themes()[b].get("label", b))) < 0
+		if ThemeColors.is_builtin_mode(key):
+			continue
+		if ThemeResources.load_theme(key) != null:
+			custom_keys.append(key)
+	custom_keys.sort_custom(func(left: String, right: String) -> bool:
+		return str(all_themes()[left].get("label", left)).naturalnocasecmp_to(str(all_themes()[right].get("label", right))) < 0
 	)
+	keys.append_array(custom_keys)
 	for key in keys:
-		var info: Dictionary = all_themes()[key]
+		if ThemeResources.load_theme(key) == null:
+			continue
+		var info: Dictionary = all_themes().get(key, {})
 		var item_index := menu.item_count
 		var label: String = str(info.get("label", key))
 		if custom_themes.has(key):
 			label += "  (XML)"
 		menu.add_radio_check_item(label, theme_menu_keys.size())
 		menu.set_item_checked(item_index, key == active_theme)
-		menu.set_item_tooltip(item_index, "Currently selected" if key == active_theme else "Apply " + label)
+		menu.set_item_tooltip(item_index, "Currently selected" if key == active_theme else "Apply " + str(info.get("label", key)))
 		theme_menu_keys.append(key)
 	if theme_menu_keys.is_empty():
 		menu.add_item("No theme resources available")
@@ -123,9 +142,11 @@ func _load_custom_themes() -> void:
 			if not result.is_empty():
 				var key: String = ThemeResources.safe_key(str(result.get("key", fname.trim_suffix(".xml"))))
 				result["key"] = key
+				if ThemeColors.is_builtin_mode(key):
+					fname = dir.get_next()
+					continue
 				custom_themes[key] = result
-				if ThemeResources.load_theme(key) == null:
-					ThemeResources.save_custom_theme(key, result)
+				ThemeResources.save_custom_theme(key, result)
 		fname = dir.get_next()
 	dir.list_dir_end()
 
@@ -145,6 +166,9 @@ func parse_theme_xml(path: String) -> Dictionary:
 			if tag == "theme":
 				result["key"] = parser.get_named_attribute_value_safe("name")
 				result["label"] = parser.get_named_attribute_value_safe("label")
+				var variant := parser.get_named_attribute_value_safe("variant")
+				if not variant.is_empty():
+					result["variant"] = variant
 				if result["key"].is_empty():
 					result["key"] = path.get_file().trim_suffix(".xml")
 				if result["label"].is_empty():
@@ -158,6 +182,7 @@ func parse_theme_xml(path: String) -> Dictionary:
 	for req in required:
 		if not result.has(req):
 			return {}
+	result["variant"] = ThemeColors.infer_variant(result)
 	return result
 
 func import_theme_xml(xml_path: String, on_imported: Callable = Callable()) -> void:
@@ -167,6 +192,8 @@ func import_theme_xml(xml_path: String, on_imported: Callable = Callable()) -> v
 			on_imported.call(false, "Invalid XML file or incomplete theme.")
 		return
 	var key: String = ThemeResources.safe_key(str(parsed.get("key", "custom")))
+	if ThemeColors.is_builtin_mode(key):
+		key = key + "_custom"
 	parsed["key"] = key
 	var dest_name: String = key + ".xml"
 	var dest_path := "user://themes/" + dest_name

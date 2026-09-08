@@ -15,13 +15,14 @@ SSCodeIDE is a single-window Godot application. There is no separate language se
 ui_editor.tscn  →  ui_editor.gd (primary orchestrator)
                       ├── NavRail                (slim vertical activity rail with icons & dynamic theme toggle)
                       ├── AppBrandButton         (brand menu button with About/Close)
-                      ├── ThemeController        (palette selection, persistence, XML import)
-                      ├── ThemeColorScheme       (colour palettes: 9 dark, 7 light variants)
+                      ├── ThemeController        (Dark/Light application, persistence, XML import)
+                      ├── ThemeColorScheme       (Dark and Light mode palettes)
                       ├── ThemeResourceRegistry  (builds & compiles .theme resources)
                       ├── FileController         (file tree and buffer management)
                       ├── FileKind               (icons / extension map)
                       ├── GitService             (OS.execute git)
                       ├── AIService              (HTTPRequest → NVIDIA NIM)
+                      ├── WebSearchService       (live web/internet search retrieval & context injection)
                       ├── CodeEditorTools        (code completion & editor utilities)
                       ├── ChatMarkdownRenderer   (chat markdown & GFM table rendering)
                       └── MarkdownPreviewRenderer(markdown document preview rendering)
@@ -41,6 +42,13 @@ Owns:
 - Theme orchestration delegating to `ThemeController`, `ThemeColorScheme`, and `ThemeResourceRegistry`
 
 It never embeds an API key. Chat and Smart Commit call `AIService.get_nvidia_api_key()` and send `Authorization: Bearer …`.
+
+### `web_search_service.gd` (`class_name WebSearchService`)
+
+Provides real-time Internet search and documentation lookup capabilities:
+- Integrates with search engines and Wikipedia API to retrieve real-time search snippets, URLs, and summaries.
+- Formats search results as BBCode for interactive chat display (`/search <query>`, `/web <query>`).
+- Generates structured temporal and web context blocks injected into AI prompt payloads for up-to-date responses.
 
 ### `ai_service.gd` (`class_name AIService`)
 

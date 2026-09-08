@@ -1,7 +1,7 @@
 class_name AppBrandButton
 extends MenuButton
 
-## AppBrand menu button providing quick access to Dark/Light mode toggle, About, and Close.
+## AppBrand menu button providing About and Close.
 
 const ID_ABOUT: int = 1
 const ID_CLOSE: int = 2

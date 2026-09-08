@@ -7,31 +7,29 @@ extends RefCounted
 const ThemeColors = preload("res://scripts/theme_color_scheme.gd")
 
 const RESOURCE_PATHS: Dictionary = {
-	"adwaita_darker": "res://themes/ui_grid_outline.theme",
-	"monokai": "res://themes/ui_material3_monokai.theme",
-	"tokyo_night": "res://themes/ui_material3_tokyo_night.theme",
-	"dracula": "res://themes/ui_material3_dracula.theme",
-	"catppuccin": "res://themes/ui_material3_catppuccin.theme",
-	"nord": "res://themes/ui_material3_nord.theme",
-	"jakes_theme": "res://themes/ui_material3_jakes_theme.theme",
-	"terminal": "res://themes/ui_material3_terminal.theme",
-	"solarized_dark": "res://themes/ui_material3_solarized_dark.theme",
-	"adwaita_lighter": "res://themes/ui_material3_adwaita_lighter.theme",
-	"monokai_light": "res://themes/ui_material3_monokai_light.theme",
-	"tokyo_night_light": "res://themes/ui_material3_tokyo_night_light.theme",
-	"dracula_light": "res://themes/ui_material3_dracula_light.theme",
-	"catppuccin_light": "res://themes/ui_material3_catppuccin_light.theme",
-	"nord_light": "res://themes/ui_material3_nord_light.theme",
-	"solarized_light": "res://themes/ui_material3_solarized_light.theme",
+	ThemeColors.MODE_DARK: "res://themes/dark.theme",
+	ThemeColors.MODE_LIGHT: "res://themes/light.theme",
 }
 
 static func load_theme(theme_name: String) -> Theme:
-	var path: String = str(RESOURCE_PATHS.get(theme_name, ""))
+	var custom_path := "user://themes/%s.theme" % safe_key(theme_name)
+	var builtin_path: String = str(RESOURCE_PATHS.get(theme_name, ""))
+	## Dark/Light always use the shipped resources. Imported XML uses user://.
+	if ThemeColors.is_builtin_mode(theme_name):
+		return _load_theme_path(builtin_path, false)
+	var custom := _load_theme_path(custom_path, true)
+	if custom != null:
+		return custom
+	return _load_theme_path(builtin_path, false)
+
+
+static func _load_theme_path(path: String, replace_cache: bool) -> Theme:
 	if path.is_empty():
-		path = "user://themes/%s.theme" % safe_key(theme_name)
-	if not ResourceLoader.exists(path):
 		return null
-	return load(path) as Theme
+	if not ResourceLoader.exists(path) and not FileAccess.file_exists(path):
+		return null
+	var cache_mode := ResourceLoader.CACHE_MODE_REPLACE if replace_cache else ResourceLoader.CACHE_MODE_REUSE
+	return ResourceLoader.load(path, "", cache_mode) as Theme
 
 static func safe_key(value: String) -> String:
 	var cleaned := ""
@@ -83,11 +81,11 @@ static func _set_surface(theme: Theme, control_type: StringName, normal: StyleBo
 	theme.set_stylebox("focus", control_type, focused)
 
 static func _build_material3_theme(palette: Dictionary) -> Theme:
-	var background := _colour(palette, "bg_darker", _colour(palette, "bg_black", Color("#141416")))
-	var surface := _colour(palette, "bg_surface", Color("#1e1e24"))
+	var background := _colour(palette, "bg_darker", _colour(palette, "bg_black", Color("#111112")))
+	var surface := _colour(palette, "bg_surface", Color("#141415"))
 	var container := _colour(palette, "bg_card", surface.lightened(0.06))
 	var variant := _colour(palette, "bg_lighter", container.lightened(0.08))
-	var on_surface := _colour(palette, "fg", Color("#dcdce0"))
+	var on_surface := _colour(palette, "fg", Color("#EDEDED"))
 	var on_variant := _colour(palette, "muted", on_surface.darkened(0.28))
 	var outline := on_variant.darkened(0.40) if background.get_luminance() < 0.5 else on_variant.lightened(0.35)
 	var primary := _colour(palette, "blue", Color("#4c8bf5"))
@@ -228,7 +226,7 @@ static func _build_material3_theme(palette: Dictionary) -> Theme:
 	# Minimal Collapsible NavRail panel (Untitled UI style slim vertical bar)
 	theme.set_type_variation(&"M3NavRail", &"PanelContainer")
 	var rail_box := StyleBoxFlat.new()
-	rail_box.bg_color = background if is_light else Color("#0a0a0c")
+	rail_box.bg_color = background if is_light else Color("#0F0F10")
 	rail_box.border_color = outline
 	rail_box.set_border_width(SIDE_RIGHT, 1)
 	rail_box.content_margin_left = 6

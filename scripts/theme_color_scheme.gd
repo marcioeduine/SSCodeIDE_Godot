@@ -10,11 +10,11 @@ extends RefCounted
 
 const DARK_THEMES: Dictionary = {
 	"adwaita_darker": {
-		"label": "Adwaita Darker",
+		"label": "Dark",
 		"variant": "dark",
-		"bg_black":   "#0a0a0c", "bg_darker":  "#0f0f12", "bg_surface": "#141418",
-		"bg_card":    "#1d1d24", "bg_lighter": "#282832",
-		"fg":         "#f0f0f4", "fg_bright":  "#ffffff", "muted":      "#858699",
+		"bg_black":   "#0F0F10", "bg_darker":  "#111112", "bg_surface": "#141415",
+		"bg_card":    "#1C1C1E", "bg_lighter": "#222224",
+		"fg":         "#EDEDED", "fg_bright":  "#FFFFFF", "muted":      "#8E8E93",
 		"blue":       "#3574f0", "green":      "#3ac474", "cyan":       "#3bbdbd", "red": "#e05561",
 		"hl_number":  "#2aacb8", "hl_symbol":  "#bcbec4", "hl_func":    "#56a8f5",
 		"hl_member":  "#c77dbb", "hl_comment": "#7a7e85", "hl_string":  "#6aab73",
@@ -112,7 +112,7 @@ const DARK_THEMES: Dictionary = {
 
 const LIGHT_THEMES: Dictionary = {
 	"adwaita_lighter": {
-		"label": "Adwaita Lighter (Light)",
+		"label": "Light",
 		"variant": "light",
 		"bg_black":   "#ffffff", "bg_darker":  "#f4f5f7", "bg_surface": "#ffffff",
 		"bg_card":    "#ebeef2", "bg_lighter": "#dfe3e8",
@@ -209,55 +209,48 @@ const ALL_THEMES: Dictionary = {
 	"solarized_light": LIGHT_THEMES.solarized_light,
 }
 
-const RESOURCE_PATHS: Dictionary = {
-	"adwaita_darker": "res://themes/ui_grid_outline.theme",
-	"monokai": "res://themes/ui_material3_monokai.theme",
-	"tokyo_night": "res://themes/ui_material3_tokyo_night.theme",
-	"dracula": "res://themes/ui_material3_dracula.theme",
-	"catppuccin": "res://themes/ui_material3_catppuccin.theme",
-	"nord": "res://themes/ui_material3_nord.theme",
-	"jakes_theme": "res://themes/ui_material3_jakes_theme.theme",
-	"terminal": "res://themes/ui_material3_terminal.theme",
-	"solarized_dark": "res://themes/ui_material3_solarized_dark.theme",
-	"adwaita_lighter": "res://themes/ui_material3_adwaita_lighter.theme",
-	"monokai_light": "res://themes/ui_material3_monokai_light.theme",
-	"tokyo_night_light": "res://themes/ui_material3_tokyo_night_light.theme",
-	"dracula_light": "res://themes/ui_material3_dracula_light.theme",
-	"catppuccin_light": "res://themes/ui_material3_catppuccin_light.theme",
-	"nord_light": "res://themes/ui_material3_nord_light.theme",
-	"solarized_light": "res://themes/ui_material3_solarized_light.theme",
+## The only modes exposed in the IDE for now.
+const MODE_DARK := "adwaita_darker"
+const MODE_LIGHT := "adwaita_lighter"
+const MODE_THEMES: Dictionary = {
+	MODE_DARK: DARK_THEMES.adwaita_darker,
+	MODE_LIGHT: LIGHT_THEMES.adwaita_lighter,
 }
 
-static func is_light(theme_name: String) -> bool:
+const RESOURCE_PATHS: Dictionary = {
+	MODE_DARK: "res://themes/dark.theme",
+	MODE_LIGHT: "res://themes/light.theme",
+}
+
+static func is_builtin_mode(theme_name: String) -> bool:
+	return theme_name == MODE_DARK or theme_name == MODE_LIGHT
+
+static func infer_variant(palette: Dictionary) -> String:
+	var explicit := str(palette.get("variant", "")).to_lower()
+	if explicit == "light" or explicit == "dark":
+		return explicit
+	var source := Color(str(palette.get("bg_surface", palette.get("bg_darker", "#141418"))))
+	if source.a <= 0.0:
+		return "dark"
+	return "light" if source.get_luminance() >= 0.5 else "dark"
+
+static func is_light(theme_name: String, palette: Dictionary = Dictionary()) -> bool:
+	if not palette.is_empty():
+		return infer_variant(palette) == "light"
+	if theme_name == MODE_LIGHT or theme_name == "light":
+		return true
+	if theme_name == MODE_DARK or theme_name == "dark":
+		return false
 	var info: Dictionary = ALL_THEMES.get(theme_name, {})
-	return str(info.get("variant", "dark")) == "light"
+	if not info.is_empty():
+		return infer_variant(info) == "light"
+	return theme_name.ends_with("_light") or theme_name.ends_with("_lighter")
 
-static func get_light_variant(dark_name: String) -> String:
-	match dark_name:
-		"adwaita_darker": return "adwaita_lighter"
-		"monokai": return "monokai_light"
-		"tokyo_night": return "tokyo_night_light"
-		"dracula": return "dracula_light"
-		"catppuccin": return "catppuccin_light"
-		"nord": return "nord_light"
-		"jakes_theme": return "adwaita_lighter"
-		"terminal": return "adwaita_lighter"
-		"solarized_dark": return "solarized_light"
-		_:
-			if is_light(dark_name):
-				return dark_name
-			return "adwaita_lighter"
+static func canonical_mode(theme_name: String) -> String:
+	return MODE_LIGHT if is_light(theme_name) else MODE_DARK
 
-static func get_dark_variant(light_name: String) -> String:
-	match light_name:
-		"adwaita_lighter": return "adwaita_darker"
-		"monokai_light": return "monokai"
-		"tokyo_night_light": return "tokyo_night"
-		"dracula_light": return "dracula"
-		"catppuccin_light": return "catppuccin"
-		"nord_light": return "nord"
-		"solarized_light": return "solarized_dark"
-		_:
-			if not is_light(light_name):
-				return light_name
-			return "adwaita_darker"
+static func get_light_variant(_dark_name: String) -> String:
+	return MODE_LIGHT
+
+static func get_dark_variant(_light_name: String) -> String:
+	return MODE_DARK

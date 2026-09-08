@@ -13,7 +13,9 @@ config_version=5
 config/name="SSCodeIDE"
 run/main_scene="res://scene/ui_editor.tscn"
 config/features=PackedStringArray("4.7")
-config/icon="res://favicon.svg"
+boot_splash/stretch_mode=5
+boot_splash/image="uid://c0bjnbod0tl5h"
+config/icon="res://icon.png"
 
 [display]
 
@@ -24,15 +26,17 @@ window/size/borderless=true
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/at-icons/plugin.cfg", "res://addons/gut/plugin.cfg")
+
 [gui]
 
 theme/default_font_multichannel_signed_distance_field=true
 
-[physics]
-
-2d/physics_engine="GodotServo"
-
 [rendering]
 
-rendering_device/driver="gles2"
+rendering_device/driver="opengl3"
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
 environment/defaults/default_clear_color=Color(0, 0, 0, 1)

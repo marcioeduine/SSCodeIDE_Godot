@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://b6s1hdqcbjksc"]
 
-[ext_resource type="Theme" path="res://themes/ui_grid_outline.theme" id="1_0cx3e"]
 [ext_resource type="Script" uid="uid://dm57wbc3c6m76" path="res://scripts/ui_editor.gd" id="1_editor"]
+[ext_resource type="Theme" uid="uid://by7etx7jpa61x" path="res://themes/dark.theme" id="1_yt52t"]
 [ext_resource type="Shader" uid="uid://crhc3gwj4ct3f" path="res://themes/glass_backdrop.gdshader" id="2_backdrop"]
-[ext_resource type="Texture2D" uid="uid://coxctd2h6bsq5" path="res://favicon.svg" id="3_favicon"]
+[ext_resource type="Texture2D" uid="uid://c6qwfu2h8im7q" path="res://icon.svg" id="3_favicon"]
 [ext_resource type="Texture2D" uid="uid://djktporhvrp26" path="res://icons/nav_explorer.svg" id="4_nav_explorer"]
 [ext_resource type="Texture2D" uid="uid://deijdrbbsi7us" path="res://icons/nav_search.svg" id="5_nav_search"]
 [ext_resource type="Texture2D" uid="uid://cdspcwkxso7nw" path="res://icons/nav_github.svg" id="6_nav_github"]
@@ -12,7 +12,6 @@
 [ext_resource type="Texture2D" uid="uid://bhmmg2p4eq0lw" path="res://icons/nav_settings.svg" id="9_nav_settings"]
 [ext_resource type="Texture2D" uid="uid://lweabxd0tqlv" path="res://icons/nav_help.svg" id="10_nav_help"]
 [ext_resource type="Texture2D" uid="uid://bvru54cisp7ec" path="res://icons/nav_sun.svg" id="11_nav_sun"]
-[ext_resource type="FontFile" uid="uid://bm1xevc15hlqh" path="res://fonts/FiraCodeNerdFont-Regular.ttf" id="13_font"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_backdrop"]
 shader = ExtResource("2_backdrop")
@@ -21,6 +20,8 @@ shader_parameter/ambient_colour = Color(0.145, 0.122, 0.18, 1)
 shader_parameter/accent_colour = Color(0.19, 0.145, 0.23, 1)
 shader_parameter/glow_strength = 0.12
 shader_parameter/motion_speed = 0.008
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_r8agn"]
 
 [node name="UI_Editor" type="Control" unique_id=1791161152]
 layout_mode = 3
@@ -31,7 +32,7 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme = ExtResource("1_0cx3e")
+theme = ExtResource("1_yt52t")
 script = ExtResource("1_editor")
 
 [node name="Background" type="ColorRect" parent="." unique_id=970540564]
@@ -45,134 +46,169 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 1)
 
-[node name="AppHBox" type="HBoxContainer" parent="." unique_id=502389437]
-unique_name_in_owner = true
+[node name="GridContainer" type="GridContainer" parent="." unique_id=1515580603]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="Header" type="HBoxContainer" parent="GridContainer" unique_id=1019862349]
+layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 3
-theme = ExtResource("1_0cx3e")
-theme_override_constants/separation = 0
 
-[node name="NavRail" type="PanelContainer" parent="AppHBox" unique_id=402821925]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(48, 0)
-layout_mode = 2
-theme_type_variation = &"M3NavRail"
-
-[node name="NavRailContent" type="VBoxContainer" parent="AppHBox/NavRail" unique_id=300101001]
+[node name="PanelBrand" type="PanelContainer" parent="GridContainer/Header" unique_id=1428602545]
 layout_mode = 2
 
-[node name="AppBrand" type="MenuButton" parent="AppHBox/NavRail/NavRailContent" unique_id=300101002]
+[node name="AppBrand" type="MenuButton" parent="GridContainer/Header/PanelBrand" unique_id=782929851]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(34, 34)
+custom_minimum_size = Vector2(42, 42)
 layout_mode = 2
 tooltip_text = "SSCodeIDE App Menu"
 icon = ExtResource("3_favicon")
 icon_alignment = 1
 expand_icon = true
 
-[node name="RailDivider1" type="HSeparator" parent="AppHBox/NavRail/NavRailContent" unique_id=300101010]
+[node name="PanelTopBar" type="PanelContainer" parent="GridContainer/Header" unique_id=191648703]
 layout_mode = 2
-size_flags_vertical = 2
-size_flags_stretch_ratio = 0.05
+size_flags_horizontal = 3
 
-[node name="GridContainer" type="GridContainer" parent="AppHBox/NavRail/NavRailContent" unique_id=408513914]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/v_separation = 40
-
-[node name="ExplorerRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent/GridContainer" unique_id=300101011]
+[node name="StatusGit" type="Button" parent="GridContainer/Header/PanelTopBar" unique_id=772580208]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+text = "⎇ main"
+flat = true
+
+[node name="AppHBox" type="HBoxContainer" parent="GridContainer" unique_id=502389437]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="NavRail" type="PanelContainer" parent="GridContainer/AppHBox" unique_id=402821925]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"M3NavRail"
+
+[node name="NavRailContent" type="VBoxContainer" parent="GridContainer/AppHBox/NavRail" unique_id=300101001]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="ExplorerRailBtn" type="Button" parent="GridContainer/AppHBox/NavRail/NavRailContent" unique_id=300101011]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+offset_transform_enabled = true
 tooltip_text = "Files / Explorer (Ctrl+B)"
 theme_type_variation = &"M3RailButton"
 icon = ExtResource("4_nav_explorer")
 flat = true
+icon_alignment = 1
 expand_icon = true
 
-[node name="EditRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent/GridContainer" unique_id=300101012]
+[node name="EditRailBtn" type="Button" parent="GridContainer/AppHBox/NavRail/NavRailContent" unique_id=300101012]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(34, 34)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 tooltip_text = "Find & Search (Ctrl+F)"
 theme_type_variation = &"M3RailButton"
 icon = ExtResource("5_nav_search")
 flat = true
+icon_alignment = 1
 expand_icon = true
 
-[node name="GitRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent/GridContainer" unique_id=300101013]
+[node name="GitRailBtn" type="Button" parent="GridContainer/AppHBox/NavRail/NavRailContent" unique_id=300101013]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(34, 34)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 tooltip_text = "Source Control & GitHub (Ctrl+Shift+G)"
 theme_type_variation = &"M3RailButton"
 icon = ExtResource("6_nav_github")
 flat = true
+icon_alignment = 1
 expand_icon = true
 
-[node name="ThemesRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent/GridContainer" unique_id=300101014]
+[node name="ThemesRailBtn" type="Button" parent="GridContainer/AppHBox/NavRail/NavRailContent" unique_id=300101014]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(34, 34)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-tooltip_text = "Themes Selector & Import"
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Themes & Import XML"
 theme_type_variation = &"M3RailButton"
 icon = ExtResource("8_nav_themes")
 flat = true
+icon_alignment = 1
 expand_icon = true
 
-[node name="ChatRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent/GridContainer" unique_id=300101015]
+[node name="ChatRailBtn" type="Button" parent="GridContainer/AppHBox/NavRail/NavRailContent" unique_id=300101015]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(34, 34)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 tooltip_text = "AI Assistant Chat (Ctrl+Shift+B)"
 theme_type_variation = &"M3RailButton"
 icon = ExtResource("7_nav_chat")
 flat = true
+icon_alignment = 1
 expand_icon = true
 
-[node name="ThemeToggleBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101005]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(34, 34)
+[node name="GridContainer" type="VSeparator" parent="GridContainer/AppHBox/NavRail/NavRailContent" unique_id=262100785]
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+theme_override_styles/separator = SubResource("StyleBoxEmpty_r8agn")
+
+[node name="ThemeToggleBtn" type="Button" parent="GridContainer/AppHBox/NavRail/NavRailContent" unique_id=300101005]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 tooltip_text = "Toggle Light / Dark Mode"
 theme_type_variation = &"M3ThemeToggle"
 icon = ExtResource("11_nav_sun")
 flat = true
+icon_alignment = 1
 expand_icon = true
 
-[node name="ConfigRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101016]
+[node name="ConfigRailBtn" type="Button" parent="GridContainer/AppHBox/NavRail/NavRailContent" unique_id=300101016]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(34, 34)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 tooltip_text = "Settings & Configuration (Ctrl+,)"
 theme_type_variation = &"M3RailButton"
 icon = ExtResource("9_nav_settings")
 flat = true
+icon_alignment = 1
 expand_icon = true
 
-[node name="HelpRailBtn" type="Button" parent="AppHBox/NavRail/NavRailContent" unique_id=300101017]
+[node name="HelpRailBtn" type="Button" parent="GridContainer/AppHBox/NavRail/NavRailContent" unique_id=300101017]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(34, 34)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 tooltip_text = "Keyboard Shortcuts & Help (F1)"
 theme_type_variation = &"M3RailButton"
 icon = ExtResource("10_nav_help")
 flat = true
+icon_alignment = 1
 expand_icon = true
 
-[node name="MainLayout" type="VBoxContainer" parent="AppHBox" unique_id=300101040]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_constants/separation = 0
-
-[node name="MainSplit" type="HSplitContainer" parent="AppHBox/MainLayout" unique_id=470791301]
+[node name="MainSplit" type="HSplitContainer" parent="GridContainer/AppHBox" unique_id=470791301]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -180,30 +216,26 @@ size_flags_vertical = 3
 split_offsets = PackedInt32Array(260)
 split_offset = 260
 
-[node name="ExplorerPane" type="PanelContainer" parent="AppHBox/MainLayout/MainSplit" unique_id=1429488087]
+[node name="ExplorerPane" type="PanelContainer" parent="GridContainer/AppHBox/MainSplit" unique_id=1429488087]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-theme_type_variation = &"M3SidePanel"
 
-[node name="ExplorerContent" type="VBoxContainer" parent="AppHBox/MainLayout/MainSplit/ExplorerPane" unique_id=1294062821]
+[node name="ExplorerContent" type="VBoxContainer" parent="GridContainer/AppHBox/MainSplit/ExplorerPane" unique_id=1294062821]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
-[node name="AppTitleLabel" type="Label" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent" unique_id=1924330637]
-custom_minimum_size = Vector2(0, 32)
+[node name="MarginContainer" type="MarginContainer" parent="GridContainer/AppHBox/MainSplit/ExplorerPane/ExplorerContent" unique_id=1071988879]
 layout_mode = 2
-size_flags_vertical = 1
-theme_override_fonts/font = ExtResource("13_font")
-theme_override_font_sizes/font_size = 15
-text = "SS - Code IDE"
-horizontal_alignment = 1
-vertical_alignment = 1
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_right = 10
 
-[node name="DrawerHeader" type="HBoxContainer" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent" unique_id=300101020]
+[node name="DrawerHeader" type="HBoxContainer" parent="GridContainer/AppHBox/MainSplit/ExplorerPane/ExplorerContent/MarginContainer" unique_id=300101020]
 custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 
-[node name="WorkspaceState" type="Label" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent/DrawerHeader" unique_id=1893227217]
+[node name="WorkspaceState" type="Label" parent="GridContainer/AppHBox/MainSplit/ExplorerPane/ExplorerContent/MarginContainer/DrawerHeader" unique_id=1893227217]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
@@ -212,8 +244,9 @@ size_flags_vertical = 1
 theme_type_variation = &"M3SidebarHeader"
 text = "EXPLORER"
 vertical_alignment = 1
+uppercase = true
 
-[node name="SwitchWorkspaceBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent/DrawerHeader" unique_id=300101024]
+[node name="SwitchWorkspaceBtn" type="Button" parent="GridContainer/AppHBox/MainSplit/ExplorerPane/ExplorerContent/MarginContainer/DrawerHeader" unique_id=300101024]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(28, 24)
 layout_mode = 2
@@ -222,14 +255,14 @@ theme_type_variation = &"M3RailButton"
 text = "⇄"
 flat = true
 
-[node name="FileTree" type="Tree" parent="AppHBox/MainLayout/MainSplit/ExplorerPane/ExplorerContent" unique_id=1514428791]
+[node name="FileTree" type="Tree" parent="GridContainer/AppHBox/MainSplit/ExplorerPane/ExplorerContent" unique_id=1514428791]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_type_variation = &"M3ExplorerTree"
+hide_root = true
 
-[node name="CenterSplit" type="HSplitContainer" parent="AppHBox/MainLayout/MainSplit" unique_id=270599731]
+[node name="CenterSplit" type="HSplitContainer" parent="GridContainer/AppHBox/MainSplit" unique_id=270599731]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -237,84 +270,63 @@ size_flags_vertical = 3
 split_offsets = PackedInt32Array(720)
 split_offset = 720
 
-[node name="EditorPane" type="PanelContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit" unique_id=301077544]
+[node name="EditorPane" type="PanelContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit" unique_id=301077544]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"M3EditorSurface"
 
-[node name="EditorContent" type="VBoxContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane" unique_id=300101006]
+[node name="EditorContent" type="VBoxContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit/EditorPane" unique_id=300101006]
 layout_mode = 2
-theme_override_constants/separation = 0
 
-[node name="GridContainer" type="HBoxContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=1574192106]
-custom_minimum_size = Vector2(0, 30)
+[node name="GridContainer" type="HBoxContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=1574192106]
+custom_minimum_size = Vector2(0, 15)
 layout_mode = 2
 theme_override_constants/separation = 2
 
-[node name="ExplorerToggleBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent/GridContainer" unique_id=1893227218]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 3
-tooltip_text = "Collapse or expand the File Explorer (Ctrl+B)"
-text = "◀"
-flat = true
-
-[node name="TabBar" type="TabBar" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent/GridContainer" unique_id=256136646]
+[node name="TabBar" type="TabBar" parent="GridContainer/AppHBox/MainSplit/CenterSplit/EditorPane/EditorContent/GridContainer" unique_id=256136646]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 tab_close_display_policy = 1
 
-[node name="ChatToggleBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent/GridContainer" unique_id=1421141930]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 2
-size_flags_horizontal = 8
-size_flags_vertical = 3
-tooltip_text = "Collapse or expand Chat (Ctrl+Shift+B)"
-text = "▶"
-flat = true
-
-[node name="FindRow" type="HBoxContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=1655727780]
+[node name="FindRow" type="HBoxContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=1655727780]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 
-[node name="FindInput" type="LineEdit" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=1760361776]
+[node name="FindInput" type="LineEdit" parent="GridContainer/AppHBox/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=1760361776]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Find…"
 
-[node name="FindNext" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=2119594804]
+[node name="FindNext" type="Button" parent="GridContainer/AppHBox/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=2119594804]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Next"
 
-[node name="ReplaceInput" type="LineEdit" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=356564620]
+[node name="ReplaceInput" type="LineEdit" parent="GridContainer/AppHBox/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=356564620]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Replace…"
 
-[node name="ReplaceAll" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=632382191]
+[node name="ReplaceAll" type="Button" parent="GridContainer/AppHBox/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=632382191]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 text = "Replace All"
 
-[node name="FindClose" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=1962445891]
+[node name="FindClose" type="Button" parent="GridContainer/AppHBox/MainSplit/CenterSplit/EditorPane/EditorContent/FindRow" unique_id=1962445891]
 unique_name_in_owner = true
 layout_mode = 2
 text = "×"
 
-[node name="CodeEdit" type="CodeEdit" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=411562642]
+[node name="CodeEdit" type="CodeEdit" parent="GridContainer/AppHBox/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=411562642]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -330,7 +342,7 @@ gutters_draw_line_numbers = true
 code_completion_enabled = true
 indent_automatic = true
 
-[node name="MarkdownPreview" type="RichTextLabel" parent="AppHBox/MainLayout/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=1429657402]
+[node name="MarkdownPreview" type="RichTextLabel" parent="GridContainer/AppHBox/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=1429657402]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -341,21 +353,21 @@ theme_type_variation = &"M3MarkdownDocument"
 bbcode_enabled = true
 selection_enabled = true
 
-[node name="ChatPane" type="PanelContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit" unique_id=1200057739]
+[node name="ChatPane" type="PanelContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit" unique_id=1200057739]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"M3ChatSurface"
 
-[node name="ChatContent" type="VBoxContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane" unique_id=300101007]
+[node name="ChatContent" type="VBoxContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane" unique_id=300101007]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="ChatHeaderRow" type="HBoxContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=440622983]
+[node name="ChatHeaderRow" type="HBoxContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=440622983]
 custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
 
-[node name="ChatHeader" type="Label" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatHeaderRow" unique_id=1421141929]
+[node name="ChatHeader" type="Label" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatHeaderRow" unique_id=1421141929]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -364,13 +376,13 @@ text = "chat"
 clip_text = true
 uppercase = true
 
-[node name="ChatContextBadge" type="Label" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatHeaderRow" unique_id=1082829237]
+[node name="ChatContextBadge" type="Label" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatHeaderRow" unique_id=1082829237]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"M3StatusText"
 text = "SSBot · Workspace"
 
-[node name="ChatLog" type="RichTextLabel" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=1541749788]
+[node name="ChatLog" type="RichTextLabel" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=1541749788]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -381,24 +393,24 @@ bbcode_enabled = true
 scroll_following = true
 selection_enabled = true
 
-[node name="ChatStatusBanner" type="PanelContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=896163620]
+[node name="ChatStatusBanner" type="PanelContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=896163620]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 
-[node name="ChatStatusVBox" type="VBoxContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatStatusBanner" unique_id=896163621]
+[node name="ChatStatusVBox" type="VBoxContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatStatusBanner" unique_id=896163621]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="ChatStatusLabel" type="RichTextLabel" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatStatusBanner/ChatStatusVBox" unique_id=1868283993]
+[node name="ChatStatusLabel" type="RichTextLabel" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatStatusBanner/ChatStatusVBox" unique_id=1868283993]
 unique_name_in_owner = true
 layout_mode = 2
 bbcode_enabled = true
 fit_content = true
 scroll_active = false
 
-[node name="ChatThinkingLabel" type="RichTextLabel" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatStatusBanner/ChatStatusVBox" unique_id=1868283994]
+[node name="ChatThinkingLabel" type="RichTextLabel" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatStatusBanner/ChatStatusVBox" unique_id=1868283994]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
@@ -412,36 +424,36 @@ scroll_following = true
 autowrap_mode = 2
 selection_enabled = true
 
-[node name="ChatSuggestionsPopup" type="PanelContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=705864052]
+[node name="ChatSuggestionsPopup" type="PanelContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=705864052]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(0, 110)
 layout_mode = 2
 
-[node name="ChatSuggestionsList" type="ItemList" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatSuggestionsPopup" unique_id=1315998758]
+[node name="ChatSuggestionsList" type="ItemList" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatSuggestionsPopup" unique_id=1315998758]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 allow_reselect = true
 
-[node name="ChatInputCard" type="PanelContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=1363750561]
+[node name="ChatInputCard" type="PanelContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=1363750561]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 78)
 layout_mode = 2
 theme_type_variation = &"M3Composer"
 
-[node name="ChatInputVBox" type="VBoxContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard" unique_id=1761679636]
+[node name="ChatInputVBox" type="VBoxContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard" unique_id=1761679636]
 layout_mode = 2
 
-[node name="ChatContextChip" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox" unique_id=740238814]
+[node name="ChatContextChip" type="Button" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox" unique_id=740238814]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 0
 theme_type_variation = &"M3TextButton"
 text = "+ Active File"
 
-[node name="ChatInput" type="LineEdit" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox" unique_id=1160227838]
+[node name="ChatInput" type="LineEdit" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox" unique_id=1160227838]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
@@ -451,21 +463,21 @@ keep_editing_on_text_submit = true
 clear_button_enabled = true
 caret_blink = true
 
-[node name="ChatInputBottomRow" type="HBoxContainer" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox" unique_id=742355465]
+[node name="ChatInputBottomRow" type="HBoxContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox" unique_id=742355465]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="AttachBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=637576685]
+[node name="AttachBtn" type="Button" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=637576685]
 unique_name_in_owner = true
 layout_mode = 2
 text = "📎"
 
-[node name="AgentModeBtn" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=274574760]
+[node name="AgentModeBtn" type="Button" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=274574760]
 unique_name_in_owner = true
 layout_mode = 2
 text = "</> Agent"
 
-[node name="ProviderSelect" type="OptionButton" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=656410950]
+[node name="ProviderSelect" type="OptionButton" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=656410950]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(172, 0)
 layout_mode = 2
@@ -481,11 +493,11 @@ popup/item_3/id = 3
 popup/item_4/text = "Laguna Code"
 popup/item_4/id = 4
 
-[node name="InputSpacer" type="Control" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=1877726678]
+[node name="InputSpacer" type="Control" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=1877726678]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ChatSend" type="Button" parent="AppHBox/MainLayout/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=748177452]
+[node name="ChatSend" type="Button" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=748177452]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(38, 26)
 layout_mode = 2
@@ -493,49 +505,51 @@ tooltip_text = "Send prompt"
 theme_type_variation = &"M3FilledButton"
 text = "↑"
 
-[node name="StatusBar" type="PanelContainer" parent="AppHBox/MainLayout" unique_id=374397806]
-custom_minimum_size = Vector2(0, 20)
-layout_mode = 2
-theme_type_variation = &"M3StatusBar"
-
-[node name="StatusRow" type="HBoxContainer" parent="AppHBox/MainLayout/StatusBar" unique_id=976935217]
+[node name="StatusBar" type="PanelContainer" parent="GridContainer" unique_id=374397806]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 12
 
-[node name="StatusLeft" type="Label" parent="AppHBox/MainLayout/StatusBar/StatusRow" unique_id=1079174229]
+[node name="MarginContainer" type="MarginContainer" parent="GridContainer/StatusBar" unique_id=1168603490]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 2
+
+[node name="StatusRow" type="HBoxContainer" parent="GridContainer/StatusBar/MarginContainer" unique_id=976935217]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_constants/separation = 24
+
+[node name="StatusLeft" type="Label" parent="GridContainer/StatusBar/MarginContainer/StatusRow" unique_id=1079174229]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_type_variation = &"M3StatusText"
 text = "READY"
+vertical_alignment = 1
 clip_text = true
 
-[node name="StatusGit" type="Button" parent="AppHBox/MainLayout/StatusBar/StatusRow" unique_id=1936752626]
-unique_name_in_owner = true
-layout_mode = 2
-text = "⎇ main"
-flat = true
-
-[node name="StatusCursor" type="Label" parent="AppHBox/MainLayout/StatusBar/StatusRow" unique_id=1248834476]
+[node name="StatusCursor" type="Label" parent="GridContainer/StatusBar/MarginContainer/StatusRow" unique_id=1248834476]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"M3StatusText"
 text = "Ln 1, Col 1"
 
-[node name="StatusLang" type="Label" parent="AppHBox/MainLayout/StatusBar/StatusRow" unique_id=279194814]
+[node name="StatusLang" type="Label" parent="GridContainer/StatusBar/MarginContainer/StatusRow" unique_id=279194814]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"M3StatusText"
 text = "Plain Text"
 
-[node name="StatusEnc" type="Label" parent="AppHBox/MainLayout/StatusBar/StatusRow" unique_id=1839436809]
+[node name="StatusEnc" type="Label" parent="GridContainer/StatusBar/MarginContainer/StatusRow" unique_id=1839436809]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"M3StatusText"
 text = "UTF-8"
 
-[node name="StatusAI" type="Label" parent="AppHBox/MainLayout/StatusBar/StatusRow" unique_id=745361571]
+[node name="StatusAI" type="Label" parent="GridContainer/StatusBar/MarginContainer/StatusRow" unique_id=745361571]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"M3StatusText"
@@ -547,6 +561,7 @@ layout_mode = 0
 
 [node name="File" type="PopupMenu" parent="MenuBar" unique_id=728694481]
 unique_name_in_owner = true
+oversampling_override = 1.0
 size = Vector2i(266, 180)
 item_count = 6
 item_0/text = "Open File…	Ctrl+O"
@@ -564,6 +579,8 @@ item_5/id = 5
 
 [node name="Edit" type="PopupMenu" parent="MenuBar" unique_id=1755527386]
 unique_name_in_owner = true
+oversampling_override = 1.0
+size = Vector2i(144, 181)
 item_count = 8
 item_0/text = "Undo	Ctrl+Z"
 item_0/id = 0

@@ -5,13 +5,14 @@
   Instructions:
 	1. Copy this file and rename it (e.g. my_theme.xml)
 	2. Set a unique `name` (slug, no spaces) and a human-readable `label`
-	3. Customise any colour values (hex #RRGGBB)
-	4. In SSCodeIDE, type: /theme import
-	5. Once imported, activate it with: /theme my_theme_name
+	3. Optional: set variant="dark" or variant="light" (inferred from bg_surface if omitted)
+	4. Customise any colour values (hex #RRGGBB)
+	5. In SSCodeIDE, open Themes in the navigation rail and choose Import XML theme…
+	6. Once imported, the theme appears in the same menu as (XML) and can be applied there
 
   All 22 colour keys and their purpose are documented below.
 -->
-<theme name="solarized_dark" label="Solarized Dark">
+<theme name="my_theme" label="My Theme" variant="dark">
 
   <!-- Backgrounds -->
   <colour key="bg_black"   value="#001e26"/>

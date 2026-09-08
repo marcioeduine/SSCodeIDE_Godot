@@ -14,7 +14,7 @@ Full technical documentation lives in [`docs/`](docs/README.md).
 
 ## Overview
 
-**SSCodeIDE** is a dedicated code editor and development environment engineered entirely with **Godot Engine 4.x** and **GDScript** with a modern JetBrains / VS Code inspired UI/UX. Featuring custom Material 3 / JetBrains themes (including Adwaita, Monokai, Tokyo Night, Dracula, Catppuccin, Nord, Solarized, and Antigravity Terminal), Dark/Light variant toggling, clean flat TabBar styling with accent indicators, full typographic support with *FiraCode Nerd Font*, a hierarchical workspace file explorer, and a native AI coding assistant with automated candidate fallback, SSCodeIDE provides a streamlined coding experience without external runtime dependencies or mandatory login requirements.
+**SSCodeIDE** is a dedicated code editor and development environment engineered entirely with **Godot Engine 4.x** and **GDScript** with a modern JetBrains / VS Code inspired UI/UX. Featuring Dark and Light modes, clean flat TabBar styling with accent indicators, full typographic support with *FiraCode Nerd Font*, a hierarchical workspace file explorer, and a native AI coding assistant with automated candidate fallback, SSCodeIDE provides a streamlined coding experience without external runtime dependencies or mandatory login requirements.
 
 ---
 
@@ -26,7 +26,7 @@ Full technical documentation lives in [`docs/`](docs/README.md).
   - Interactive **AppBrand** (`favicon.svg`) providing About dialogue and exit (`Ctrl+Q`).
   - Collapsible side drawer (`ExplorerPane`) with workspace switcher (`⇄ Switch Workspace…`), file tree, and zero-distraction collapse (`Ctrl+B`).
   - Streamlined tab bar (`TabBar`) featuring flat active tabs with bottom accent indicator bars and comfortable padding.
-  - Comprehensive built-in themes: Adwaita Darker/Lighter, Monokai (Dark/Light), Tokyo Night (Dark/Light), Dracula (Dark/Light), Catppuccin Mocha/Latte, Nord (Dark/Light), Solarized (Dark/Light), Terminal (Antigravity), and Jake's Theme, plus runtime XML theme importing.
+  - Built-in **Dark** and **Light** modes, plus runtime XML theme importing from the Themes menu.
 
 - **Multi-Tab Code Editor (`CodeEdit`)**:
   - Multi-tab management with active file tracking and modification state indicators.
@@ -45,9 +45,11 @@ Full technical documentation lives in [`docs/`](docs/README.md).
   - Built-in slash commands in AI Chat: `/git status`, `/git diff`, `/git log`, `/git commit`, `/git push`, `/git pull`, `/git sync`, `/git branch`, `/git checkout`, `/git remote`, `/git config`, `/git clone`, `/github`.
   - Automated Smart Commit generation adhering to Conventional Commits.
 
-- **Integrated AI Assistant Panel**:
-  - Dedicated side-panel chat interface for code assistance, debugging, and queries.
-  - Direct HTTP client communicating with **NVIDIA NIM API**, supporting:
+- **Integrated AI Assistant Panel with Live Web Search & Agent Capabilities**:
+  - Dedicated side-panel chat interface for code assistance, live debugging, documentation, and queries.
+  - **Live Internet & Web Search (`WebSearchService`)**: Real-time web querying (`/search <query>`, `/web <query>`) for up-to-date documentation, release notes, and real-time knowledge.
+  - **Intimate Pair-Programming Persona ('Tu')**: Friendly, warm, supportive, and intimate tone in European Portuguese (pt-PT) with British English (en-GB) code standards.
+  - Direct asynchronous HTTP client communicating with **NVIDIA NIM API**, supporting:
     - `NVIDIA Nemotron` (`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, `nvidia/nemotron-3.5-lightning-30b-a3b`)
     - `Moonshot Kimi K3` (`moonshotai/kimi-k3`)
     - `DeepSeek V4` (`deepseek-ai/deepseek-v4-pro-0813`)
@@ -130,14 +132,16 @@ Full technical documentation lives in [`docs/`](docs/README.md).
 │   ├── theme_color_scheme.gd       # Theme palette schema & definitions
 │   ├── theme_controller.gd         # Theme application and config controller
 │   ├── theme_resource_registry.gd  # Dynamic .theme builder and resource manager
-│   └── ui_editor.gd                # Primary IDE orchestrator
+│   ├── ui_editor.gd                # Primary IDE orchestrator
+│   └── web_search_service.gd       # Real-time Internet and web search service
 ├── test/                           # Automated unit tests (GUT)
 │   └── unit/
 │       ├── test_ai_service.gd
 │       ├── test_file_kind.gd
 │       ├── test_git_service.gd
-│       └── test_ui_editor_script.gd
-├── themes/                         # Precompiled binary .theme resources & XML templates
+│       ├── test_ui_editor_script.gd
+│       └── test_web_search_service.gd
+├── themes/                         # dark.theme, light.theme, and example XML import template
 ├── project.godot                   # Godot project settings and engine configuration
 ├── .gutconfig.json                 # GUT test runner configuration
 ├── LICENSE                         # Proprietary licence agreement

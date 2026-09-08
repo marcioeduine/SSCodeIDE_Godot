@@ -6,7 +6,7 @@ SSCodeIDE adopts a modern, minimalist collapsible sidebar navigation inspired by
 - **Navigation Rail (Slim Vertical Bar)**:
   - **App Brand (`favicon.svg`)**: Access application info (About SSCodeIDE) and exit (`Ctrl+Q`).
   - **Navigation Icons**: Quick access to File Explorer (📁), Edit Actions (✏️), Git & GitHub (⎇), Themes (🎨), and AI Chat Assistant (💬).
-  - **Theme Toggle (`☀️` / `🌙`)**: Dynamic toggle button switching seamlessly between Dark and Light mode.
+  - **Theme Toggle (`☀️` / `🌙`)**: Switches between Dark and Light mode.
   - **Utility Actions**: Quick settings (⚙️) and keyboard shortcuts help (❓).
 - **Collapsible Drawer / Explorer**:
   - **Workspace Header**: Displays current workspace folder name with switch workspace action (`⇄ Switch Workspace…`).
@@ -47,7 +47,9 @@ The Git menu also exposes fetch, sync, branch, checkout, remotes, config, clone,
 
 ### Chat slash commands
 
-In the AI panel: `/git status`, `/git diff`, `/git log`, `/git commit`, `/git push`, `/git pull`, `/git sync`, `/git branch`, `/git checkout`, `/git remote`, `/git config`, `/git clone`, `/github`, `/compact`.
+In the AI panel: `/git status`, `/git diff`, `/git log`, `/git commit`, `/git push`, `/git pull`, `/git sync`, `/git branch`, `/git checkout`, `/git remote`, `/git config`, `/git clone`, `/github`, `/search <query>`, `/web <query>`, `/compact`.
+
+`/search <query>` / `/web <query>` performs a live Internet search in real time and displays snippets and source links.
 
 `/compact` summarises older conversation context locally and preserves the most recent messages, reducing the amount of history sent to the AI.
 
@@ -61,12 +63,11 @@ See [credentials-and-export.md](credentials-and-export.md).
 
 ## Themes
 
-SSCodeIDE provides a comprehensive suite of JetBrains-inspired palettes:
-- **Dark themes**: Adwaita Darker, Monokai, Tokyo Night, Dracula, Catppuccin Mocha, Nord, Jake's Theme, Terminal (Antigravity), Solarized Dark.
-- **Light themes**: Adwaita Lighter, Monokai Light, Tokyo Night Light, Dracula Light, Catppuccin Latte, Nord Light, Solarized Light.
+SSCodeIDE currently exposes two built-in modes:
+- **Dark** and **Light**, toggled with the sun / moon button (`☀️` / `🌙`) or chosen from the Themes menu.
+- **XML import**: Custom themes can be imported from the Themes menu (`Import XML theme…`). Files are saved under `user://themes/` and appear in the menu as `(XML)`. Start from `themes/example_theme.xml`.
+- Other built-in palettes are not listed for now; a saved extra palette is mapped to Dark or Light on load unless you import it as XML.
 - **Tab styling**: JetBrains IDE flat tabs with a 2px bottom primary accent indicator on active tabs and clean muted inactive tabs.
-- **XML import**: Custom XML themes in `themes/` or `user://themes/` can be imported directly via the Themes menu (`Import XML theme…`).
-- **Duplicate protection**: Selecting the currently active theme will not trigger redundant re-application.
 
 ## Help
 

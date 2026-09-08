@@ -29,12 +29,32 @@ func test_theme_menu_is_scene_backed_and_replaces_slash_selector() -> void:
 	await get_tree().process_frame
 	var menu := editor.get_node_or_null("%Themes") as PopupMenu
 	assert_not_null(menu)
-	assert_gt(menu.item_count, 1)
+	assert_gte(editor._theme_menu_keys.size(), 2)
+	assert_eq(editor._theme_menu_keys[0], ThemeColorScheme.MODE_DARK)
+	assert_eq(editor._theme_menu_keys[1], ThemeColorScheme.MODE_LIGHT)
+	assert_eq(menu.get_item_text(0), "Dark")
+	assert_eq(menu.get_item_text(1), "Light")
 	assert_eq(menu.get_item_text(menu.item_count - 1), "Import XML theme…")
+	assert_false(editor._theme_menu_keys.has("monokai"))
+	assert_false(editor._theme_menu_keys.has("tokyo_night"))
+	assert_false(editor._theme_menu_keys.has("dracula"))
 	var commands: Array[String] = []
 	for entry: Dictionary in editor.CHAT_SLASH_COMMANDS:
 		commands.append(str(entry.get("cmd", "")))
 	assert_false(commands.has("/theme"))
+
+
+func test_theme_color_scheme_canonicalizes_hidden_palettes() -> void:
+	assert_eq(ThemeColorScheme.MODE_THEMES.size(), 2)
+	assert_true(ThemeColorScheme.is_builtin_mode(ThemeColorScheme.MODE_DARK))
+	assert_true(ThemeColorScheme.is_builtin_mode(ThemeColorScheme.MODE_LIGHT))
+	assert_false(ThemeColorScheme.is_builtin_mode("monokai"))
+	assert_eq(ThemeColorScheme.canonical_mode("monokai"), ThemeColorScheme.MODE_DARK)
+	assert_eq(ThemeColorScheme.canonical_mode("adwaita_lighter"), ThemeColorScheme.MODE_LIGHT)
+	assert_eq(ThemeColorScheme.get_light_variant("monokai"), ThemeColorScheme.MODE_LIGHT)
+	assert_eq(ThemeColorScheme.get_dark_variant("monokai_light"), ThemeColorScheme.MODE_DARK)
+	assert_true(ThemeColorScheme.is_light("adwaita_lighter"))
+	assert_false(ThemeColorScheme.is_light("adwaita_darker"))
 
 
 func test_theme_menu_applies_a_resource_and_marks_the_active_choice() -> void:
@@ -43,14 +63,53 @@ func test_theme_menu_applies_a_resource_and_marks_the_active_choice() -> void:
 	add_child_autofree(editor)
 	await get_tree().process_frame
 	var previous: String = editor._active_theme
-	var monokai_id: int = editor._theme_menu_keys.find("monokai")
-	assert_ne(monokai_id, -1)
-	editor._on_theme_menu_id_pressed(monokai_id)
-	assert_eq(editor._active_theme, "monokai")
-	assert_eq((editor.theme as Theme).resource_path, "res://themes/ui_material3_monokai.theme")
+	var light_id: int = editor._theme_menu_keys.find(ThemeColorScheme.MODE_LIGHT)
+	assert_ne(light_id, -1)
+	editor._on_theme_menu_id_pressed(light_id)
+	assert_eq(editor._active_theme, ThemeColorScheme.MODE_LIGHT)
+	assert_eq((editor.theme as Theme).resource_path, "res://themes/light.theme")
 	var menu := editor.get_node("%Themes") as PopupMenu
-	assert_true(menu.is_item_checked(monokai_id))
+	assert_true(menu.is_item_checked(light_id))
 	editor._apply_theme_by_name(previous)
+
+
+func test_theme_menu_lists_imported_xml_and_collapses_extra_builtins() -> void:
+	var scene := load("res://scene/ui_editor.tscn") as PackedScene
+	var editor := scene.instantiate()
+	add_child_autofree(editor)
+	await get_tree().process_frame
+	var previous: String = editor._active_theme
+	assert_false(editor._theme_menu_keys.has("monokai"))
+	editor._apply_theme_by_name(ThemeColorScheme.MODE_LIGHT)
+	editor._apply_theme_by_name("monokai")
+	assert_eq(editor._active_theme, ThemeColorScheme.MODE_DARK)
+
+	var xml_key := "imported_test"
+	var src_path := "user://%s_src.xml" % xml_key
+	var src := FileAccess.open(src_path, FileAccess.WRITE)
+	assert_not_null(src)
+	src.store_string("""<?xml version="1.0" encoding="UTF-8"?>
+<theme name="%s" label="Imported Test" variant="dark">
+	<colour key="bg_surface" value="#141418"/>
+	<colour key="bg_darker" value="#0f0f12"/>
+	<colour key="fg" value="#f0f0f4"/>
+	<colour key="blue" value="#3574f0"/>
+	<colour key="green" value="#3ac474"/>
+</theme>
+""" % xml_key)
+	src.close()
+	editor._import_theme_from_xml(src_path)
+	var imported_id: int = editor._theme_menu_keys.find(xml_key)
+	assert_ne(imported_id, -1)
+	assert_eq(editor._active_theme, xml_key)
+	var menu := editor.get_node("%Themes") as PopupMenu
+	assert_true(menu.get_item_text(imported_id).contains("(XML)"))
+	editor._toggle_light_dark_theme()
+	assert_eq(editor._active_theme, ThemeColorScheme.MODE_LIGHT)
+	editor._apply_theme_by_name(previous)
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(src_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://themes/%s.theme" % xml_key))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://themes/%s.xml" % xml_key))
 
 
 func test_markdown_formatting_helpers() -> void:
@@ -267,6 +326,7 @@ func test_minimal_collapsible_sidebar_navigation() -> void:
 	assert_true((editor._git_rail_btn.icon as Texture2D).resource_path.ends_with("nav_github.svg"))
 	
 	assert_not_null(editor._themes_rail_btn)
+	assert_true(editor._themes_rail_btn.visible)
 	assert_not_null(editor._themes_rail_btn.icon)
 	assert_true((editor._themes_rail_btn.icon as Texture2D).resource_path.ends_with("nav_themes.svg"))
 	

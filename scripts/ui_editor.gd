@@ -31,8 +31,6 @@ const ThemeResources = preload("res://scripts/theme_resource_registry.gd")
 @onready var _center_split: HSplitContainer = %CenterSplit
 @onready var _explorer_pane: PanelContainer = %ExplorerPane
 @onready var _chat_pane: PanelContainer = %ChatPane
-@onready var _explorer_toggle_btn: Button = %ExplorerToggleBtn
-@onready var _chat_toggle_btn: Button = %ChatToggleBtn
 @onready var _explorer_rail_btn: Button = get_node_or_null("%ExplorerRailBtn") as Button
 @onready var _edit_rail_btn: Button = get_node_or_null("%EditRailBtn") as Button
 @onready var _git_rail_btn: Button = get_node_or_null("%GitRailBtn") as Button
@@ -117,99 +115,7 @@ const OS_NOTIFY_EXPIRE_MS: int = 4000
 const OS_NOTIFY_REPLACE_ID: int = 424242
 const SPLIT_COLLAPSE_PX: int = 32
 const THEME_MENU_IMPORT_ID: int = 10_000
-
-const THEMES: Dictionary = {
-	"adwaita_darker": {
-		"label": "Adwaita Darker",
-		"bg_black":   "#000000", "bg_darker":  "#0e0e11", "bg_surface": "#16161b",
-		"bg_card":    "#1c1c22", "bg_lighter": "#26262e",
-		"fg":         "#deddda", "fg_bright":  "#f6f5f4", "muted":      "#9a9996",
-		"blue":       "#62a0ea", "green":      "#57e389", "cyan":       "#5bc8af", "red": "#ed333b",
-		"hl_number":  "#ffa348", "hl_symbol":  "#5bc8af", "hl_func":    "#62a0ea",
-		"hl_member":  "#99c1f1", "hl_comment": "#9a9996", "hl_string":  "#57e389",
-		"hl_keyword": "#dc8add", "hl_type":    "#93ddc2", "hl_const":   "#ffa348",
-	},
-	"monokai": {
-		"label": "Monokai",
-		"bg_black":   "#1a1a1a", "bg_darker":  "#1e1e1e", "bg_surface": "#272822",
-		"bg_card":    "#2d2e27", "bg_lighter": "#383830",
-		"fg":         "#f8f8f2", "fg_bright":  "#ffffff", "muted":      "#75715e",
-		"blue":       "#66d9e8", "green":      "#a6e22e", "cyan":       "#66d9e8", "red": "#f92672",
-		"hl_number":  "#ae81ff", "hl_symbol":  "#f8f8f2", "hl_func":    "#a6e22e",
-		"hl_member":  "#fd971f", "hl_comment": "#75715e", "hl_string":  "#e6db74",
-		"hl_keyword": "#f92672", "hl_type":    "#66d9e8", "hl_const":   "#ae81ff",
-	},
-	"tokyo_night": {
-		"label": "Tokyo Night",
-		"bg_black":   "#13131e", "bg_darker":  "#16161f", "bg_surface": "#1a1b26",
-		"bg_card":    "#1f2035", "bg_lighter": "#292e42",
-		"fg":         "#a9b1d6", "fg_bright":  "#c0caf5", "muted":      "#565f89",
-		"blue":       "#7aa2f7", "green":      "#9ece6a", "cyan":       "#2ac3de", "red": "#f7768e",
-		"hl_number":  "#ff9e64", "hl_symbol":  "#89ddff", "hl_func":    "#7aa2f7",
-		"hl_member":  "#73daca", "hl_comment": "#565f89", "hl_string":  "#9ece6a",
-		"hl_keyword": "#bb9af7", "hl_type":    "#2ac3de", "hl_const":   "#ff9e64",
-	},
-	"dracula": {
-		"label": "Dracula",
-		"bg_black":   "#1a1a2e", "bg_darker":  "#1e1f29", "bg_surface": "#282a36",
-		"bg_card":    "#2e3040", "bg_lighter": "#3d3f4e",
-		"fg":         "#f8f8f2", "fg_bright":  "#ffffff", "muted":      "#6272a4",
-		"blue":       "#8be9fd", "green":      "#50fa7b", "cyan":       "#8be9fd", "red": "#ff5555",
-		"hl_number":  "#bd93f9", "hl_symbol":  "#ff79c6", "hl_func":    "#50fa7b",
-		"hl_member":  "#ffb86c", "hl_comment": "#6272a4", "hl_string":  "#f1fa8c",
-		"hl_keyword": "#ff79c6", "hl_type":    "#8be9fd", "hl_const":   "#bd93f9",
-	},
-	"catppuccin": {
-		"label": "Catppuccin Mocha",
-		"bg_black":   "#0e0e14", "bg_darker":  "#11111b", "bg_surface": "#1e1e2e",
-		"bg_card":    "#181825", "bg_lighter": "#313244",
-		"fg":         "#cdd6f4", "fg_bright":  "#ffffff", "muted":      "#585b70",
-		"blue":       "#89b4fa", "green":      "#a6e3a1", "cyan":       "#94e2d5", "red": "#f38ba8",
-		"hl_number":  "#fab387", "hl_symbol":  "#89dceb", "hl_func":    "#89b4fa",
-		"hl_member":  "#cba6f7", "hl_comment": "#585b70", "hl_string":  "#a6e3a1",
-		"hl_keyword": "#cba6f7", "hl_type":    "#94e2d5", "hl_const":   "#fab387",
-	},
-	"nord": {
-		"label": "Nord",
-		"bg_black":   "#191d24", "bg_darker":  "#1e2430", "bg_surface": "#2e3440",
-		"bg_card":    "#3b4252", "bg_lighter": "#434c5e",
-		"fg":         "#d8dee9", "fg_bright":  "#eceff4", "muted":      "#616e88",
-		"blue":       "#88c0d0", "green":      "#a3be8c", "cyan":       "#8fbcbb", "red": "#bf616a",
-		"hl_number":  "#b48ead", "hl_symbol":  "#81a1c1", "hl_func":    "#88c0d0",
-		"hl_member":  "#81a1c1", "hl_comment": "#616e88", "hl_string":  "#a3be8c",
-		"hl_keyword": "#81a1c1", "hl_type":    "#8fbcbb", "hl_const":   "#b48ead",
-	},
-	"jakes_theme": {
-		"label": "Jake's Theme",
-		"bg_black": "#000000", "bg_darker": "#000000", "bg_surface": "#000000",
-		"bg_card": "#0a0a0a", "bg_lighter": "#080808",
-		"fg": "#e0e0e0", "fg_bright": "#ffffff", "muted": "#858585",
-		"blue": "#8be9fd", "green": "#57e389", "cyan": "#62a0ea", "red": "#ed333b",
-		"hl_number": "#ffa348", "hl_symbol": "#9a9996", "hl_func": "#62a0ea",
-		"hl_member": "#99c1f1", "hl_comment": "#9a9996", "hl_string": "#57e389",
-		"hl_keyword": "#8be9fd", "hl_type": "#62a0ea", "hl_const": "#ffa348",
-	},
-	"terminal": {
-		"label": "Terminal (Antigravity)",
-		"bg_black": "#000000", "bg_darker": "#050505", "bg_surface": "#0a0a0c",
-		"bg_card": "#121216", "bg_lighter": "#1a1a20",
-		"fg": "#deddda", "fg_bright": "#ffffff", "muted": "#9a9996",
-		"blue": "#62a0ea", "green": "#57e389", "cyan": "#5bc8af", "red": "#ed333b",
-		"hl_number": "#ffa348", "hl_symbol": "#5bc8af", "hl_func": "#62a0ea",
-		"hl_member": "#99c1f1", "hl_comment": "#9a9996", "hl_string": "#57e389",
-		"hl_keyword": "#62a0ea", "hl_type": "#5bc8af", "hl_const": "#ffa348",
-	},
-	"solarized_dark": {
-		"label": "Solarized Dark",
-		"bg_black": "#001e26", "bg_darker": "#002731", "bg_surface": "#002b36",
-		"bg_card": "#073642", "bg_lighter": "#0e4a5a",
-		"fg": "#839496", "fg_bright": "#fdf6e3", "muted": "#586e75",
-		"blue": "#268bd2", "green": "#859900", "cyan": "#2aa198", "red": "#dc322f",
-		"hl_number": "#d33682", "hl_symbol": "#657b83", "hl_func": "#268bd2",
-		"hl_member": "#b58900", "hl_comment": "#586e75", "hl_string": "#859900",
-		"hl_keyword": "#cb4b16", "hl_type": "#2aa198", "hl_const": "#6c71c4",
-	},
-}
+const THEMES: Dictionary = ThemeColorScheme.MODE_THEMES
 
 const CHAT_SLASH_COMMANDS: Array[Dictionary] = [
 	{"cmd": "/tools", "desc": "List all available AI agent tools"},
@@ -227,6 +133,8 @@ const CHAT_SLASH_COMMANDS: Array[Dictionary] = [
 	{"cmd": "/git config ", "desc": "Set Git user name and email (/git config <name> <email>)"},
 	{"cmd": "/git clone ", "desc": "Clone GitHub repository (/git clone <url>)"},
 	{"cmd": "/github", "desc": "Display GitHub repository links and details"},
+	{"cmd": "/search ", "desc": "Search the live Internet & web for up-to-date information (/search <query>)"},
+	{"cmd": "/web ", "desc": "Search the live Internet & web for up-to-date information (/web <query>)"},
 	{"cmd": "/save", "desc": "Save the active file in editor"},
 	{"cmd": "/files", "desc": "Refresh workspace file explorer"},
 	{"cmd": "/open ", "desc": "Open file by path (/open <path>)"},
@@ -280,7 +188,7 @@ const HELP_TEXT := """[b]SSCodeIDE Shortcuts[/b]
 """
 
 const ABOUT_TEXT := """[b]SSCodeIDE[/b]
-IDE in 100% native GDScript (Godot 4.7) — Kitty Adwaita Darker & Fish theme.
+IDE in 100% native GDScript (Godot 4.7) — Dark and Light modes.
 
 Interface: system sans-serif · Code editor: FiraCode Nerd Font
 AI Chat: Nemotron · Kimi K3 · DeepSeek V4 · Laguna Code via NVIDIA NIM API
@@ -519,8 +427,6 @@ func _expand_explorer() -> void:
 	_explorer_pane.visible = true
 	var target := _explorer_split_offset if _explorer_split_offset > SPLIT_COLLAPSE_PX else int(get_viewport_rect().size.x * 0.18)
 	_main_split.split_offset = target
-	if _explorer_toggle_btn:
-		_explorer_toggle_btn.text = "◀"
 	_status_left.text = "Explorer  ▶  shown"
 
 
@@ -531,8 +437,6 @@ func _collapse_explorer(save_offset: bool) -> void:
 		_explorer_split_offset = _main_split.split_offset
 	_explorer_collapsed = true
 	_explorer_pane.visible = false
-	if _explorer_toggle_btn:
-		_explorer_toggle_btn.text = "▶"
 	_status_left.text = "Explorer  ◀  hidden  (Ctrl+B to restore)"
 
 
@@ -541,8 +445,6 @@ func _expand_chat() -> void:
 	_chat_pane.visible = true
 	var target := _chat_split_offset if _chat_split_offset > SPLIT_COLLAPSE_PX else int(get_viewport_rect().size.x * 0.50)
 	_center_split.split_offset = target
-	if _chat_toggle_btn:
-		_chat_toggle_btn.text = "▶"
 	_status_left.text = "Chat  ▶  shown"
 
 
@@ -553,8 +455,6 @@ func _collapse_chat(save_offset: bool) -> void:
 		_chat_split_offset = _center_split.split_offset
 	_chat_collapsed = true
 	_chat_pane.visible = false
-	if _chat_toggle_btn:
-		_chat_toggle_btn.text = "◀"
 	_status_left.text = "Chat  ◀  hidden  (Ctrl+Shift+B to restore)"
 
 func _on_main_split_dragged(offset: int) -> void:
@@ -620,6 +520,7 @@ func _wire_signals() -> void:
 		_dialog_action_btn.pressed.connect(_on_dialog_action_pressed)
 	if _dialog_input:
 		_dialog_input.text_submitted.connect(func(_t: String) -> void: _on_dialog_action_pressed())
+	_ai_chat_http.timeout = 60.0
 	_ai_chat_http.request_completed.connect(_on_ai_chat_http_completed)
 	_provider_select.item_selected.connect(_on_provider_selected)
 	_find_input.text_submitted.connect(_do_find)
@@ -630,8 +531,6 @@ func _wire_signals() -> void:
 	_chat_suggestions_list.item_activated.connect(_on_chat_suggestion_selected)
 	_main_split.dragged.connect(_on_main_split_dragged)
 	_center_split.dragged.connect(_on_center_split_dragged)
-	_explorer_toggle_btn.pressed.connect(_toggle_explorer)
-	_chat_toggle_btn.pressed.connect(_toggle_chat)
 	if _explorer_rail_btn:
 		_explorer_rail_btn.pressed.connect(_toggle_explorer)
 	if _edit_rail_btn:
@@ -645,6 +544,8 @@ func _wire_signals() -> void:
 				_git_menu.popup_on_parent(Rect2i(_git_rail_btn.get_global_rect()))
 		)
 	if _themes_rail_btn:
+		_themes_rail_btn.visible = true
+		_themes_rail_btn.tooltip_text = "Themes & Import XML"
 		_themes_rail_btn.pressed.connect(func() -> void:
 			if _themes_menu:
 				_themes_menu.popup_on_parent(Rect2i(_themes_rail_btn.get_global_rect()))
@@ -951,24 +852,18 @@ func _update_app_brand_menu() -> void:
 func _update_theme_toggle_btn() -> void:
 	if _theme_toggle_btn == null:
 		return
-	var is_light := ThemeColorScheme.is_light(_active_theme)
-	# In light mode, show moon icon to switch to dark; in dark mode, show sun icon to switch to light
+	var is_light := _theme_is_light(_active_theme)
 	_theme_toggle_btn.icon = preload("res://icons/nav_moon.svg") if is_light else preload("res://icons/nav_sun.svg")
 	_theme_toggle_btn.text = ""
 	_theme_toggle_btn.tooltip_text = "Switch to Dark Mode" if is_light else "Switch to Light Mode"
 
 
+func _theme_is_light(theme_name: String) -> bool:
+	return ThemeColorScheme.is_light(theme_name, _all_themes().get(theme_name, {}))
+
+
 func _toggle_light_dark_theme() -> void:
-	var is_light := ThemeColorScheme.is_light(_active_theme)
-	var target := ""
-	if is_light:
-		target = ThemeColorScheme.get_dark_variant(_active_theme)
-		if target.is_empty():
-			target = "adwaita_darker"
-	else:
-		target = ThemeColorScheme.get_light_variant(_active_theme)
-		if target.is_empty():
-			target = "adwaita_lighter"
+	var target := ThemeColorScheme.MODE_DARK if _theme_is_light(_active_theme) else ThemeColorScheme.MODE_LIGHT
 	_apply_theme_by_name(target)
 
 
@@ -1368,20 +1263,30 @@ func _save_ai_config() -> void:
 
 
 func _all_themes() -> Dictionary:
-	## Returns built-in themes merged with any user-installed XML themes
-	var merged := THEMES.duplicate()
+	var merged := ThemeColorScheme.MODE_THEMES.duplicate()
 	for key in _custom_themes:
+		if ThemeColorScheme.is_builtin_mode(str(key)):
+			continue
 		merged[key] = _custom_themes[key]
 	return merged
+
+
+func _resolve_theme_name(_name: String) -> String:
+	if _custom_themes.has(_name) and not ThemeColorScheme.is_builtin_mode(_name):
+		return _name
+	if ThemeColorScheme.is_builtin_mode(_name):
+		return _name
+	return ThemeColorScheme.canonical_mode(_name)
 
 
 func _load_theme_config() -> void:
 	_load_custom_themes()
 	var cfg := ConfigFile.new()
 	if cfg.load("user://ui_config.cfg") == OK:
-		_active_theme = str(cfg.get_value("theme", "name", "adwaita_darker"))
+		_active_theme = str(cfg.get_value("theme", "name", ThemeColorScheme.MODE_DARK))
+	_active_theme = _resolve_theme_name(_active_theme)
 	if not _all_themes().has(_active_theme) or ThemeResources.load_theme(_active_theme) == null:
-		_active_theme = "adwaita_darker"
+		_active_theme = ThemeColorScheme.MODE_DARK
 
 
 func _save_theme_config() -> void:
@@ -1392,17 +1297,18 @@ func _save_theme_config() -> void:
 
 
 func _apply_theme_by_name(_name: String) -> void:
-	if _name == _active_theme:
+	var resolved := _resolve_theme_name(_name)
+	if resolved == _active_theme:
 		return
 	var previous_theme := _active_theme
-	_active_theme = _name
+	_active_theme = resolved
 	if not _apply_kitty_fish_theme():
 		_active_theme = previous_theme
-		_append_chat("IDE", "[color=#ed333b]Theme not found:[/color] " + _name, Color("#ed333b"))
-		_show_toast("Theme not found: " + _name, true)
+		_append_chat("IDE", "[color=#ed333b]Theme not found:[/color] " + resolved, Color("#ed333b"))
+		_show_toast("Theme not found: " + resolved, true)
 		return
 	_save_theme_config()
-	var label: String = str(_all_themes().get(_name, {}).get("label", _name))
+	var label: String = str(_all_themes().get(resolved, {}).get("label", resolved))
 	_populate_themes_menu()
 	_update_app_brand_menu()
 	_update_theme_toggle_btn()
@@ -1411,22 +1317,26 @@ func _apply_theme_by_name(_name: String) -> void:
 
 
 func _populate_themes_menu() -> void:
-	## The NavBar is the single visible theme selector. Theme resources supply
-	## their visual treatment, including this popup, rather than runtime styles.
 	if _themes_menu == null:
 		return
 	_themes_menu.clear()
 	_theme_menu_keys.clear()
-	var keys: Array[String] = []
-	for raw_key in _all_themes().keys():
+	var keys: Array[String] = [ThemeColorScheme.MODE_DARK, ThemeColorScheme.MODE_LIGHT]
+	var custom_keys: Array[String] = []
+	for raw_key in _custom_themes.keys():
 		var key := str(raw_key)
+		if ThemeColorScheme.is_builtin_mode(key):
+			continue
 		if ThemeResources.load_theme(key) != null:
-			keys.append(key)
-	keys.sort_custom(func(left: String, right: String) -> bool:
+			custom_keys.append(key)
+	custom_keys.sort_custom(func(left: String, right: String) -> bool:
 		return str(_all_themes()[left].get("label", left)).naturalnocasecmp_to(str(_all_themes()[right].get("label", right))) < 0
 	)
+	keys.append_array(custom_keys)
 	for key in keys:
-		var info: Dictionary = _all_themes()[key]
+		if ThemeResources.load_theme(key) == null:
+			continue
+		var info: Dictionary = _all_themes().get(key, {})
 		var item_index := _themes_menu.item_count
 		var label: String = str(info.get("label", key))
 		if _custom_themes.has(key):
@@ -1466,9 +1376,11 @@ func _load_custom_themes() -> void:
 			if not result.is_empty():
 				var key: String = ThemeResources.safe_key(str(result.get("key", fname.trim_suffix(".xml"))))
 				result["key"] = key
+				if ThemeColorScheme.is_builtin_mode(key):
+					fname = dir.get_next()
+					continue
 				_custom_themes[key] = result
-				if ThemeResources.load_theme(key) == null:
-					ThemeResources.save_custom_theme(key, result)
+				ThemeResources.save_custom_theme(key, result)
 		fname = dir.get_next()
 	dir.list_dir_end()
 
@@ -1495,6 +1407,9 @@ func _parse_theme_xml(path: String) -> Dictionary:
 			if tag == "theme":
 				result["key"] = parser.get_named_attribute_value_safe("name")
 				result["label"] = parser.get_named_attribute_value_safe("label")
+				var variant := parser.get_named_attribute_value_safe("variant")
+				if not variant.is_empty():
+					result["variant"] = variant
 				if result["key"].is_empty():
 					result["key"] = path.get_file().trim_suffix(".xml")
 				if result["label"].is_empty():
@@ -1509,6 +1424,7 @@ func _parse_theme_xml(path: String) -> Dictionary:
 	for req in required:
 		if not result.has(req):
 			return {}
+	result["variant"] = ThemeColorScheme.infer_variant(result)
 	return result
 
 
@@ -1529,6 +1445,8 @@ func _import_theme_from_xml(xml_path: String) -> void:
 		return
 	## Copy file into user://themes/
 	var key: String = ThemeResources.safe_key(str(parsed.get("key", "custom")))
+	if ThemeColorScheme.is_builtin_mode(key):
+		key = key + "_custom"
 	parsed["key"] = key
 	var dest_name: String = key + ".xml"
 	var dest_path := "user://themes/" + dest_name
@@ -1671,7 +1589,7 @@ func _create_adwaita_fish_highlighter() -> CodeHighlighter:
 func _active_palette() -> Dictionary:
 	## XML themes carry the same palette schema as built-ins, so syntax and
 	## editor affordances follow the visual resource selected from the NavBar.
-	return _all_themes().get(_active_theme, THEMES["adwaita_darker"])
+	return _all_themes().get(_active_theme, ThemeColorScheme.MODE_THEMES[ThemeColorScheme.MODE_DARK])
 
 
 func _refresh_file_tree() -> void:
@@ -1692,7 +1610,7 @@ func _refresh_file_tree() -> void:
 	_populate_tree_dir(root_item, _workspace_root)
 
 
-func _populate_tree_dir(parent_item: TreeItem, dir_path: String) -> void:
+func _populate_tree_dir(parent_item: TreeItem, dir_path: String, max_depth: int = 1, current_depth: int = 0) -> void:
 	var dir := DirAccess.open(dir_path)
 	if not dir:
 		return
@@ -1719,9 +1637,26 @@ func _populate_tree_dir(parent_item: TreeItem, dir_path: String) -> void:
 			item.set_icon(0, folder_tex)
 			item.set_icon_max_width(0, 16)
 		item.set_custom_color(0, Color("#8ec4f7"))
-		item.set_metadata(0, {"path": item_path, "is_dir": true})
 		item.collapsed = true
-		_populate_tree_dir(item, item_path)
+		if current_depth < max_depth:
+			item.set_metadata(0, {"path": item_path, "is_dir": true, "loaded": true})
+			_populate_tree_dir(item, item_path, max_depth, current_depth + 1)
+		else:
+			item.set_metadata(0, {"path": item_path, "is_dir": true, "loaded": false})
+			var sub_dir := DirAccess.open(item_path)
+			if sub_dir:
+				sub_dir.list_dir_begin()
+				var sub_fname := sub_dir.get_next()
+				var has_sub_content := false
+				while sub_fname != "":
+					if sub_fname not in [".", "..", ".git", ".godot", ".gemini", "android"]:
+						has_sub_content = true
+						break
+					sub_fname = sub_dir.get_next()
+				sub_dir.list_dir_end()
+				if has_sub_content:
+					var dummy: TreeItem = _file_tree.create_item(item)
+					dummy.set_text(0, "Loading…")
 	for f: String in files:
 		var item: TreeItem = _file_tree.create_item(parent_item)
 		item.set_text(0, f)
@@ -1744,6 +1679,15 @@ func _on_tree_item_collapsed(item: TreeItem) -> void:
 		if folder_tex:
 			item.set_icon(0, folder_tex)
 			item.set_icon_max_width(0, 16)
+		if not item.collapsed and not meta.get("loaded", false):
+			meta["loaded"] = true
+			var child: TreeItem = item.get_first_child()
+			while child != null:
+				var next: TreeItem = child.get_next()
+				item.remove_child(child)
+				child.free()
+				child = next
+			_populate_tree_dir(item, p, 1, 0)
 
 
 func _on_tree_item_activated() -> void:
@@ -2079,6 +2023,14 @@ func _handle_slash(cmd: String) -> void:
 			_show_tools_list()
 		"/github":
 			_show_github_info_dialog()
+		"/search", "/web":
+			var q: String = parts[1].strip_edges() if parts.size() > 1 else ""
+			if q.is_empty():
+				_append_chat("WEB", "[color=#ffa348]Uso:[/color] /search <termo de pesquisa> ou /web <termo>", Color("#ffa348"))
+			else:
+				_show_toast("A pesquisar na Internet: " + q, false)
+				var res := WebSearchService.search_web(q, 5)
+				_append_chat("WEB", WebSearchService.format_search_results_bbcode(q, res), Color("#57e389"))
 		"/git":
 			var subcmd_raw: String = parts[1].strip_edges() if parts.size() > 1 else "status"
 			var sub_parts: PackedStringArray = subcmd_raw.split(" ", false, 1)
@@ -2485,6 +2437,23 @@ func _ask_ai(prompt: String) -> void:
 	_current_prompt = prompt
 	_model_candidates = AIService.get_candidate_models(_ai_provider)
 	_model_candidate_index = 0
+
+	# Auto-fetch live internet search context if requested
+	var lower := prompt.to_lower()
+	var needs_web := (
+		lower.contains("pesquisa") or lower.contains("busca") or lower.contains("internet")
+		or lower.contains("web") or lower.contains("notícia") or lower.contains("noticia")
+		or lower.contains("última") or lower.contains("recente") or lower.contains("novidade")
+		or lower.contains("versão actual") or lower.contains("versao actual") or lower.contains("online")
+	)
+	if needs_web:
+		var search_q := prompt.replace("pesquisa na web", "").replace("pesquisa na internet", "").replace("busca na internet", "").replace("procura na internet", "").strip_edges()
+		if search_q.length() > 2:
+			var web_res := WebSearchService.search_web(search_q, 4)
+			if not web_res.is_empty():
+				var web_context := WebSearchService.format_search_context_for_prompt(search_q, web_res)
+				_chat_history.append({"role": "system", "content": web_context})
+
 	_send_chat_completion()
 
 
@@ -2523,36 +2492,55 @@ func _send_chat_completion() -> void:
 			"stream": false
 		}
 	else:
+		var current_datetime: String = Time.get_datetime_string_from_system(false, true)
+		var current_year: String = str(Time.get_date_dict_from_system().get("year", 2026))
 		var workspace_info: String = _get_workspace_context()
 		var system_role_content: String = ""
 		if _agent_mode:
 			system_role_content = (
-				"You are SSBot, an elite autonomous AI programming agent integrated directly into SSCodeIDE created by Ser Superior (SS).\n" +
-				"You have direct access and visibility to the project workspace files, directory tree, and active file.\n\n" +
+				"You are SSBot, an elite autonomous AI programming partner and agent integrated directly into SSCodeIDE created by Ser Superior (SS).\n" +
+				"You have direct access and visibility to the project workspace files, directory tree, active file, and real-time Internet search capabilities.\n\n" +
+				"=== CONTEXTO TEMPORAL & ACESSO À INTERNET (TEMPO REAL) ===\n" +
+				"Data e Hora Actual: " + current_datetime + " (Ano: " + current_year + ")\n" +
+				"Ambiente: SSCodeIDE sobre Godot Engine nativo em GDScript.\n" +
+				"Tens acesso total a informações actualizadas em tempo real da Internet através do WebSearchService do SSCodeIDE. Responde sempre com conhecimento moderno, rigoroso e actualizado.\n\n" +
 				"=== WORKSPACE CONTEXT ===\n" +
 				workspace_info + "\n" +
 				"=========================\n\n" +
-				"=== CRITICAL COMMUNICATION & LANGUAGE RULES ===\n" +
-				"1. You MUST ALWAYS communicate and respond in European Portuguese (pt-PT), adhering strictly to the 'norma culta' of Portugal.\n" +
-				"2. Treat the user informally by 'tu' (second person singular: 'podes', 'vê', 'executa', 'fizeste').\n" +
-				"3. Follow the grammatical rules of the pre-2012 orthographic agreement (preserving silent consonants, e.g., 'acção', 'directo', 'projecto', 'objectivo', 'adopção', 'correcção', 'facto', 'actualização', 'óptimo', 'eléctrico').\n" +
-				"4. However, ALL projects, source code, variable names, functions, docstrings, and technical code comments MUST ALWAYS be in technical British English (en-GB) (e.g., 'colour', 'behaviour', 'initialise', 'serialisation', 'optimise', 'centre').\n" +
-				"===============================================\n\n" +
+				"=== REGRAS CRÍTICAS DE COMUNICAÇÃO, TRATAMENTO E LINGUAGEM ===\n" +
+				"1. TRATAMENTO PELO PRONOME PESSOAL RECTO 'TU' — CALOROSO, AMIGÁVEL, PRÓXIMO E ÍNTIMO:\n" +
+				"   - Trata SEMPRE o utilizador informalmente (segunda pessoa do singular: 'tu podes', 'vê aqui', 'olha', 'como estás?', 'fizeste um óptimo trabalho', 'estou aqui contigo', 'vamos resolver isto juntos').\n" +
+				"   - Adopta um tom caloroso, amigável, íntimo, positivo, encorajador e empático, fazendo com que o utilizador se sinta totalmente confortável, apoiado e em total confiança, como um verdadeiro amigo e parceiro próximo de programação a trabalhar lado a lado.\n" +
+				"   - Sê simpático, acolhedor e atencioso em todas as respostas.\n" +
+				"2. NORMA LINGUÍSTICA (PORTUGUÊS EUROPEU):\n" +
+				"   - DEVES SEMPRE comunicar e responder em Português Europeu (pt-PT), aderindo estritamente à 'norma culta' de Portugal.\n" +
+				"   - Segue as regras ortográficas anteriores ao acordo de 2012 (preservando consoantes mudas em palavras como 'acção', 'directo', 'projecto', 'objectivo', 'adopção', 'correcção', 'facto', 'actualização', 'óptimo', 'eléctrico').\n" +
+				"3. CÓDIGO E IDENTIFICADORES TÉCNICOS:\n" +
+				"   - Todo o código-fonte, nomes de variáveis, funções, classes, docstrings e comentários técnicos no código DEVEM SEMPRE estar em Inglês Britânico técnico (en-GB) (e.g., 'colour', 'behaviour', 'initialise', 'serialisation', 'optimise', 'centre').\n" +
+				"==============================================================\n\n" +
 				"Provide detailed technical guidance, plan development tasks with checklists, review code, execute slash commands, and format responses clearly with Markdown/BBCode.\n" +
 				"When you need to create or edit a workspace file, emit one or more blocks exactly as `<sscode-write path=\"relative/path\">file contents</sscode-write>`. Use workspace-relative paths only. The IDE executes these blocks; do not merely describe the change.\n" +
 				"To delete a file, emit `<sscode-delete path=\"relative/path\"/>`. Use this only when the user explicitly requests deletion.\n" +
-				"Always consider the full workspace context and active file contents when responding."
+				"Always consider the full workspace context, active file contents, and current real-time data when responding."
 			)
 		else:
 			system_role_content = (
-				"You are SSBot, a helpful AI programming assistant embedded in SSCodeIDE created by Ser Superior (SS).\n\n" +
-				"=== CRITICAL COMMUNICATION & LANGUAGE RULES ===\n" +
-				"1. You MUST ALWAYS communicate and respond in European Portuguese (pt-PT), adhering strictly to the 'norma culta' of Portugal.\n" +
-				"2. Treat the user informally by 'tu' (second person singular: 'podes', 'vê', 'executa', 'fizeste').\n" +
-				"3. Follow the grammatical rules of the pre-2012 orthographic agreement (preserving silent consonants, e.g., 'acção', 'directo', 'projecto', 'objectivo', 'adopção', 'correcção', 'facto', 'actualização', 'óptimo', 'eléctrico').\n" +
-				"4. However, ALL projects, source code, variable names, functions, docstrings, and technical code comments MUST ALWAYS be in technical British English (en-GB) (e.g., 'colour', 'behaviour', 'initialise', 'serialisation', 'optimise', 'centre').\n" +
-				"===============================================\n\n" +
-				"Respond concisely and helpfully to general programming questions and discussions."
+				"You are SSBot, a friendly and helpful AI programming partner embedded in SSCodeIDE created by Ser Superior (SS).\n\n" +
+				"=== CONTEXTO TEMPORAL & ACESSO À INTERNET (TEMPO REAL) ===\n" +
+				"Data e Hora Actual: " + current_datetime + " (Ano: " + current_year + ")\n" +
+				"Ambiente: SSCodeIDE sobre Godot Engine 4.7.2.stable nativo em GDScript.\n" +
+				"Tens acesso total a informações actualizadas em tempo real da Internet através do WebSearchService do SSCodeIDE.\n\n" +
+				"=== REGRAS CRÍTICAS DE COMUNICAÇÃO, TRATAMENTO E LINGUAGEM ===\n" +
+				"1. TRATAMENTO POR 'TU' — CALOROSO, AMIGÁVEL, PRÓXIMO E ÍNTIMO:\n" +
+				"   - Trata SEMPRE o utilizador por 'tu' (segunda pessoa do singular: 'tu podes', 'vê aqui', 'olha', 'como estás?', 'fizeste um óptimo trabalho', 'estou aqui contigo', 'vamos tratar disto juntos').\n" +
+				"   - Adopta um tom caloroso, amigável, íntimo, acolhedor e empático, para que o utilizador se sinta totalmente confortável, relaxado e apoiado, como um parceiro e amigo íntimo de programação.\n" +
+				"2. NORMA LINGUÍSTICA (PORTUGUÊS EUROPEU):\n" +
+				"   - DEVES SEMPRE comunicar e responder em Português Europeu (pt-PT), aderindo estritamente à 'norma culta' de Portugal.\n" +
+				"   - Segue as regras ortográficas anteriores ao acordo de 2012 (preservando consoantes mudas em palavras como 'acção', 'directo', 'projecto', 'objectivo', 'adopção', 'correcção', 'facto', 'actualização', 'óptimo', 'eléctrico').\n" +
+				"3. CÓDIGO E IDENTIFICADORES TÉCNICOS:\n" +
+				"   - Todo o código-fonte, nomes de variáveis, funções, docstrings e comentários técnicos DEVEM SEMPRE estar em Inglês Britânico técnico (en-GB) (e.g., 'colour', 'behaviour', 'initialise', 'serialisation', 'optimise', 'centre').\n" +
+				"==============================================================\n\n" +
+				"Responde de forma clara, prestativa e amigável às questões e tarefas de programação."
 			)
 		messages_payload = [
 			{"role": "system", "content": system_role_content}
@@ -2567,7 +2555,7 @@ func _send_chat_completion() -> void:
 			"temperature": 0.7 if _agent_mode else 0.5,
 			"top_p": 0.95,
 			"max_tokens": 4096,
-			"stream": true
+			"stream": false
 		}
 		if model_name.begins_with("nvidia/nemotron"):
 			payload_dict["chat_template_kwargs"] = {"thinking": true}
@@ -2576,8 +2564,6 @@ func _send_chat_completion() -> void:
 	if not is_smart_commit:
 		_thinking_text = ""
 		_refresh_thinking_panel()
-		if _start_chat_stream(payload_json):
-			return
 	var err: Error = _ai_chat_http.request(target_url, headers, HTTPClient.METHOD_POST, payload_json)
 	if err != OK:
 		if _is_smart_commit_pending():
