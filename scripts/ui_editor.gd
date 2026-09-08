@@ -119,7 +119,16 @@ var _sidebar_themes_panel: VBoxContainer = null
 var _sidebar_config_panel: VBoxContainer = null
 var _sidebar_help_panel: VBoxContainer = null
 var _git_status_tree: Tree = null
+var _git_commit_msg_input: LineEdit = null
 var _themes_list: ItemList = null
+var _search_query_input: LineEdit = null
+var _search_replace_input: LineEdit = null
+var _search_match_case_btn: Button = null
+var _search_whole_word_btn: Button = null
+var _search_include_input: LineEdit = null
+var _search_exclude_input: LineEdit = null
+var _search_results_tree: Tree = null
+var _search_summary_label: Label = null
 
 const SPINNER_FRAMES: Array[String] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 const OS_NOTIFY_EXPIRE_MS: int = 4000
@@ -520,7 +529,9 @@ func _setup_sidebar_panels() -> void:
 	if not container:
 		return
 
-	# 1. Search Panel
+	# -------------------------------------------------------------
+	# 1. Search Panel (VS Code Style Find/Replace in Workspace)
+	# -------------------------------------------------------------
 	_sidebar_search_panel = VBoxContainer.new()
 	_sidebar_search_panel.name = "SidebarSearchPanel"
 	_sidebar_search_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -536,48 +547,78 @@ func _setup_sidebar_panels() -> void:
 	var s_vbox := VBoxContainer.new()
 	s_vbox.add_theme_constant_override("separation", 6)
 
-	var s_lbl := Label.new()
-	s_lbl.text = "Find in Editor:"
-	s_vbox.add_child(s_lbl)
-	var s_input := LineEdit.new()
-	s_input.placeholder_text = "Search text…"
-	s_input.text_submitted.connect(func(t: String) -> void:
-		_find_input.text = t
-		_do_find(t)
-	)
-	s_vbox.add_child(s_input)
+	_search_query_input = LineEdit.new()
+	_search_query_input.placeholder_text = "Search in workspace…"
+	_search_query_input.clear_button_enabled = true
+	_search_query_input.text_submitted.connect(func(t: String) -> void: _do_workspace_search(t))
+	s_vbox.add_child(_search_query_input)
 
-	var r_lbl := Label.new()
-	r_lbl.text = "Replace with:"
-	s_vbox.add_child(r_lbl)
-	var r_input := LineEdit.new()
-	r_input.placeholder_text = "Replacement text…"
-	r_input.text_changed.connect(func(t: String) -> void: _replace_input.text = t)
-	s_vbox.add_child(r_input)
+	_search_replace_input = LineEdit.new()
+	_search_replace_input.placeholder_text = "Replace with…"
+	_search_replace_input.clear_button_enabled = true
+	s_vbox.add_child(_search_replace_input)
 
-	var btn_hbox := HBoxContainer.new()
-	btn_hbox.add_theme_constant_override("separation", 6)
-	var find_next_btn := Button.new()
-	find_next_btn.text = "Find Next"
-	find_next_btn.pressed.connect(func() -> void:
-		_find_input.text = s_input.text
-		_on_find_next()
-	)
-	btn_hbox.add_child(find_next_btn)
+	var s_ctrl_row := HBoxContainer.new()
+	s_ctrl_row.add_theme_constant_override("separation", 4)
 
-	var repl_btn := Button.new()
-	repl_btn.text = "Replace All"
-	repl_btn.pressed.connect(func() -> void:
-		_find_input.text = s_input.text
-		_replace_input.text = r_input.text
-		_replace_all_matches()
+	_search_match_case_btn = Button.new()
+	_search_match_case_btn.text = "Aa"
+	_search_match_case_btn.toggle_mode = true
+	_search_match_case_btn.tooltip_text = "Match Case"
+	s_ctrl_row.add_child(_search_match_case_btn)
+
+	_search_whole_word_btn = Button.new()
+	_search_whole_word_btn.text = "\\b"
+	_search_whole_word_btn.toggle_mode = true
+	_search_whole_word_btn.tooltip_text = "Match Whole Word"
+	s_ctrl_row.add_child(_search_whole_word_btn)
+
+	var search_run_btn := Button.new()
+	search_run_btn.text = "Search"
+	search_run_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	search_run_btn.theme_type_variation = &"M3FilledButton"
+	search_run_btn.pressed.connect(func() -> void:
+		if _search_query_input:
+			_do_workspace_search(_search_query_input.text)
 	)
-	btn_hbox.add_child(repl_btn)
-	s_vbox.add_child(btn_hbox)
+	s_ctrl_row.add_child(search_run_btn)
+
+	var replace_all_btn := Button.new()
+	replace_all_btn.text = "Replace All"
+	replace_all_btn.pressed.connect(func() -> void:
+		if _search_query_input and _search_replace_input:
+			_replace_in_workspace(_search_query_input.text, _search_replace_input.text)
+	)
+	s_ctrl_row.add_child(replace_all_btn)
+	s_vbox.add_child(s_ctrl_row)
+
+	_search_include_input = LineEdit.new()
+	_search_include_input.placeholder_text = "files to include (e.g. *.gd)"
+	s_vbox.add_child(_search_include_input)
+
+	_search_exclude_input = LineEdit.new()
+	_search_exclude_input.placeholder_text = "files to exclude (e.g. .godot/*)"
+	s_vbox.add_child(_search_exclude_input)
+
+	_search_summary_label = Label.new()
+	_search_summary_label.text = "0 results"
+	_search_summary_label.theme_type_variation = &"M3StatusText"
+	s_vbox.add_child(_search_summary_label)
+
 	s_margin.add_child(s_vbox)
 	_sidebar_search_panel.add_child(s_margin)
 
-	# 2. Git Panel
+	_search_results_tree = Tree.new()
+	_search_results_tree.hide_root = true
+	_search_results_tree.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_search_results_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_search_results_tree.theme_type_variation = &"M3ExplorerTree"
+	_search_results_tree.item_activated.connect(_on_search_result_activated)
+	_sidebar_search_panel.add_child(_search_results_tree)
+
+	# -------------------------------------------------------------
+	# 2. Git Panel (VS Code Style Source Control & GitHub)
+	# -------------------------------------------------------------
 	_sidebar_git_panel = VBoxContainer.new()
 	_sidebar_git_panel.name = "SidebarGitPanel"
 	_sidebar_git_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -585,32 +626,84 @@ func _setup_sidebar_panels() -> void:
 	_sidebar_git_panel.visible = false
 	container.add_child(_sidebar_git_panel)
 
+	var git_margin := MarginContainer.new()
+	git_margin.add_theme_constant_override("margin_left", 8)
+	git_margin.add_theme_constant_override("margin_right", 8)
+	git_margin.add_theme_constant_override("margin_top", 4)
+	git_margin.add_theme_constant_override("margin_bottom", 4)
+	var git_vbox := VBoxContainer.new()
+	git_vbox.add_theme_constant_override("separation", 6)
+
+	_git_commit_msg_input = LineEdit.new()
+	_git_commit_msg_input.placeholder_text = "Message (Ctrl+Enter to commit)"
+	_git_commit_msg_input.clear_button_enabled = true
+	_git_commit_msg_input.text_submitted.connect(func(msg: String) -> void: _commit_git_message(msg))
+	git_vbox.add_child(_git_commit_msg_input)
+
+	var commit_row := HBoxContainer.new()
+	commit_row.add_theme_constant_override("separation", 6)
+
+	var commit_btn := Button.new()
+	commit_btn.text = "✓ Commit"
+	commit_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	commit_btn.theme_type_variation = &"M3FilledButton"
+	commit_btn.pressed.connect(func() -> void:
+		if _git_commit_msg_input:
+			_commit_git_message(_git_commit_msg_input.text)
+	)
+	commit_row.add_child(commit_btn)
+
+	var smart_commit_b := Button.new()
+	smart_commit_b.text = "✨ Smart Commit"
+	smart_commit_b.pressed.connect(_generate_smart_commit)
+	commit_row.add_child(smart_commit_b)
+
+	git_vbox.add_child(commit_row)
+	git_margin.add_child(git_vbox)
+	_sidebar_git_panel.add_child(git_margin)
+
 	_git_status_tree = Tree.new()
 	_git_status_tree.hide_root = true
+	_git_status_tree.columns = 2
+	_git_status_tree.set_column_expand(0, true)
+	_git_status_tree.set_column_custom_minimum_width(1, 28)
 	_git_status_tree.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_git_status_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_git_status_tree.theme_type_variation = &"M3ExplorerTree"
+	_git_status_tree.item_activated.connect(_on_git_status_item_activated)
 	_sidebar_git_panel.add_child(_git_status_tree)
 
+	var git_actions_margin := MarginContainer.new()
+	git_actions_margin.add_theme_constant_override("margin_left", 8)
+	git_actions_margin.add_theme_constant_override("margin_right", 8)
+	git_actions_margin.add_theme_constant_override("margin_bottom", 6)
 	var git_btn_box := HBoxContainer.new()
 	git_btn_box.add_theme_constant_override("separation", 6)
-	var commit_b := Button.new()
-	commit_b.text = "Smart Commit"
-	commit_b.pressed.connect(_generate_smart_commit)
-	git_btn_box.add_child(commit_b)
 
 	var push_b := Button.new()
-	push_b.text = "Push"
+	push_b.text = "↑ Push"
+	push_b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	push_b.pressed.connect(func() -> void: _on_git_menu(3))
 	git_btn_box.add_child(push_b)
 
 	var pull_b := Button.new()
-	pull_b.text = "Pull"
+	pull_b.text = "↓ Pull"
+	pull_b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	pull_b.pressed.connect(func() -> void: _on_git_menu(4))
 	git_btn_box.add_child(pull_b)
 
-	_sidebar_git_panel.add_child(git_btn_box)
+	var sync_b := Button.new()
+	sync_b.text = "⇄ Sync"
+	sync_b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sync_b.pressed.connect(func() -> void: _on_git_menu(5))
+	git_btn_box.add_child(sync_b)
 
+	git_actions_margin.add_child(git_btn_box)
+	_sidebar_git_panel.add_child(git_actions_margin)
+
+	# -------------------------------------------------------------
 	# 3. Themes Panel
+	# -------------------------------------------------------------
 	_sidebar_themes_panel = VBoxContainer.new()
 	_sidebar_themes_panel.name = "SidebarThemesPanel"
 	_sidebar_themes_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -636,7 +729,9 @@ func _setup_sidebar_panels() -> void:
 	import_xml_btn.pressed.connect(_import_theme_xml_dialog)
 	_sidebar_themes_panel.add_child(import_xml_btn)
 
+	# -------------------------------------------------------------
 	# 4. Settings Panel
+	# -------------------------------------------------------------
 	_sidebar_config_panel = VBoxContainer.new()
 	_sidebar_config_panel.name = "SidebarConfigPanel"
 	_sidebar_config_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -654,7 +749,9 @@ func _setup_sidebar_panels() -> void:
 	cfg_info.text += "[color=#8E8E93]Use top menu bar for advanced options.[/color]"
 	_sidebar_config_panel.add_child(cfg_info)
 
+	# -------------------------------------------------------------
 	# 5. Help Panel
+	# -------------------------------------------------------------
 	_sidebar_help_panel = VBoxContainer.new()
 	_sidebar_help_panel.name = "SidebarHelpPanel"
 	_sidebar_help_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -670,6 +767,39 @@ func _setup_sidebar_panels() -> void:
 	_sidebar_help_panel.add_child(help_info)
 
 
+func _commit_git_message(msg: String) -> void:
+	var commit_text: String = msg.strip_edges()
+	if commit_text.is_empty():
+		_generate_smart_commit()
+		return
+	if not GitService.is_git_repository(_workspace_root):
+		_send_os_notification("Git Error", "No Git repository found in workspace.", true)
+		return
+	GitService.stage_all(_workspace_root)
+	var res: Dictionary = GitService.commit(commit_text, _workspace_root)
+	if bool(res.get("success", false)):
+		_send_os_notification("Git Commit", "Committed: " + commit_text)
+		if _git_commit_msg_input:
+			_git_commit_msg_input.text = ""
+		_update_git_status_bar()
+		_refresh_git_panel()
+	else:
+		_send_os_notification("Git Commit Failed", str(res.get("error", "Failed to commit")), true)
+
+
+func _on_git_status_item_activated() -> void:
+	if _git_status_tree == null:
+		return
+	var item: TreeItem = _git_status_tree.get_selected()
+	if not item:
+		return
+	var meta: Variant = item.get_metadata(0)
+	if meta is Dictionary and meta.has("path"):
+		var full_p: String = str(meta.get("path", ""))
+		if FileAccess.file_exists(full_p):
+			_open_path(full_p)
+
+
 func _refresh_git_panel() -> void:
 	if _git_status_tree == null:
 		return
@@ -683,9 +813,8 @@ func _refresh_git_panel() -> void:
 	var branch: String = str(st.get("branch", "main"))
 	var is_clean: bool = bool(st.get("is_clean", true))
 
-	var branch_item := _git_status_tree.create_item(root)
-	branch_item.set_text(0, "Branch: " + branch)
-	branch_item.set_custom_color(0, Color("#30d158") if is_clean else Color("#ffa348"))
+	if _workspace_state and _current_sidebar_tab == SidebarTab.GIT:
+		_workspace_state.text = "SOURCE CONTROL: " + branch.to_upper()
 
 	var staged: Array = st.get("staged", [])
 	if not staged.is_empty():
@@ -693,8 +822,17 @@ func _refresh_git_panel() -> void:
 		staged_cat.set_text(0, "Staged Changes (%d)" % staged.size())
 		staged_cat.set_custom_color(0, Color("#30d158"))
 		for f in staged:
+			var rel: String = str(f)
+			var full_path: String = _workspace_root.path_join(rel)
 			var item := _git_status_tree.create_item(staged_cat)
-			item.set_text(0, "  " + str(f))
+			item.set_text(0, rel)
+			item.set_text(1, "A")
+			item.set_custom_color(1, Color("#30d158"))
+			var tex: Texture2D = FileKind.texture_for_path(full_path, false, false)
+			if tex:
+				item.set_icon(0, tex)
+				item.set_icon_max_width(0, 16)
+			item.set_metadata(0, {"path": full_path, "rel_path": rel, "type": "staged"})
 
 	var unstaged: Array = st.get("unstaged", [])
 	if not unstaged.is_empty():
@@ -702,8 +840,17 @@ func _refresh_git_panel() -> void:
 		unstaged_cat.set_text(0, "Changes (%d)" % unstaged.size())
 		unstaged_cat.set_custom_color(0, Color("#ffa348"))
 		for f in unstaged:
+			var rel: String = str(f)
+			var full_path: String = _workspace_root.path_join(rel)
 			var item := _git_status_tree.create_item(unstaged_cat)
-			item.set_text(0, "  " + str(f))
+			item.set_text(0, rel)
+			item.set_text(1, "M")
+			item.set_custom_color(1, Color("#ffa348"))
+			var tex: Texture2D = FileKind.texture_for_path(full_path, false, false)
+			if tex:
+				item.set_icon(0, tex)
+				item.set_icon_max_width(0, 16)
+			item.set_metadata(0, {"path": full_path, "rel_path": rel, "type": "unstaged"})
 
 	var untracked: Array = st.get("untracked", [])
 	if not untracked.is_empty():
@@ -711,8 +858,212 @@ func _refresh_git_panel() -> void:
 		untracked_cat.set_text(0, "Untracked Files (%d)" % untracked.size())
 		untracked_cat.set_custom_color(0, Color("#8e8e93"))
 		for f in untracked:
+			var rel: String = str(f)
+			var full_path: String = _workspace_root.path_join(rel)
 			var item := _git_status_tree.create_item(untracked_cat)
-			item.set_text(0, "  " + str(f))
+			item.set_text(0, rel)
+			item.set_text(1, "U")
+			item.set_custom_color(1, Color("#8e8e93"))
+			var tex: Texture2D = FileKind.texture_for_path(full_path, false, false)
+			if tex:
+				item.set_icon(0, tex)
+				item.set_icon_max_width(0, 16)
+			item.set_metadata(0, {"path": full_path, "rel_path": rel, "type": "untracked"})
+
+	if is_clean:
+		var clean_item := _git_status_tree.create_item(root)
+		clean_item.set_text(0, "Working tree clean")
+		clean_item.set_custom_color(0, Color("#8e8e93"))
+
+
+func _do_workspace_search(query: String) -> void:
+	if _search_results_tree == null:
+		return
+	_search_results_tree.clear()
+	var root := _search_results_tree.create_item()
+	var q := query.strip_edges()
+	if q.is_empty():
+		if _search_summary_label:
+			_search_summary_label.text = "0 results"
+		return
+
+	var match_case: bool = _search_match_case_btn.button_pressed if _search_match_case_btn else false
+	var whole_word: bool = _search_whole_word_btn.button_pressed if _search_whole_word_btn else false
+	var inc_pattern: String = _search_include_input.text.strip_edges() if _search_include_input else ""
+	var exc_pattern: String = _search_exclude_input.text.strip_edges() if _search_exclude_input else ""
+
+	var results: Dictionary = _search_workspace_files(_workspace_root, q, match_case, whole_word, inc_pattern, exc_pattern)
+	var total_matches: int = 0
+	var total_files: int = results.size()
+
+	for rel_path: String in results.keys():
+		var file_matches: Array = results[rel_path]
+		total_matches += file_matches.size()
+		var full_p: String = _workspace_root.path_join(rel_path)
+
+		var file_item := _search_results_tree.create_item(root)
+		file_item.set_text(0, "%s (%d)" % [rel_path, file_matches.size()])
+		var icon_tex: Texture2D = FileKind.texture_for_path(full_p, false, false)
+		if icon_tex:
+			file_item.set_icon(0, icon_tex)
+			file_item.set_icon_max_width(0, 16)
+
+		for match_info: Dictionary in file_matches:
+			var line_num: int = int(match_info.get("line", 1))
+			var col_num: int = int(match_info.get("col", 0))
+			var snippet: String = str(match_info.get("snippet", ""))
+
+			var item := _search_results_tree.create_item(file_item)
+			item.set_text(0, "%d: %s" % [line_num, snippet])
+			item.set_metadata(0, {
+				"path": full_p,
+				"line": line_num,
+				"col": col_num,
+				"length": q.length()
+			})
+
+	if _search_summary_label:
+		_search_summary_label.text = "%d results in %d files" % [total_matches, total_files]
+
+
+func _search_workspace_files(base_dir: String, query: String, match_case: bool, whole_word: bool, inc_glob: String, exc_glob: String) -> Dictionary:
+	var results: Dictionary = {}
+	var files_to_scan: Array[String] = []
+	_collect_search_files_recursive(base_dir, base_dir, files_to_scan, inc_glob, exc_glob)
+
+	for full_p: String in files_to_scan:
+		var f := FileAccess.open(full_p, FileAccess.READ)
+		if not f:
+			continue
+		var content: String = f.get_as_text()
+		f.close()
+
+		var lines: PackedStringArray = content.split("\n")
+		var file_matches: Array = []
+
+		for l_idx in range(lines.size()):
+			var line_text: String = lines[l_idx]
+			var idx: int = 0
+			var search_line: String = line_text if match_case else line_text.to_lower()
+			var search_q: String = query if match_case else query.to_lower()
+
+			while idx < search_line.length():
+				var pos: int = search_line.find(search_q, idx)
+				if pos == -1:
+					break
+
+				var is_word: bool = true
+				if whole_word:
+					if pos > 0 and _is_ident_char(search_line[pos - 1]):
+						is_word = false
+					var end_pos: int = pos + search_q.length()
+					if end_pos < search_line.length() and _is_ident_char(search_line[end_pos]):
+						is_word = false
+
+				if is_word:
+					file_matches.append({
+						"line": l_idx + 1,
+						"col": pos,
+						"snippet": line_text.strip_edges()
+					})
+
+				idx = pos + max(1, search_q.length())
+
+		if not file_matches.is_empty():
+			var rel: String = full_p.trim_prefix(base_dir).lstrip("/")
+			results[rel] = file_matches
+
+	return results
+
+
+func _collect_search_files_recursive(base_dir: String, current_dir: String, out_files: Array[String], inc_glob: String, exc_glob: String) -> void:
+	var dir := DirAccess.open(current_dir)
+	if not dir:
+		return
+	dir.list_dir_begin()
+	var fname: String = dir.get_next()
+	while fname != "":
+		if fname not in [".", "..", ".git", ".godot", ".gemini", ".import", "android"]:
+			var full_path: String = current_dir.path_join(fname)
+			if dir.current_is_dir():
+				_collect_search_files_recursive(base_dir, full_path, out_files, inc_glob, exc_glob)
+			else:
+				var ext: String = fname.get_extension().to_lower()
+				if ext not in ["png", "jpg", "jpeg", "webp", "res", "scn", "uid", "bin", "exe", "zip", "import"]:
+					var rel: String = full_path.trim_prefix(base_dir).lstrip("/")
+					var include_ok: bool = inc_glob.is_empty() or rel.match("*" + inc_glob + "*") or fname.match("*" + inc_glob + "*")
+					var exclude_ok: bool = exc_glob.is_empty() or not (rel.match("*" + exc_glob + "*") or fname.match("*" + exc_glob + "*"))
+					if include_ok and exclude_ok:
+						out_files.append(full_path)
+		fname = dir.get_next()
+	dir.list_dir_end()
+
+
+func _is_ident_char(c: String) -> bool:
+	return c.is_subsequence_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
+
+
+func _on_search_result_activated() -> void:
+	if _search_results_tree == null:
+		return
+	var item: TreeItem = _search_results_tree.get_selected()
+	if not item:
+		return
+	var meta: Variant = item.get_metadata(0)
+	if meta is Dictionary and meta.has("path"):
+		var full_p: String = str(meta.get("path", ""))
+		var line_num: int = int(meta.get("line", 1)) - 1
+		var col_num: int = int(meta.get("col", 0))
+		var q_len: int = int(meta.get("length", 0))
+
+		_open_path(full_p)
+		if _code_edit:
+			_code_edit.set_caret_line(line_num)
+			_code_edit.set_caret_column(col_num)
+			if q_len > 0:
+				_code_edit.select(line_num, col_num, line_num, col_num + q_len)
+			_code_edit.center_viewport_to_caret()
+
+
+func _replace_in_workspace(search_q: String, replace_q: String) -> void:
+	var q: String = search_q.strip_edges()
+	if q.is_empty():
+		return
+	var match_case: bool = _search_match_case_btn.button_pressed if _search_match_case_btn else false
+	var whole_word: bool = _search_whole_word_btn.button_pressed if _search_whole_word_btn else false
+	var inc_pattern: String = _search_include_input.text.strip_edges() if _search_include_input else ""
+	var exc_pattern: String = _search_exclude_input.text.strip_edges() if _search_exclude_input else ""
+
+	var results: Dictionary = _search_workspace_files(_workspace_root, q, match_case, whole_word, inc_pattern, exc_pattern)
+	var replaced_files: int = 0
+	var total_replaced: int = 0
+
+	for rel_path: String in results.keys():
+		var full_p: String = _workspace_root.path_join(rel_path)
+		var f := FileAccess.open(full_p, FileAccess.READ)
+		if not f:
+			continue
+		var content: String = f.get_as_text()
+		f.close()
+
+		var new_content: String = content.replace(q, replace_q)
+		if new_content != content:
+			var wf := FileAccess.open(full_p, FileAccess.WRITE)
+			if wf:
+				wf.store_string(new_content)
+				wf.close()
+				replaced_files += 1
+				total_replaced += results[rel_path].size()
+
+			for tab_idx in range(_open_files.size()):
+				var info: Dictionary = _open_files[tab_idx]
+				if str(info.get("path", "")) == full_p:
+					info["content"] = new_content
+					if _active_index == tab_idx and _code_edit:
+						_code_edit.text = new_content
+
+	_send_os_notification("Workspace Replace", "Replaced %d occurrences across %d files." % [total_replaced, replaced_files])
+	_do_workspace_search(q)
 
 
 func _refresh_themes_panel() -> void:
@@ -1877,6 +2228,8 @@ func _refresh_file_tree() -> void:
 
 
 func _populate_tree_dir(parent_item: TreeItem, dir_path: String, max_depth: int = 1, current_depth: int = 0) -> void:
+	if parent_item == null or _file_tree == null:
+		return
 	var dir := DirAccess.open(dir_path)
 	if not dir:
 		return
@@ -1896,6 +2249,8 @@ func _populate_tree_dir(parent_item: TreeItem, dir_path: String, max_depth: int 
 	files.sort()
 	for d: String in dirs:
 		var item: TreeItem = _file_tree.create_item(parent_item)
+		if item == null:
+			continue
 		item.set_text(0, d)
 		var item_path: String = dir_path.path_join(d)
 		var folder_tex: Texture2D = FileKind.texture_for_path(item_path, true, false)
@@ -1922,9 +2277,12 @@ func _populate_tree_dir(parent_item: TreeItem, dir_path: String, max_depth: int 
 				sub_dir.list_dir_end()
 				if has_sub_content:
 					var dummy: TreeItem = _file_tree.create_item(item)
-					dummy.set_text(0, "Loading…")
+					if dummy != null:
+						dummy.set_text(0, "Loading…")
 	for f: String in files:
 		var item: TreeItem = _file_tree.create_item(parent_item)
+		if item == null:
+			continue
 		item.set_text(0, f)
 		var item_path: String = dir_path.path_join(f)
 		var file_tex: Texture2D = FileKind.texture_for_path(item_path, false, false)
@@ -1936,7 +2294,7 @@ func _populate_tree_dir(parent_item: TreeItem, dir_path: String, max_depth: int 
 
 
 func _on_tree_item_collapsed(item: TreeItem) -> void:
-	if not item:
+	if not item or is_queued_for_deletion():
 		return
 	var meta: Variant = item.get_metadata(0)
 	if meta is Dictionary and meta.get("is_dir", false):
@@ -1946,14 +2304,22 @@ func _on_tree_item_collapsed(item: TreeItem) -> void:
 			item.set_icon(0, folder_tex)
 			item.set_icon_max_width(0, 16)
 		if not item.collapsed and not meta.get("loaded", false):
-			meta["loaded"] = true
-			var child: TreeItem = item.get_first_child()
-			while child != null:
-				var next: TreeItem = child.get_next()
-				item.remove_child(child)
-				child.free()
-				child = next
-			_populate_tree_dir(item, p, 1, 0)
+			call_deferred("_deferred_load_tree_dir", item, p)
+
+
+func _deferred_load_tree_dir(item: TreeItem, p: String) -> void:
+	if not is_instance_valid(item) or is_queued_for_deletion():
+		return
+	var meta: Variant = item.get_metadata(0)
+	if meta is Dictionary:
+		meta["loaded"] = true
+	var child: TreeItem = item.get_first_child()
+	while child != null:
+		var next: TreeItem = child.get_next()
+		item.remove_child(child)
+		child.free()
+		child = next
+	_populate_tree_dir(item, p, 1, 0)
 
 
 func _on_tree_item_activated() -> void:

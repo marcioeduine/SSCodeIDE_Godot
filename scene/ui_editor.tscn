@@ -55,22 +55,30 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Header" type="HBoxContainer" parent="GridContainer" unique_id=1019862349]
+custom_minimum_size = Vector2(0, 35)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 0
 
 [node name="PanelBrand" type="PanelContainer" parent="GridContainer/Header" unique_id=1428602545]
+custom_minimum_size = Vector2(48, 35)
 layout_mode = 2
+theme_type_variation = &"M3NavRail"
 
 [node name="AppBrand" type="MenuButton" parent="GridContainer/Header/PanelBrand" unique_id=782929851]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 tooltip_text = "SSCodeIDE App Menu"
+theme_type_variation = &"M3AppBrandButton"
 icon = ExtResource("3_favicon")
 icon_alignment = 1
 expand_icon = true
 
 [node name="PanelTopBar" type="PanelContainer" parent="GridContainer/Header" unique_id=191648703]
+custom_minimum_size = Vector2(0, 35)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -90,6 +98,7 @@ size_flags_vertical = 3
 
 [node name="NavRail" type="PanelContainer" parent="GridContainer/AppHBox" unique_id=402821925]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 0)
 layout_mode = 2
 theme_type_variation = &"M3NavRail"
 

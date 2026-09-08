@@ -230,10 +230,10 @@ static func _build_material3_theme(palette: Dictionary) -> Theme:
 	rail_box.bg_color = background if is_light else Color("#0F0F10")
 	rail_box.border_color = outline
 	rail_box.set_border_width(SIDE_RIGHT, 1)
-	rail_box.content_margin_left = 6
-	rail_box.content_margin_right = 6
-	rail_box.content_margin_top = 8
-	rail_box.content_margin_bottom = 8
+	rail_box.content_margin_left = 8
+	rail_box.content_margin_right = 8
+	rail_box.content_margin_top = 4
+	rail_box.content_margin_bottom = 4
 	rail_box.anti_aliasing = true
 	theme.set_stylebox("panel", &"M3NavRail", rail_box)
 
