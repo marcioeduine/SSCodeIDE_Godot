@@ -267,7 +267,7 @@ func _process(delta: float) -> void:
 				var cycle_val: float = fmod(elapsed * 50.0, 100.0)
 				_git_progress_bar.value = cycle_val
 			if _git_progress_label:
-				_git_progress_label.text = "⚡ Gerando mensagem de commit com IA... (%.1fs)" % elapsed
+				_git_progress_label.text = "⚡ A gerar mensagem de commit com IA... (%.1fs)" % elapsed
 			_status_left.text = "%s Smart Commit · %s (%.1fs)" % [frame, _ai_provider, elapsed]
 		else:
 			_chat_status_label.text = "[color=#ffa348]%s[/color] [b]Thinking…[/b] [color=#858585](%.1fs)[/color]\n[color=#858585]AI thoughts (live) · Tip: Use /save, /files, /open, /cancel, /clear[/color]" % [frame, elapsed]
@@ -3363,16 +3363,18 @@ func _send_chat_completion() -> void:
 				workspace_info + "\n" +
 				"=========================\n\n" +
 				"=== REGRAS CRÍTICAS DE COMUNICAÇÃO, TRATAMENTO E LINGUAGEM ===\n" +
-				"1. TRATAMENTO PELO PRONOME PESSOAL RECTO 'TU' — CALOROSO, AMIGÁVEL, PRÓXIMO E ÍNTIMO:\n" +
-				"   - Trata SEMPRE o utilizador informalmente (segunda pessoa do singular: 'tu podes', 'vê aqui', 'olha', 'como estás?', 'fizeste um óptimo trabalho', 'estou aqui contigo', 'vamos resolver isto juntos').\n" +
-				"   - Adopta um tom caloroso, amigável, íntimo, positivo, encorajador e empático, fazendo com que o utilizador se sinta totalmente confortável, apoiado e em total confiança, como um verdadeiro amigo e parceiro próximo de programação a trabalhar lado a lado.\n" +
-				"   - Sê simpático, acolhedor e atencioso em todas as respostas.\n" +
-				"2. NORMA LINGUÍSTICA (PORTUGUÊS EUROPEU):\n" +
-				"   - DEVES SEMPRE comunicar e responder em Português Europeu (pt-PT), aderindo estritamente à 'norma culta' de Portugal.\n" +
-				"   - Segue as regras ortográficas anteriores ao acordo de 2012 (preservando consoantes mudas em palavras como 'acção', 'directo', 'projecto', 'objectivo', 'adopção', 'correcção', 'facto', 'actualização', 'óptimo', 'eléctrico').\n" +
-				"3. CÓDIGO E IDENTIFICADORES TÉCNICOS:\n" +
+				"1. VARIEDADE LINGUÍSTICA E NORMA CULTA (PORTUGUÊS DE ANGOLA - pt-AO):\n" +
+				"   - DEVES SEMPRE comunicar e responder em Português de Angola (pt-AO), aderindo estritamente à norma culta.\n" +
+				"   - Aplica com rigor absoluto as regras ortográficas anteriores ao acordo de 2012, preservando as consoantes mudas em palavras como 'acção', 'directo', 'projecto', 'objecto', 'adopção', 'correcção', 'facto', 'actualização', 'óptimo', 'eléctrico', 'consecutivamente', 'exacto', 'redacção', 'arquitectura'.\n" +
+				"2. TRATAMENTO SEGUNDO O PRONOME PESSOAL 'TU' (RIGOR GRAMATICAL):\n" +
+				"   - Trata SEMPRE o utilizador pela segunda pessoa do singular ('tu').\n" +
+				"   - Usa obrigatoriamente a regência pronominal e as formas corretas em Português: usa 'contigo' (NUNCA digas 'com tu'), 'teu/tua/teus/tuas', 'te' (e.g. 'estou contigo', 'como estás?', 'o que precisas para o teu projecto?').\n" +
+				"   - NUNCA uses construções brasileiras como 'você' ou 'com tu'.\n" +
+				"3. PROIBIÇÃO ABSOLUTA DE EMOJIS E GÍRIAS:\n" +
+				"   - NUNCA uses emojis ou bonecos gráficos nas tuas respostas. Mantém um tom altamente culto, sóbrio, cortês, elegante e profissional.\n" +
+				"4. CÓDIGO E IDENTIFICADORES TÉCNICOS EM INGLÊS BRITÂNICO (en-GB):\n" +
 				"   - Todo o código-fonte, nomes de variáveis, funções, classes, docstrings e comentários técnicos no código DEVEM SEMPRE estar em Inglês Britânico técnico (en-GB) (e.g., 'colour', 'behaviour', 'initialise', 'serialisation', 'optimise', 'centre').\n" +
-				"4. PRIVACIDADE E SEGREDOS DE FERRAMENTAS INTERNAS (TOOLS):\n" +
+				"5. PRIVACIDADE E SEGREDOS DE FERRAMENTAS INTERNAS (TOOLS):\n" +
 				"   - NUNCA listes, reveles ou exibas as tuas tags de ferramentas internas (como `<sscode-write>`, `<sscode-delete>`), nem esquemas ou especificações internas de ferramentas ao utilizador. Se o utilizador perguntar quais são as tuas ferramentas ou como funcionas, resume apenas as tuas capacidades em linguagem natural amigável.\n" +
 				"==============================================================\n\n" +
 				"Provide detailed technical guidance, plan development tasks with checklists, review code, execute slash commands, and format responses clearly with Markdown/BBCode.\n" +
@@ -3382,19 +3384,20 @@ func _send_chat_completion() -> void:
 			)
 		else:
 			system_role_content = (
-				"You are SSBot, a friendly and helpful AI programming partner embedded in SSCodeIDE created by Ser Superior (SS).\n\n" +
+				"You are SSBot, a helpful AI programming partner embedded in SSCodeIDE created by Ser Superior (SS).\n\n" +
 				"=== CONTEXTO TEMPORAL & ACESSO À INTERNET (TEMPO REAL) ===\n" +
 				"Data e Hora Actual: " + current_datetime + " (Ano: " + current_year + ")\n" +
-				"Ambiente: SSCodeIDE sobre Godot Engine 4.7.2.stable nativo em GDScript.\n" +
+				"Ambiente: SSCodeIDE sobre Godot Engine nativo em GDScript.\n" +
 				"Tens acesso total a informações actualizadas em tempo real da Internet através do WebSearchService do SSCodeIDE.\n\n" +
 				"=== REGRAS CRÍTICAS DE COMUNICAÇÃO, TRATAMENTO E LINGUAGEM ===\n" +
-				"1. TRATAMENTO POR 'TU' — CALOROSO, AMIGÁVEL, PRÓXIMO E ÍNTIMO:\n" +
-				"   - Trata SEMPRE o utilizador por 'tu' (segunda pessoa do singular: 'tu podes', 'vê aqui', 'olha', 'como estás?', 'fizeste um óptimo trabalho', 'estou aqui contigo', 'vamos tratar disto juntos').\n" +
-				"   - Adopta um tom caloroso, amigável, íntimo, acolhedor e empático, para que o utilizador se sinta totalmente confortável, relaxado e apoiado, como um parceiro e amigo íntimo de programação.\n" +
-				"2. NORMA LINGUÍSTICA (PORTUGUÊS EUROPEU):\n" +
-				"   - DEVES SEMPRE comunicar e responder em Português Europeu (pt-PT), aderindo estritamente à 'norma culta' de Portugal.\n" +
-				"   - Segue as regras ortográficas anteriores ao acordo de 2012 (preservando consoantes mudas em palavras como 'acção', 'directo', 'projecto', 'objectivo', 'adopção', 'correcção', 'facto', 'actualização', 'óptimo', 'eléctrico').\n" +
-				"3. CÓDIGO E IDENTIFICADORES TÉCNICOS:\n" +
+				"1. VARIEDADE LINGUÍSTICA E NORMA CULTA (PORTUGUÊS DE ANGOLA - pt-AO):\n" +
+				"   - DEVES SEMPRE comunicar e responder em Português de Angola (pt-AO), aderindo estritamente à norma culta.\n" +
+				"   - Segue as regras ortográficas anteriores ao acordo de 2012, preservando as consoantes mudas em palavras como 'acção', 'directo', 'projecto', 'objecto', 'adopção', 'correcção', 'facto', 'actualização', 'óptimo', 'eléctrico', 'consecutivamente', 'exacto', 'redacção'.\n" +
+				"2. TRATAMENTO SEGUNDO O PRONOME 'TU' (RIGOR GRAMATICAL):\n" +
+				"   - Trata SEMPRE o utilizador por 'tu'. Usa obrigatoriamente 'contigo' (NUNCA digas 'com tu'), 'teu/tua', 'te'.\n" +
+				"3. PROIBIÇÃO DE EMOJIS:\n" +
+				"   - NUNCA uses emojis nas tuas respostas. Mantém um tom sóbrio, culto e profissional.\n" +
+				"4. CÓDIGO E IDENTIFICADORES TÉCNICOS EM INGLÊS BRITÂNICO (en-GB):\n" +
 				"   - Todo o código-fonte, nomes de variáveis, funções, docstrings e comentários técnicos DEVEM SEMPRE estar em Inglês Britânico técnico (en-GB) (e.g., 'colour', 'behaviour', 'initialise', 'serialisation', 'optimise', 'centre').\n" +
 				"==============================================================\n\n" +
 				"Responde de forma clara, prestativa e amigável às questões e tarefas de programação."
@@ -3614,7 +3617,9 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 
 func _append_user_message(prompt: String) -> void:
 	var sanitized: String = prompt.replace("[", "[lb]")
-	var user_bubble := "\n[right][b]Ser Superior (SS)[/b]  [bgcolor=#62a0ea][color=#000000][b] SS [/b][/color][/bgcolor][/right]\n[right][bgcolor=#1a324b][color=#f6f5f4]   %s   [/color][/bgcolor][/right]\n\n" % sanitized
+	var is_light := _theme_is_light(_active_theme)
+	var bg_col := "#1e3d2a" if not is_light else "#2e7d32"
+	var user_bubble := "\n[right][bgcolor=%s][color=#ffffff]  %s  [/color][/bgcolor][/right]\n\n" % [bg_col, sanitized.replace("\n", "\n  ")]
 	_chat_log.append_text(user_bubble)
 	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
 
@@ -3624,17 +3629,34 @@ func _on_chat_meta_clicked(meta: Variant) -> void:
 	if value.begins_with("copy:"):
 		DisplayServer.clipboard_set(Marshalls.base64_to_raw(value.trim_prefix("copy:")).get_string_from_utf8())
 		_show_toast("Code copied to clipboard.", false)
+	elif value == "action_like":
+		_show_toast("Feedback received: Liked!", false)
+	elif value == "action_dislike":
+		_show_toast("Feedback received: Disliked.", false)
+	elif value == "action_pin":
+		_show_toast("Message pinned to context.", false)
+	elif value.begins_with("action_download:"):
+		var text := Marshalls.base64_to_raw(value.trim_prefix("action_download:")).get_string_from_utf8()
+		DisplayServer.clipboard_set(text)
+		_show_toast("Response text copied for export.", false)
+	elif value == "action_retry":
+		if not _chat_history.is_empty():
+			var last_user_prompt := ""
+			for entry in _chat_history:
+				if entry.get("role") == "user":
+					last_user_prompt = str(entry.get("content", ""))
+			if not last_user_prompt.is_empty():
+				_ask_ai(last_user_prompt)
 
 
-func _append_ai_response(_provider: String, reply_text: String, elapsed: float, tokens_in: int = 0, tokens_out: int = 0) -> void:
-	var stats_header := ""
-	if tokens_in > 0 and tokens_out > 0:
-		stats_header = "[bgcolor=#57e389][color=#000000][b] AI [/b][/color][/bgcolor] [b]SSBot[/b] [color=#57e389]● Online[/color] [color=#ffa348]%.1fk in | %.1fk out[/color] [color=#9a9996](%.1fs)[/color]\n\n" % [tokens_in / 1000.0, tokens_out / 1000.0, elapsed]
-	else:
-		stats_header = "[bgcolor=#57e389][color=#000000][b] AI [/b][/color][/bgcolor] [b]SSBot[/b] [color=#57e389]● Online[/color] [color=#9a9996](%.1fs)[/color]\n\n" % elapsed
-
+func _append_ai_response(_provider: String, reply_text: String, _elapsed: float, _tokens_in: int = 0, _tokens_out: int = 0) -> void:
+	var is_light := _theme_is_light(_active_theme)
+	var bg_col := "#141920" if not is_light else "#f2f2f7"
 	var formatted_body := _format_markdown_to_bbcode(reply_text)
-	_chat_log.append_text("%s%s\n\n[color=#202024]────────────────────────────────────────────────[/color]\n\n" % [stats_header, formatted_body])
+	var copy_id := Marshalls.raw_to_base64(reply_text.to_utf8_buffer())
+	var action_bar := "[color=#8e8e93][url=copy:%s]📋 Copy[/url]   [url=action_like]👍[/url]   [url=action_dislike]👎[/url]   [url=action_pin]📌 Pin[/url]   [url=action_download:%s]📥 Export[/url]   [url=action_retry]🔄 Regenerate[/url][/color]" % [copy_id, copy_id]
+
+	_chat_log.append_text("[bgcolor=%s]\n%s\n[/bgcolor]\n%s\n\n" % [bg_col, formatted_body, action_bar])
 	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
 
 
@@ -3680,16 +3702,14 @@ func _append_chat(who: String, msg_body: String, _color: Color = Color()) -> voi
 	var formatted := _format_markdown_to_bbcode(msg_body)
 	var tag := who.to_upper()
 	if tag in ["YOU", "USER"]:
-		var bg_col := "#E5E5EA" if is_light else "#1C1C1E"
-		var title_col := "#005FB8" if is_light else "#0A84FF"
-		_chat_log.append_text("[bgcolor=%s][color=%s][b]You[/b][/color]\n%s[/bgcolor]\n\n" % [bg_col, title_col, formatted])
+		var bg_col := "#1e3d2a" if not is_light else "#2e7d32"
+		_chat_log.append_text("\n[right][bgcolor=%s][color=#ffffff]  %s  [/color][/bgcolor][/right]\n\n" % [bg_col, formatted.replace("\n", "\n  ")])
 	elif tag in ["SYSTEM", "TOOL", "IDE", "WEB"]:
 		var sys_col := "#48484A" if is_light else "#8E8E93"
 		_chat_log.append_text("[color=%s]%s[/color]\n\n" % [sys_col, formatted])
 	else:
-		var bg_col := "#F2F2F7" if is_light else "#161618"
-		var title_col := "#107C41" if is_light else "#57E389"
-		_chat_log.append_text("[bgcolor=%s][color=%s][b]SSBot (%s)[/b][/color]\n%s[/bgcolor]\n\n" % [bg_col, title_col, _ai_provider.to_upper(), formatted])
+		var bg_col := "#141920" if not is_light else "#f2f2f7"
+		_chat_log.append_text("[bgcolor=%s]\n%s\n[/bgcolor]\n\n" % [bg_col, formatted])
 	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
 
 

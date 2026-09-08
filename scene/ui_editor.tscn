@@ -302,6 +302,7 @@ tab_close_display_policy = 1
 
 [node name="FindRow" type="HBoxContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit/EditorPane/EditorContent" unique_id=1655727780]
 unique_name_in_owner = true
+visible = false
 custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 
@@ -380,7 +381,7 @@ theme_override_constants/separation = 4
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"M3SidebarHeader"
-text = "CHAT"
+text = "AI CHAT"
 clip_text = true
 uppercase = true
 
@@ -489,7 +490,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "Ask SSBot about code, or type / for commands…"
+placeholder_text = "Ask a question or make a request..."
 keep_editing_on_text_submit = true
 clear_button_enabled = true
 caret_blink = true
@@ -514,11 +515,11 @@ size_flags_horizontal = 3
 
 [node name="ChatSend" type="Button" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=748177452]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(38, 26)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Send prompt"
-theme_type_variation = &"M3FilledButton"
-text = "↑"
+theme_type_variation = &"M3SendCircleBtn"
+text = "➔"
 
 [node name="StatusBar" type="PanelContainer" parent="GridContainer" unique_id=374397806]
 layout_mode = 2

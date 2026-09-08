@@ -130,10 +130,19 @@ static func _build_material3_theme(palette: Dictionary) -> Theme:
 	theme.set_stylebox("panel", &"M3StatusBar", _box_margins(container, outline, 0, 12, 2, 12, 2, 1))
 	theme.set_stylebox("focus", &"M3StatusBar", _box_margins(container, primary, 0, 12, 2, 12, 2, 1))
 
-	# Chat Composer Box
+	# Chat Composer Box (Floating Rounded Input Card)
 	theme.set_type_variation(&"M3Composer", &"PanelContainer")
-	theme.set_stylebox("panel", &"M3Composer", _box_margins(container, outline, 6, 8, 8, 8, 8, 1))
-	theme.set_stylebox("focus", &"M3Composer", _box_margins(container, primary, 6, 8, 8, 8, 8, 1))
+	theme.set_stylebox("panel", &"M3Composer", _box_margins(container, outline, 16, 12, 10, 12, 10, 1))
+	theme.set_stylebox("focus", &"M3Composer", _box_margins(container, primary, 16, 12, 10, 12, 10, 1))
+
+	# Vibrant Emerald Green Send Circle Button
+	theme.set_type_variation(&"M3SendCircleBtn", &"Button")
+	var send_bg := Color("#22c55e")
+	theme.set_stylebox("normal", &"M3SendCircleBtn", _box(send_bg, Color.TRANSPARENT, 16, 4))
+	theme.set_stylebox("hover", &"M3SendCircleBtn", _box(send_bg.lightened(0.1), Color.TRANSPARENT, 16, 4))
+	theme.set_stylebox("pressed", &"M3SendCircleBtn", _box(send_bg.darkened(0.1), Color.TRANSPARENT, 16, 4))
+	theme.set_stylebox("focus", &"M3SendCircleBtn", _box(send_bg, primary, 16, 4, 1))
+	theme.set_color("font_color", &"M3SendCircleBtn", Color("#000000"))
 
 	# Surfaces
 	for control_type in [&"Tree", &"ItemList", &"RichTextLabel", &"TextEdit", &"CodeEdit"]:
