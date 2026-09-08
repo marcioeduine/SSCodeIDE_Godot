@@ -63,7 +63,7 @@ static func format_code_block(code: String, language: String, is_light: bool = f
 	var body_bg := "#f3f3f6" if is_light else "#141418"
 	var body_fg := "#111113" if is_light else "#e6edf3"
 	var link_col := "#005fb8" if is_light else "#58a6ff"
-	return "\n[bgcolor=%s][color=%s]  %s[/color]  [url=copy:%s][color=%s]📋 Copy[/color][/url]\n[bgcolor=%s][color=%s]  %s\n[/color][/bgcolor]\n\n" % [hdr_bg, hdr_fg, language, copy_id, link_col, body_bg, body_fg, safe_code.replace("\n", "\n  ")]
+	return "\n[bgcolor=%s][color=%s]  %s[/color]  [url=copy:%s][color=%s]Copy[/color][/url]\n[bgcolor=%s][color=%s]  %s\n[/color][/bgcolor]\n\n" % [hdr_bg, hdr_fg, language, copy_id, link_col, body_bg, body_fg, safe_code.replace("\n", "\n  ")]
 
 
 static func replace_bold(text: String) -> String:

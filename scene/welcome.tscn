@@ -1,0 +1,87 @@
+[gd_scene format=3 uid="uid://dj8ffo1jh57hq"]
+
+[ext_resource type="Script" path="res://scripts/welcome.gd" id="1_welcome"]
+[ext_resource type="Theme" uid="uid://by7etx7jpa61x" path="res://themes/dark.theme" id="2_theme"]
+[ext_resource type="Shader" uid="uid://crhc3gwj4ct3f" path="res://themes/glass_backdrop.gdshader" id="3_backdrop"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_backdrop"]
+shader = ExtResource("3_backdrop")
+shader_parameter/deep_colour = Color(0.0784314, 0.0705882, 0.0941176, 1)
+shader_parameter/ambient_colour = Color(0.145098, 0.121569, 0.180392, 1)
+shader_parameter/accent_colour = Color(0.188235, 0.145098, 0.231373, 1)
+shader_parameter/glow_strength = 0.12
+shader_parameter/motion_speed = 0.008
+
+[node name="Welcome" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_welcome")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_backdrop")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0784314, 0.0705882, 0.0941176, 1)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Card" type="PanelContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(480, 260)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/Card/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="CenterContainer/Card/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "SSCodeIDE"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="CenterContainer/Card/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.631373, 0.631373, 0.65098, 1)
+theme_override_font_sizes/font_size = 13
+text = "Next-Generation Native AI Code Editor"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="CenterContainer/Card/Margin/VBox"]
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+
+[node name="ProgressBar" type="ProgressBar" parent="CenterContainer/Card/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+show_percentage = false
+
+[node name="StatusLabel" type="Label" parent="CenterContainer/Card/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.556863, 0.556863, 0.576471, 1)
+theme_override_font_sizes/font_size = 11
+text = "Initialising workspace..."
+horizontal_alignment = 1

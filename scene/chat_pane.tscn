@@ -165,7 +165,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(96, 24)
 layout_mode = 2
 theme_type_variation = &"M3PillBadge"
-text = "Models  denial ⌵"
+text = "Nemotron 3 Omni ⌵"
 icon = ExtResource("3_icon_sparkles")
 expand_icon = true
 

@@ -274,7 +274,7 @@ func _process(delta: float) -> void:
 				var cycle_val: float = fmod(elapsed * 50.0, 100.0)
 				_git_progress_bar.value = cycle_val
 			if _git_progress_label:
-				_git_progress_label.text = "⚡ Generating AI commit message... (%.1fs)" % elapsed
+				_git_progress_label.text = "Generating AI commit message... (%.1fs)" % elapsed
 			_status_left.text = "%s Smart Commit · %s (%.1fs)" % [frame, _ai_provider, elapsed]
 		else:
 			_chat_status_label.text = "[color=#ffa348]%s[/color] [b]Thinking…[/b] [color=#858585](%.1fs)[/color]\n[color=#858585]AI thoughts (live) · Tip: Use /save, /files, /open, /cancel, /clear[/color]" % [frame, elapsed]
@@ -1845,21 +1845,21 @@ func _update_git_status_bar() -> void:
 	if not _status_git:
 		return
 	if not GitService.is_git_repository(_workspace_root):
-		_status_git.text = "⎇ no git"
+		_status_git.text = "no git"
 		_status_git.add_theme_color_override("font_color", Color("#9a9996"))
 		return
 	var st: Dictionary = GitService.get_status(_workspace_root)
 	var branch: String = str(st.get("branch", "main"))
 	var is_clean: bool = bool(st.get("is_clean", true))
 	if is_clean:
-		_status_git.text = "⎇ " + branch
+		_status_git.text = branch
 		_status_git.add_theme_color_override("font_color", Color("#57e389"))
 	else:
 		var staged: Array = st.get("staged", [])
 		var unstaged: Array = st.get("unstaged", [])
 		var untracked: Array = st.get("untracked", [])
 		var total: int = staged.size() + unstaged.size() + untracked.size()
-		_status_git.text = "⎇ %s *(%d)" % [branch, total]
+		_status_git.text = "%s *(%d)" % [branch, total]
 		_status_git.add_theme_color_override("font_color", Color("#ffa348"))
 
 
@@ -2156,7 +2156,7 @@ func _update_model_badge_text() -> void:
 	}
 	var display_title: String = titles.get(_ai_provider, "Nemotron 3 Omni")
 	if _model_badge_btn:
-		_model_badge_btn.text = "✴ " + display_title + " ⌵"
+		_model_badge_btn.text = display_title + " ⌵"
 		var model_popup := _model_badge_btn.get_popup()
 		var names: Array[String] = ["nemotron", "nemotron_lightning", "kimi_k3", "deepseek_v4", "laguna"]
 		for i in range(names.size()):
@@ -2464,25 +2464,25 @@ func _import_theme_from_xml(xml_path: String) -> void:
 
 func _update_ai_status() -> void:
 	var titles := {
-		"nemotron": "Opus-4.5",
-		"nemotron_lightning": "Nemotron 3.5",
+		"nemotron": "Nemotron 3 Omni",
+		"nemotron_lightning": "Nemotron 3.5 Lightning",
 		"kimi_k3": "Kimi K3",
 		"deepseek_v4": "DeepSeek V4",
 		"laguna": "Laguna Code",
 	}
-	var display_title: String = titles.get(_ai_provider, "Opus-4.5")
+	var display_title: String = titles.get(_ai_provider, "Nemotron 3 Omni")
 	if AIService.has_nvidia_api_key():
 		_status_ai.text = "AI: %s · on" % display_title
 	else:
 		_status_ai.text = "AI: %s · key needed" % display_title
 	if _model_badge_btn:
-		_model_badge_btn.text = "✴ " + display_title + " ⌵"
+		_model_badge_btn.text = display_title + " ⌵"
 	_chat_input.placeholder_text = "How can i help you today?"
 
 
 func _show_chat_welcome() -> void:
 	_chat_log.clear()
-	var welcome := "\n\n\n\n\n[center][font_size=28][color=#e2996d]✴[/color] [b]Let's Talk[/b][/font_size]\n[color=#7a7e85][font_size=13]Ask any question or start coding with AI[/font_size][/color][/center]\n"
+	var welcome := "\n\n\n\n\n[center][font_size=28][b]Let's Talk[/b][/font_size]\n[color=#7a7e85][font_size=13]Ask any question or start coding with AI[/font_size][/color][/center]\n"
 	_chat_log.append_text(welcome)
 
 
@@ -3346,7 +3346,7 @@ func _continue_smart_commit() -> void:
 	if _git_progress_panel:
 		_git_progress_panel.visible = true
 	if _git_progress_label:
-		_git_progress_label.text = "⚡ Generating AI commit message..."
+		_git_progress_label.text = "Generating AI commit message..."
 	if _git_progress_bar:
 		_git_progress_bar.value = 10.0
 
@@ -3375,7 +3375,7 @@ func _ai_smart_commit_request(prompt: String, diff_stat: String) -> void:
 	if _git_progress_panel:
 		_git_progress_panel.visible = true
 	if _git_progress_label:
-		_git_progress_label.text = "⚡ Analysing Git changes..."
+		_git_progress_label.text = "Analysing Git changes..."
 	if _git_progress_bar:
 		_git_progress_bar.value = 20.0
 	_status_left.text = "Smart Commit: generating AI message…"

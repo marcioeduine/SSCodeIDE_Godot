@@ -496,7 +496,7 @@ static func format_status_bbcode(status: Dictionary, gh_info: Dictionary = {}) -
 	var untracked: Array = status.get("untracked", [])
 	
 	var out: String = "[b][color=#62a0ea]Git Repository Status[/color][/b]\n\n"
-	out += "[color=#9a9996]Branch:[/color] [color=#57e389]⎇ %s[/color]" % branch
+	out += "[color=#9a9996]Branch:[/color] [color=#57e389]%s[/color]" % branch
 	if ahead > 0 or behind > 0:
 		out += " [color=#ffa348](ahead %d, behind %d)[/color]" % [ahead, behind]
 	out += "\n"
@@ -507,7 +507,7 @@ static func format_status_bbcode(status: Dictionary, gh_info: Dictionary = {}) -
 	
 	out += "\n"
 	if is_clean:
-		out += "[bgcolor=#1e1e24][color=#57e389]✔ Working tree clean. Nothing to commit.[/color][/bgcolor]\n"
+		out += "[bgcolor=#1e1e24][color=#57e389]Working tree clean. Nothing to commit.[/color][/bgcolor]\n"
 	else:
 		if not staged.is_empty():
 			out += "[b][color=#57e389]Changes Staged for Commit (%d):[/color][/b]\n" % staged.size()

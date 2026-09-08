@@ -221,75 +221,12 @@ static func color_for_path(path: String, is_dir: bool = false) -> Color:
 			return Color("#deddda")
 
 
-static func icon_for_path(path: String) -> String:
-	if path.is_empty():
-		return "📄"
-	var ext: String = path.get_extension().to_lower()
-	match ext:
-		"py", "pyw", "ipynb":
-			return "🐍"
-		"js", "mjs", "cjs":
-			return "📜"
-		"ts", "tsx":
-			return "📘"
-		"jsx":
-			return "⚛️"
-		"gd":
-			return "📄"
-		"c", "h":
-			return "🔤"
-		"cpp", "cc", "cxx", "hpp", "hxx":
-			return "⚙️"
-		"rs":
-			return "🦀"
-		"go":
-			return "🐹"
-		"java":
-			return "☕"
-		"kt":
-			return "🅺"
-		"sh", "bash", "zsh", "fish":
-			return "🐚"
-		"lua":
-			return "🌙"
-		"rb":
-			return "💎"
-		"tscn", "scn":
-			return "🃏"
-		"res", "tres":
-			return "📦"
-		"json":
-			return "🔷"
-		"yaml", "yml":
-			return "�purple"
-		"toml", "ini":
-			return "⚙️"
-		"cfg":
-			return "🛠"
-		"xml":
-			return "🧾"
-		"md":
-			return "📝"
-		"html", "htm":
-			return "📄"
-		"css":
-			return "🎨"
-		"scss", "sass":
-			return "💅"
-		"png", "jpg", "jpeg", "gif", "webp", "svg", "ico", "bmp":
-			return "🖼"
-		"wav", "mp3", "ogg", "flac":
-			return "🎵"
-		"mp4", "webm", "ogv", "mkv":
-			return "🎬"
-		"zip", "tar", "gz", "tgz", "7z", "rar":
-			return "🗜"
-		"pdf":
-			return "📄"
-		"txt", "log", "rst":
-			return "📄"
-		_:
-			return "📄"
+static func icon_for_path(_path: String) -> String:
+	return ""
+
+
+static func get_symbol_icon(_ext: String) -> String:
+	return ""
 
 
 static func icon_resource_path(kind: Kind) -> String:

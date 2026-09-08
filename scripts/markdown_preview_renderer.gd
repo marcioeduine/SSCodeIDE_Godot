@@ -169,7 +169,7 @@ static func inline(text: String, is_light: bool = false) -> String:
 		["(?<![\\w])_(.+?)_(?![\\w])", "[i]$1[/i]"],
 		["~~(.+?)~~", "[s]$1[/s]"],
 		["\\[([^\\]]+)\\]\\(([^)]+)\\)", "[color=%s][url=$2]$1[/url][/color]" % link_col],
-		["!\\[([^\\]]*?)\\]\\(([^)]+)\\)", "[color=%s]🖼 $1[/color]" % code_fg],
+		["!\\[([^\\]]*?)\\]\\(([^)]+)\\)", "[color=%s]$1[/color]" % code_fg],
 		["<[^>]+>", ""],
 	]:
 		var regex := RegEx.new()
