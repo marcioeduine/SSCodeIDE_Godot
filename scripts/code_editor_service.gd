@@ -9,20 +9,31 @@ const KEYWORDS: Array[String] = [
 	"for", "while", "match", "return", "signal", "enum", "static", "void",
 	"int", "float", "bool", "String", "Array", "Dictionary", "true", "false", "null",
 	"@onready", "@export", "preload", "load", "print", "push_error", "await",
+	"def", "class", "import", "from", "with", "try", "except", "finally", "raise",
+	"async", "lambda", "global", "nonlocal", "del", "pass", "yield", "super", "self",
+	"function", "let", "export", "default", "interface", "type", "struct", "pub",
+	"fn", "mut", "impl", "use", "mod", "package", "namespace", "public", "private",
+	"protected", "override", "virtual", "constexpr", "switch", "case", "break",
+	"continue", "this", "new", "delete", "typeof", "instanceof", "as", "is", "in",
+	"and", "or", "not", "tool", "breakpoint", "assert",
 ]
 
 const BUILTIN_FUNCTIONS: Array[String] = [
 	"print", "push_error", "push_warning", "len", "range", "str", "int", "float",
 	"bool", "min", "max", "clamp", "abs", "sin", "cos", "sqrt", "randf", "randi",
 	"load", "preload", "get_node", "has_node", "find_child", "add_child", "remove_child",
-	"queue_free", "emit_signal", "connect", "disconnect", "is_connected",
+	"queue_free", "emit_signal", "connect", "disconnect", "is_connected", "typeof",
 ]
 
 const TYPES: Array[String] = [
 	"Node", "Control", "Panel", "PanelContainer", "Label", "Button", "LineEdit",
 	"TextEdit", "CodeEdit", "Tree", "TreeItem", "ItemList", "TabBar", "RichTextLabel",
-	"HTTPRequest", "ColorRect", "TextureRect", "Vector2", "Vector3", "Color", "Rect2",
-	"Transform2D", "Transform3D", "PackedStringArray", "PackedByteArray", "Variant",
+	"HTTPRequest", "ColorRect", "TextureRect", "Vector2", "Vector2i", "Vector3", "Vector3i",
+	"Color", "Rect2", "Rect2i", "Transform2D", "Transform3D", "Basis", "Quaternion",
+	"NodePath", "StringName", "RID", "Callable", "Signal", "PackedStringArray",
+	"PackedByteArray", "PackedInt32Array", "PackedInt64Array", "PackedFloat32Array",
+	"PackedFloat64Array", "PackedVector2Array", "PackedVector3Array", "PackedColorArray",
+	"Variant", "Object", "RefCounted", "Resource", "CanvasItem", "Viewport",
 ]
 
 
@@ -61,14 +72,22 @@ static func create_highlighter(palette: Dictionary) -> CodeHighlighter:
 	var keyword_colour := Color(str(palette.get("hl_keyword", "#dc8add")))
 	var type_colour := Color(str(palette.get("hl_type", "#93ddc2")))
 	var constant_colour := Color(str(palette.get("hl_const", "#ffa348")))
-	highlighter.add_color_region("#", "", Color(str(palette.get("hl_comment", "#9a9996"))), true)
-	highlighter.add_color_region('"', '"', Color(str(palette.get("hl_string", "#57e389"))))
-	highlighter.add_color_region("'", "'", Color(str(palette.get("hl_string", "#57e389"))))
-	highlighter.add_color_region('\"\"\"', '\"\"\"', Color(str(palette.get("hl_string", "#57e389"))))
+	var comment_colour := Color(str(palette.get("hl_comment", "#9a9996")))
+	var string_colour := Color(str(palette.get("hl_string", "#57e389")))
+
+	highlighter.add_color_region("#", "", comment_colour, true)
+	highlighter.add_color_region("//", "", comment_colour, true)
+	highlighter.add_color_region("/*", "*/", comment_colour, false)
+	highlighter.add_color_region('"', '"', string_colour)
+	highlighter.add_color_region("'", "'", string_colour)
+	highlighter.add_color_region('\"\"\"', '\"\"\"', string_colour)
+	highlighter.add_color_region("'''", "'''", string_colour)
+	highlighter.add_color_region("`", "`", string_colour)
+
 	for keyword in KEYWORDS:
 		highlighter.add_keyword_color(keyword, keyword_colour)
-	for type_name in ["Vector2", "Vector3", "Color", "PackedStringArray", "PackedByteArray", "Error", "NodePath", "StringName"]:
+	for type_name in TYPES:
 		highlighter.add_keyword_color(type_name, type_colour)
-	for constant_name in ["true", "false", "null", "self", "PI", "TAU", "INF", "NAN"]:
+	for constant_name in ["true", "false", "null", "self", "this", "PI", "TAU", "INF", "NAN"]:
 		highlighter.add_keyword_color(constant_name, constant_colour)
 	return highlighter

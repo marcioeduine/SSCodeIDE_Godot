@@ -21,10 +21,10 @@ Full technical documentation lives in [`docs/`](docs/README.md).
 ## Key Functional Features
 
 - **Minimal Collapsible Sidebar Navigation & Styling**:
-  - Slim vertical activity navigation rail (`NavRail`) featuring quick access to Explorer (📁), Edit (✏️), Git (⎇), Themes (🎨), AI Chat (💬), Settings (⚙️), and Help (❓).
-  - Dynamic **Theme Toggle (`☀️` / `🌙`)** button in the navigation rail for instant Light and Dark mode switching.
+  - Slim vertical activity navigation rail (`NavRail`) featuring quick access to Explorer, Edit, Git, Themes, AI Chat, Settings, and Help.
+  - Dynamic **Theme Toggle** button in the navigation rail for instant Light and Dark mode switching.
   - Interactive **AppBrand** (`favicon.svg`) providing About dialogue and exit (`Ctrl+Q`).
-  - Collapsible side drawer (`ExplorerPane`) with workspace switcher (`⇄ Switch Workspace…`), file tree, and zero-distraction collapse (`Ctrl+B`).
+  - Collapsible side drawer (`ExplorerPane`) with workspace switcher (`Switch Workspace…`), file tree, and zero-distraction collapse (`Ctrl+B`).
   - Streamlined tab bar (`TabBar`) featuring flat active tabs with bottom accent indicator bars and comfortable padding.
   - Built-in **Dark** and **Light** modes, plus runtime XML theme importing from the Themes menu.
 
@@ -40,7 +40,7 @@ Full technical documentation lives in [`docs/`](docs/README.md).
 
 - **Native Git & GitHub Integration (`GitService`)**:
   - Dedicated **Git** Menu Bar with status, commits, push, pull, fetch, sync, branch management, diffs, log history, and configuration.
-  - Interactive Status Bar branch indicator (`⎇ main`) with real-time modified file counters and status modal.
+  - Interactive Status Bar branch indicator (`main`) with real-time modified file counters and status modal.
   - Full GitHub remote synchronisation (`git push`, `git pull`, `git fetch`, `git sync`) and GitHub URL parsing (SSH and HTTPS).
   - Built-in slash commands in AI Chat: `/git status`, `/git diff`, `/git log`, `/git commit`, `/git push`, `/git pull`, `/git sync`, `/git branch`, `/git checkout`, `/git remote`, `/git config`, `/git clone`, `/github`.
   - Automated Smart Commit generation adhering to Conventional Commits.

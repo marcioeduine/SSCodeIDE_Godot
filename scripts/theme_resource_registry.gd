@@ -95,7 +95,11 @@ static func _build_material3_theme(palette: Dictionary) -> Theme:
 	var is_light := str(palette.get("variant", "dark")) == "light"
 
 	var theme := Theme.new()
-	theme.default_font = null
+	var font_res: Font = load("res://fonts/FiraCodeNerdFont-Regular.ttf") as Font
+	if font_res:
+		theme.default_font = font_res
+	else:
+		theme.default_font = null
 	theme.default_font_size = 13
 
 	var panel := _box(surface, outline, 4, 8, 1)

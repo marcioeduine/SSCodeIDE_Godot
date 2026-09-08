@@ -2,21 +2,28 @@ class_name ChatMarkdownRenderer
 extends RefCounted
 
 ## Transforms the lightweight chat Markdown dialect into RichTextLabel BBCode.
+## Fully theme-aware to ensure high contrast in both Dark and Light modes.
 
-
-static func render(raw_text: String) -> String:
+static func render(raw_text: String, is_light: bool = false) -> String:
 	if raw_text.is_empty():
 		return ""
 	var output := ""
 	var in_code_block := false
 	var code_block_lang := ""
 	var code_block_lines: Array[String] = []
+
+	var heading_color := "#005fb8" if is_light else "#ffffff"
+	var quote_bar := "#005fb8" if is_light else "#5bc8af"
+	var quote_text := "#333336" if is_light else "#c0bfbc"
+	var check_ok := "#107c41" if is_light else "#57e389"
+	var check_no := "#6e6e73" if is_light else "#9a9996"
+
 	for line in raw_text.split("\n"):
 		var trimmed := line.strip_edges()
 		if trimmed.begins_with("```"):
 			if in_code_block:
 				in_code_block = false
-				output += format_code_block("\n".join(code_block_lines), code_block_lang if not code_block_lang.is_empty() else "code")
+				output += format_code_block("\n".join(code_block_lines), code_block_lang if not code_block_lang.is_empty() else "code", is_light)
 				code_block_lines.clear()
 			else:
 				in_code_block = true
@@ -29,29 +36,34 @@ static func render(raw_text: String) -> String:
 
 		var formatted_line := line
 		if formatted_line.begins_with("### "):
-			formatted_line = "[color=#ffffff][b]" + formatted_line.substr(4) + "[/b][/color]"
+			formatted_line = "[color=%s][b]%s[/b][/color]" % [heading_color, formatted_line.substr(4)]
 		elif formatted_line.begins_with("## "):
-			formatted_line = "[font_size=14][color=#ffffff][b]" + formatted_line.substr(3) + "[/b][/color][/font_size]"
+			formatted_line = "[font_size=14][color=%s][b]%s[/b][/color][/font_size]" % [heading_color, formatted_line.substr(3)]
 		elif formatted_line.begins_with("# "):
-			formatted_line = "[font_size=16][color=#ffffff][b]" + formatted_line.substr(2) + "[/b][/color][/font_size]"
+			formatted_line = "[font_size=16][color=%s][b]%s[/b][/color][/font_size]" % [heading_color, formatted_line.substr(2)]
 		elif formatted_line.begins_with("> "):
-			formatted_line = "[color=#5bc8af]▎[/color] [color=#c0bfbc]" + formatted_line.substr(2) + "[/color]"
+			formatted_line = "[color=%s]▎[/color] [color=%s]%s[/color]" % [quote_bar, quote_text, formatted_line.substr(2)]
 		elif formatted_line.begins_with("- [ ] ") or formatted_line.begins_with("* [ ] "):
-			formatted_line = "  [color=#9a9996]☐ " + formatted_line.substr(6) + "[/color]"
+			formatted_line = "  [color=%s]☐ %s[/color]" % [check_no, formatted_line.substr(6)]
 		elif formatted_line.begins_with("- [x] ") or formatted_line.begins_with("* [x] ") or formatted_line.begins_with("- [X] "):
-			formatted_line = "  [color=#57e389]✔ " + formatted_line.substr(6) + "[/color]"
+			formatted_line = "  [color=%s]✔ %s[/color]" % [check_ok, formatted_line.substr(6)]
 		elif formatted_line.begins_with("- ") or formatted_line.begins_with("* "):
-			formatted_line = "  [color=#57e389]•[/color] " + formatted_line.substr(2)
-		output += replace_links(replace_italic(replace_bold(replace_inline_code(formatted_line)))) + "\n"
+			formatted_line = "  [color=%s]•[/color] %s" % [check_ok, formatted_line.substr(2)]
+		output += replace_links(replace_italic(replace_bold(replace_inline_code(formatted_line, is_light))), is_light) + "\n"
 	if in_code_block and not code_block_lines.is_empty():
-		output += format_code_block("\n".join(code_block_lines), code_block_lang if not code_block_lang.is_empty() else "code")
+		output += format_code_block("\n".join(code_block_lines), code_block_lang if not code_block_lang.is_empty() else "code", is_light)
 	return output.strip_edges(false, true)
 
 
-static func format_code_block(code: String, language: String) -> String:
+static func format_code_block(code: String, language: String, is_light: bool = false) -> String:
 	var safe_code := code.replace("[", "[lb]").replace("]", "[rb]")
 	var copy_id := Marshalls.raw_to_base64(code.to_utf8_buffer())
-	return "\n[bgcolor=#25292e][color=#8b949e]  %s[/color]  [url=copy:%s][color=#58a6ff][u]Copy[/u][/color][/url]\n[bgcolor=#161b22][color=#e6edf3]  %s\n[/color][/bgcolor]\n\n" % [language, copy_id, safe_code.replace("\n", "\n  ")]
+	var hdr_bg := "#e5e5ea" if is_light else "#25292e"
+	var hdr_fg := "#48484a" if is_light else "#8b949e"
+	var body_bg := "#f2f2f7" if is_light else "#161b22"
+	var body_fg := "#1c1c1e" if is_light else "#e6edf3"
+	var link_col := "#005fb8" if is_light else "#58a6ff"
+	return "\n[bgcolor=%s][color=%s]  %s[/color]  [url=copy:%s][color=%s][u]Copy[/u][/color][/url]\n[bgcolor=%s][color=%s]  %s\n[/color][/bgcolor]\n\n" % [hdr_bg, hdr_fg, language, copy_id, link_col, body_bg, body_fg, safe_code.replace("\n", "\n  ")]
 
 
 static func replace_bold(text: String) -> String:
@@ -65,14 +77,16 @@ static func replace_bold(text: String) -> String:
 	return result
 
 
-static func replace_inline_code(text: String) -> String:
+static func replace_inline_code(text: String, is_light: bool = false) -> String:
 	var result := text
+	var code_bg := "#e5e5ea" if is_light else "#2c2c2e"
+	var code_fg := "#005fb8" if is_light else "#99c1f1"
 	while true:
 		var first := result.find("`")
 		var second := result.find("`", first + 1)
 		if first < 0 or second < 0:
 			break
-		result = result.substr(0, first) + "[bgcolor=#23232b][color=#99c1f1] " + result.substr(first + 1, second - first - 1) + " [/color][/bgcolor]" + result.substr(second + 1)
+		result = result.substr(0, first) + "[bgcolor=%s][color=%s] %s [/color][/bgcolor]" % [code_bg, code_fg, result.substr(first + 1, second - first - 1)] + result.substr(second + 1)
 	return result
 
 
@@ -87,7 +101,8 @@ static func replace_italic(text: String) -> String:
 	return result
 
 
-static func replace_links(text: String) -> String:
+static func replace_links(text: String, is_light: bool = false) -> String:
+	var link_col := "#005fb8" if is_light else "#62a0ea"
 	var result := text
 	while true:
 		var open := result.find("[")
@@ -99,5 +114,5 @@ static func replace_links(text: String) -> String:
 			break
 		var label := result.substr(open + 1, close - open - 1)
 		var target := result.substr(close + 2, target_end - close - 2)
-		result = result.substr(0, open) + "[url=" + target + "][color=#62a0ea][u]" + label + "[/u][/color][/url]" + result.substr(target_end + 1)
+		result = result.substr(0, open) + "[url=" + target + "][color=" + link_col + "][u]" + label + "[/u][/color][/url]" + result.substr(target_end + 1)
 	return result

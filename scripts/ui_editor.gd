@@ -638,6 +638,8 @@ func _setup_sidebar_panels() -> void:
 	# -------------------------------------------------------------
 	# 2. Git Panel (VS Code Style Source Control & GitHub)
 	# -------------------------------------------------------------
+	# 2. Source Control & GitHub Panel (VS Code Style, Dynamic & Spacious)
+	# -------------------------------------------------------------
 	_sidebar_git_panel = VBoxContainer.new()
 	_sidebar_git_panel.name = "SidebarGitPanel"
 	_sidebar_git_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -645,10 +647,48 @@ func _setup_sidebar_panels() -> void:
 	_sidebar_git_panel.visible = false
 	container.add_child(_sidebar_git_panel)
 
+	var git_vsplit := VSplitContainer.new()
+	git_vsplit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	git_vsplit.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	git_vsplit.split_offset = 280
+	_sidebar_git_panel.add_child(git_vsplit)
+
+	var top_git_vbox := VBoxContainer.new()
+	top_git_vbox.add_theme_constant_override("separation", 6)
+	top_git_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_git_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+	var git_hdr_margin := MarginContainer.new()
+	git_hdr_margin.add_theme_constant_override("margin_left", 8)
+	git_hdr_margin.add_theme_constant_override("margin_right", 8)
+	git_hdr_margin.add_theme_constant_override("margin_top", 6)
+	git_hdr_margin.add_theme_constant_override("margin_bottom", 2)
+	var git_hdr_hbox := HBoxContainer.new()
+	var git_hdr_lbl := Label.new()
+	git_hdr_lbl.text = "SOURCE CONTROL"
+	git_hdr_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	git_hdr_lbl.add_theme_color_override("font_color", Color("#A1A1A6"))
+	git_hdr_lbl.add_theme_font_size_override("font_size", 11)
+	git_hdr_hbox.add_child(git_hdr_lbl)
+
+	var refresh_b := Button.new()
+	refresh_b.text = "Refresh"
+	refresh_b.flat = true
+	refresh_b.add_theme_color_override("font_color", Color("#8E8E93"))
+	refresh_b.add_theme_font_size_override("font_size", 11)
+	var icon_refresh: Texture2D = _load_svg_icon("res://icons/git_sync.svg")
+	if icon_refresh:
+		refresh_b.icon = icon_refresh
+		refresh_b.expand_icon = true
+	refresh_b.pressed.connect(func() -> void: _refresh_git_panel())
+	git_hdr_hbox.add_child(refresh_b)
+	git_hdr_margin.add_child(git_hdr_hbox)
+	top_git_vbox.add_child(git_hdr_margin)
+
 	var git_margin := MarginContainer.new()
 	git_margin.add_theme_constant_override("margin_left", 8)
 	git_margin.add_theme_constant_override("margin_right", 8)
-	git_margin.add_theme_constant_override("margin_top", 4)
+	git_margin.add_theme_constant_override("margin_top", 2)
 	git_margin.add_theme_constant_override("margin_bottom", 4)
 	var git_vbox := VBoxContainer.new()
 	git_vbox.add_theme_constant_override("separation", 6)
@@ -707,7 +747,7 @@ func _setup_sidebar_panels() -> void:
 	git_vbox.add_child(_git_progress_panel)
 
 	git_margin.add_child(git_vbox)
-	_sidebar_git_panel.add_child(git_margin)
+	top_git_vbox.add_child(git_margin)
 
 	_git_status_tree = Tree.new()
 	_git_status_tree.hide_root = true
@@ -718,7 +758,7 @@ func _setup_sidebar_panels() -> void:
 	_git_status_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_git_status_tree.theme_type_variation = &"M3ExplorerTree"
 	_git_status_tree.item_activated.connect(_on_git_status_item_activated)
-	_sidebar_git_panel.add_child(_git_status_tree)
+	top_git_vbox.add_child(_git_status_tree)
 
 	var git_actions_margin := MarginContainer.new()
 	git_actions_margin.add_theme_constant_override("margin_left", 8)
@@ -758,11 +798,13 @@ func _setup_sidebar_panels() -> void:
 	git_btn_box.add_child(_git_sync_btn)
 
 	git_actions_margin.add_child(git_btn_box)
-	_sidebar_git_panel.add_child(git_actions_margin)
+	top_git_vbox.add_child(git_actions_margin)
+	git_vsplit.add_child(top_git_vbox)
 
-	# Dedicated Git Output Console inside Git Panel
 	_git_console_panel = PanelContainer.new()
-	_git_console_panel.custom_minimum_size = Vector2(0, 110)
+	_git_console_panel.custom_minimum_size = Vector2(0, 100)
+	_git_console_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_git_console_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_git_console_panel.theme_type_variation = &"M3Composer"
 	var console_margin := MarginContainer.new()
 	console_margin.add_theme_constant_override("margin_left", 8)
@@ -774,15 +816,17 @@ func _setup_sidebar_panels() -> void:
 
 	var console_hdr := HBoxContainer.new()
 	var console_lbl := Label.new()
-	console_lbl.text = "Git Output"
+	console_lbl.text = "GIT OUTPUT LOGS"
 	console_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	console_lbl.add_theme_color_override("font_color", Color("#A1A1A6"))
+	console_lbl.add_theme_font_size_override("font_size", 11)
 	console_hdr.add_child(console_lbl)
 
 	var clear_console_b := Button.new()
 	clear_console_b.text = "Clear"
 	clear_console_b.flat = true
 	clear_console_b.add_theme_color_override("font_color", Color("#8E8E93"))
+	clear_console_b.add_theme_font_size_override("font_size", 11)
 	clear_console_b.pressed.connect(func() -> void:
 		if _git_console_log:
 			_git_console_log.clear()
@@ -798,7 +842,7 @@ func _setup_sidebar_panels() -> void:
 	console_vbox.add_child(_git_console_log)
 	console_margin.add_child(console_vbox)
 	_git_console_panel.add_child(console_margin)
-	_sidebar_git_panel.add_child(_git_console_panel)
+	git_vsplit.add_child(_git_console_panel)
 
 	# -------------------------------------------------------------
 	# 3. Themes Panel
@@ -1267,9 +1311,13 @@ func _wire_signals() -> void:
 	_clear_chat_btn = get_node_or_null("%ClearChatBtn") as Button
 	if _clear_chat_btn:
 		_clear_chat_btn.pressed.connect(_on_clear_chat_pressed)
+		_clear_chat_btn.icon = _load_svg_icon("res://icons/clear.svg")
+		_clear_chat_btn.text = ""
 	_compact_chat_btn = get_node_or_null("%CompactChatBtn") as Button
 	if _compact_chat_btn:
 		_compact_chat_btn.pressed.connect(_on_compact_chat_pressed)
+		_compact_chat_btn.icon = _load_svg_icon("res://icons/compact.svg")
+		_compact_chat_btn.text = ""
 	if _smart_commit_btn:
 		_smart_commit_btn.pressed.connect(_generate_smart_commit)
 	_file_menu.id_pressed.connect(_on_file_menu)
@@ -2085,7 +2133,8 @@ func _apply_theme_by_name(_name: String) -> void:
 	_populate_themes_menu()
 	_update_app_brand_menu()
 	_update_theme_toggle_btn()
-	_append_chat("IDE", "[color=#57e389]Theme applied:[/color] [b]" + label + "[/b]", Color("#57e389"))
+	if _md_preview_active and _active_index >= 0 and _active_index < _open_files.size():
+		_set_markdown_preview(true, _code_edit.text)
 	_show_toast("Theme: " + label, false)
 
 
@@ -2337,7 +2386,8 @@ func _set_markdown_preview(enabled: bool, raw_md: String) -> void:
 
 
 func _markdown_to_bbcode(markdown: String) -> String:
-	return MarkdownPreview.render(markdown)
+	var is_light := ThemeColorScheme.is_light(_active_theme)
+	return MarkdownPreview.render(markdown, is_light)
 
 
 func _is_table_row(line: String) -> bool:
@@ -3603,19 +3653,26 @@ func _append_tool_badge(action: String, target: String) -> void:
 
 
 func _append_chat(who: String, msg_body: String, _color: Color = Color()) -> void:
+	var is_light := _theme_is_light(_active_theme)
 	var formatted := _format_markdown_to_bbcode(msg_body)
 	var tag := who.to_upper()
 	if tag in ["YOU", "USER"]:
-		_chat_log.append_text("[bgcolor=#1C1C1E][color=#0A84FF][b]You[/b][/color]\n%s[/bgcolor]\n\n" % formatted)
-	elif tag in ["SYSTEM", "TOOL"]:
-		_chat_log.append_text("[color=#8E8E93]%s[/color]\n\n" % formatted)
+		var bg_col := "#E5E5EA" if is_light else "#1C1C1E"
+		var title_col := "#005FB8" if is_light else "#0A84FF"
+		_chat_log.append_text("[bgcolor=%s][color=%s][b]You[/b][/color]\n%s[/bgcolor]\n\n" % [bg_col, title_col, formatted])
+	elif tag in ["SYSTEM", "TOOL", "IDE", "WEB"]:
+		var sys_col := "#48484A" if is_light else "#8E8E93"
+		_chat_log.append_text("[color=%s]%s[/color]\n\n" % [sys_col, formatted])
 	else:
-		_chat_log.append_text("[bgcolor=#161618][color=#57E389][b]SSBot (%s)[/b][/color]\n%s[/bgcolor]\n\n" % [_ai_provider.to_upper(), formatted])
+		var bg_col := "#F2F2F7" if is_light else "#161618"
+		var title_col := "#107C41" if is_light else "#57E389"
+		_chat_log.append_text("[bgcolor=%s][color=%s][b]SSBot (%s)[/b][/color]\n%s[/bgcolor]\n\n" % [bg_col, title_col, _ai_provider.to_upper(), formatted])
 	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
 
 
 func _format_markdown_to_bbcode(raw_text: String) -> String:
-	return ChatMarkdown.render(raw_text)
+	var is_light := _theme_is_light(_active_theme)
+	return ChatMarkdown.render(raw_text, is_light)
 
 
 func _format_code_block(code: String, language: String) -> String:
