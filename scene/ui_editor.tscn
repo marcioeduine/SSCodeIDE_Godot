@@ -12,6 +12,9 @@
 [ext_resource type="Texture2D" uid="uid://bhmmg2p4eq0lw" path="res://icons/nav_settings.svg" id="9_nav_settings"]
 [ext_resource type="Texture2D" uid="uid://lweabxd0tqlv" path="res://icons/nav_help.svg" id="10_nav_help"]
 [ext_resource type="Texture2D" uid="uid://bvru54cisp7ec" path="res://icons/nav_sun.svg" id="11_nav_sun"]
+[ext_resource type="Texture2D" path="res://icons/paperclip.svg" id="12_icon_paperclip"]
+[ext_resource type="Texture2D" path="res://icons/send.svg" id="13_icon_send"]
+[ext_resource type="Texture2D" path="res://icons/sparkles.svg" id="14_icon_sparkles"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_backdrop"]
 shader = ExtResource("2_backdrop")
@@ -480,9 +483,11 @@ theme_type_variation = &"M3Composer"
 
 [node name="ChatInputVBox" type="VBoxContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard" unique_id=1761679636]
 layout_mode = 2
+theme_override_constants/separation = 6
 
 [node name="ChatContextChip" type="Button" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox" unique_id=740238814]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 size_flags_horizontal = 0
 theme_type_variation = &"M3TextButton"
@@ -490,12 +495,12 @@ text = "+ Active File"
 
 [node name="ChatInput" type="LineEdit" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox" unique_id=1160227838]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 34)
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "Ask a question or make a request..."
+theme_type_variation = &"M3ComposerInput"
+placeholder_text = "How can i help you today?"
 keep_editing_on_text_submit = true
-clear_button_enabled = true
 caret_blink = true
 
 [node name="ChatInputBottomRow" type="HBoxContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox" unique_id=742355465]
@@ -504,13 +509,30 @@ theme_override_constants/separation = 6
 
 [node name="AttachBtn" type="Button" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=637576685]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
-text = "📎"
+tooltip_text = "Attach context/file"
+theme_type_variation = &"M3RailButton"
+icon = ExtResource("12_icon_paperclip")
+flat = true
+icon_alignment = 1
+expand_icon = true
 
-[node name="AgentModeBtn" type="Button" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=274574760]
+[node name="AgentModeBtn" type="MenuButton" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=274574760]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 24)
 layout_mode = 2
-text = "</> Agent"
+theme_type_variation = &"M3PillBadge"
+text = "Build ⌵"
+
+[node name="ModelBadgeBtn" type="MenuButton" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=987120349]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 24)
+layout_mode = 2
+theme_type_variation = &"M3PillBadge"
+icon = ExtResource("14_icon_sparkles")
+text = "Opus-4.5 ⌵"
+expand_icon = true
 
 [node name="InputSpacer" type="Control" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=1877726678]
 layout_mode = 2
@@ -518,11 +540,13 @@ size_flags_horizontal = 3
 
 [node name="ChatSend" type="Button" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=748177452]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(32, 32)
+custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
 tooltip_text = "Send prompt"
 theme_type_variation = &"M3SendCircleBtn"
-text = "➔"
+icon = ExtResource("13_icon_send")
+icon_alignment = 1
+expand_icon = true
 
 [node name="StatusBar" type="PanelContainer" parent="GridContainer" unique_id=374397806]
 layout_mode = 2

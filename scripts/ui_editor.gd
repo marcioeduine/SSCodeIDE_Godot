@@ -17,7 +17,8 @@ const ThemeResources = preload("res://scripts/theme_resource_registry.gd")
 @onready var _chat_context_chip: Button = %ChatContextChip
 @onready var _chat_input: LineEdit = %ChatInput
 @onready var _attach_btn: Button = %AttachBtn
-@onready var _agent_mode_btn: Button = %AgentModeBtn
+@onready var _agent_mode_btn: MenuButton = get_node_or_null("%AgentModeBtn") as MenuButton
+@onready var _model_badge_btn: MenuButton = get_node_or_null("%ModelBadgeBtn") as MenuButton
 @onready var _provider_select: OptionButton = %ProviderSelect
 @onready var _smart_commit_btn: Button = get_node_or_null("%SmartCommitBtn") as Button
 @onready var _chat_send: Button = %ChatSend
@@ -1345,7 +1346,7 @@ func _wire_signals() -> void:
 	_chat_send.pressed.connect(_on_chat_send_pressed)
 	_chat_context_chip.pressed.connect(_on_context_chip_pressed)
 	_attach_btn.pressed.connect(_on_attach_btn_pressed)
-	_agent_mode_btn.pressed.connect(_on_agent_mode_pressed)
+	_setup_composer_dropdowns()
 	_clear_chat_btn = get_node_or_null("%ClearChatBtn") as Button
 	if _clear_chat_btn:
 		_clear_chat_btn.pressed.connect(_on_clear_chat_pressed)
@@ -2085,15 +2086,76 @@ func _prompt_api_key(force: bool, after: Callable) -> void:
 				after.call(), true)
 
 
+func _setup_composer_dropdowns() -> void:
+	if _agent_mode_btn:
+		var agent_popup := _agent_mode_btn.get_popup()
+		agent_popup.clear()
+		agent_popup.add_radio_check_item("Build (Agent Autopilot)", 0)
+		agent_popup.add_radio_check_item("Chat (Standard Chat)", 1)
+		agent_popup.set_item_checked(0, _agent_mode)
+		agent_popup.set_item_checked(1, not _agent_mode)
+		if not agent_popup.id_pressed.is_connected(_on_agent_mode_popup_selected):
+			agent_popup.id_pressed.connect(_on_agent_mode_popup_selected)
+		_agent_mode_btn.text = "Build ⌵" if _agent_mode else "Chat ⌵"
+
+	if _model_badge_btn:
+		_model_badge_btn.icon = preload("res://icons/sparkles.svg")
+		_model_badge_btn.expand_icon = true
+		var model_popup := _model_badge_btn.get_popup()
+		model_popup.clear()
+		model_popup.add_radio_check_item("Opus-4.5 (Default)", 0)
+		model_popup.add_radio_check_item("Nemotron 3.5 Lightning", 1)
+		model_popup.add_radio_check_item("Kimi K3", 2)
+		model_popup.add_radio_check_item("DeepSeek V4", 3)
+		model_popup.add_radio_check_item("Laguna Code", 4)
+		if not model_popup.id_pressed.is_connected(_on_model_badge_popup_selected):
+			model_popup.id_pressed.connect(_on_model_badge_popup_selected)
+		_update_model_badge_text()
+
+
+func _on_agent_mode_popup_selected(id: int) -> void:
+	_agent_mode = (id == 0)
+	if _agent_mode_btn:
+		_agent_mode_btn.text = "Build ⌵" if _agent_mode else "Chat ⌵"
+		var agent_popup := _agent_mode_btn.get_popup()
+		agent_popup.set_item_checked(0, _agent_mode)
+		agent_popup.set_item_checked(1, not _agent_mode)
+	if _agent_mode:
+		_show_toast("Switched to Build (Agent Autopilot) mode", false)
+	else:
+		_show_toast("Switched to Chat mode", false)
+
+
+func _on_model_badge_popup_selected(id: int) -> void:
+	_on_provider_selected(id)
+
+
+func _update_model_badge_text() -> void:
+	var titles := {
+		"nemotron": "Opus-4.5",
+		"nemotron_lightning": "Nemotron 3.5",
+		"kimi_k3": "Kimi K3",
+		"deepseek_v4": "DeepSeek V4",
+		"laguna": "Laguna Code",
+	}
+	var display_title: String = titles.get(_ai_provider, "Opus-4.5")
+	if _model_badge_btn:
+		_model_badge_btn.text = display_title + " ⌵"
+		var model_popup := _model_badge_btn.get_popup()
+		var names: Array[String] = ["nemotron", "nemotron_lightning", "kimi_k3", "deepseek_v4", "laguna"]
+		for i in range(names.size()):
+			model_popup.set_item_checked(i, names[i] == _ai_provider)
+
+
 func _on_provider_selected(index: int) -> void:
 	if _ai_busy:
 		_cancel_ai_request()
 	var names: Array[String] = ["nemotron", "nemotron_lightning", "kimi_k3", "deepseek_v4", "laguna"]
 	if index >= 0 and index < names.size():
 		_ai_provider = names[index]
-	_chat_send.text = "Send"
 	_save_ai_config()
 	_update_ai_status()
+	_update_model_badge_text()
 
 
 func _load_ai_config() -> void:
@@ -2341,17 +2403,19 @@ func _import_theme_from_xml(xml_path: String) -> void:
 
 func _update_ai_status() -> void:
 	var titles := {
-		"nemotron": "Nemotron 3 Omni",
-		"nemotron_lightning": "Nemotron 3.5 Lightning",
+		"nemotron": "Opus-4.5",
+		"nemotron_lightning": "Nemotron 3.5",
 		"kimi_k3": "Kimi K3",
 		"deepseek_v4": "DeepSeek V4",
 		"laguna": "Laguna Code",
 	}
-	var display_title: String = titles.get(_ai_provider, "Nemotron 3 Omni")
+	var display_title: String = titles.get(_ai_provider, "Opus-4.5")
 	if AIService.has_nvidia_api_key():
 		_status_ai.text = "AI: %s · on" % display_title
 	else:
 		_status_ai.text = "AI: %s · key needed" % display_title
+	if _model_badge_btn:
+		_model_badge_btn.text = "✴ " + display_title + " ⌵"
 	_chat_input.placeholder_text = "How can i help you today?"
 
 

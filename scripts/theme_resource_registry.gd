@@ -115,18 +115,19 @@ static func _build_material3_theme(palette: Dictionary) -> Theme:
 		_set_surface(theme, control_type, panel, focus_panel)
 
 	# Vibe IDE / Floating Card Panels: rounded corners (12px) with subtle borders
-	var card_border := Color("#24252e") if not is_light else outline
+	var card_bg := surface
+	var card_border := Color("#24252e") if not is_light else Color("#d8d9de")
 	theme.set_type_variation(&"M3SidePanel", &"PanelContainer")
-	theme.set_stylebox("panel", &"M3SidePanel", _box_margins(surface, card_border, 12, 10, 8, 10, 8, 1))
-	theme.set_stylebox("focus", &"M3SidePanel", _box_margins(surface, primary, 12, 10, 8, 10, 8, 1))
+	theme.set_stylebox("panel", &"M3SidePanel", _box_margins(card_bg, card_border, 12, 10, 8, 10, 8, 1))
+	theme.set_stylebox("focus", &"M3SidePanel", _box_margins(card_bg, primary, 12, 10, 8, 10, 8, 1))
 
 	theme.set_type_variation(&"M3EditorSurface", &"PanelContainer")
-	theme.set_stylebox("panel", &"M3EditorSurface", _box_margins(surface, card_border, 12, 0, 0, 0, 0, 1))
-	theme.set_stylebox("focus", &"M3EditorSurface", _box_margins(surface, primary, 12, 0, 0, 0, 0, 1))
+	theme.set_stylebox("panel", &"M3EditorSurface", _box_margins(card_bg, card_border, 12, 0, 0, 0, 0, 1))
+	theme.set_stylebox("focus", &"M3EditorSurface", _box_margins(card_bg, primary, 12, 0, 0, 0, 0, 1))
 
 	theme.set_type_variation(&"M3ChatSurface", &"PanelContainer")
-	theme.set_stylebox("panel", &"M3ChatSurface", _box_margins(surface, card_border, 12, 12, 10, 12, 10, 1))
-	theme.set_stylebox("focus", &"M3ChatSurface", _box_margins(surface, primary, 12, 12, 10, 12, 10, 1))
+	theme.set_stylebox("panel", &"M3ChatSurface", _box_margins(card_bg, card_border, 12, 12, 10, 12, 10, 1))
+	theme.set_stylebox("focus", &"M3ChatSurface", _box_margins(card_bg, primary, 12, 12, 10, 12, 10, 1))
 
 	# NavBar (Top Bar) — Vibe subtle header styling with comfortable padding
 	theme.set_type_variation(&"M3TopAppBar", &"PanelContainer")
@@ -138,19 +139,50 @@ static func _build_material3_theme(palette: Dictionary) -> Theme:
 	theme.set_stylebox("panel", &"M3StatusBar", _box_margins(background, card_border, 0, 12, 4, 12, 4, 1))
 	theme.set_stylebox("focus", &"M3StatusBar", _box_margins(background, primary, 0, 12, 4, 12, 4, 1))
 
-	# Chat Composer Box (Floating Rounded Input Card)
+	# Chat Composer Box (Floating Rounded Input Card - 100% Faithful to Reference Image)
+	var composer_bg := Color("#1a1a1e") if not is_light else Color("#ffffff")
+	var composer_border := Color("#2a2b34") if not is_light else Color("#d0d2d8")
 	theme.set_type_variation(&"M3Composer", &"PanelContainer")
-	theme.set_stylebox("panel", &"M3Composer", _box_margins(container, card_border, 12, 12, 10, 12, 10, 1))
-	theme.set_stylebox("focus", &"M3Composer", _box_margins(container, primary, 12, 12, 10, 12, 10, 1))
+	theme.set_stylebox("panel", &"M3Composer", _box_margins(composer_bg, composer_border, 12, 12, 10, 12, 10, 1))
+	theme.set_stylebox("focus", &"M3Composer", _box_margins(composer_bg, primary, 12, 12, 10, 12, 10, 1))
 
-	# Vibrant Emerald Green Send Circle Button
+	# Transparent Borderless Input inside Composer Card
+	theme.set_type_variation(&"M3ComposerInput", &"LineEdit")
+	var transparent_input := StyleBoxEmpty.new()
+	transparent_input.content_margin_left = 2
+	transparent_input.content_margin_right = 2
+	transparent_input.content_margin_top = 2
+	transparent_input.content_margin_bottom = 2
+	theme.set_stylebox("normal", &"M3ComposerInput", transparent_input)
+	theme.set_stylebox("focus", &"M3ComposerInput", transparent_input)
+	theme.set_stylebox("read_only", &"M3ComposerInput", transparent_input)
+	theme.set_color("font_color", &"M3ComposerInput", on_surface)
+	theme.set_color("font_placeholder_color", &"M3ComposerInput", on_variant)
+	theme.set_font_size("font_size", &"M3ComposerInput", 13)
+
+	# Rounded Pill Badges in Composer Bottom Row (Build ⌵ , Opus-4.5 ⌵)
+	theme.set_type_variation(&"M3PillBadge", &"Button")
+	var badge_bg := Color("#222329") if not is_light else Color("#e8eaee")
+	var badge_border := Color("#2c2d38") if not is_light else Color("#d0d2d8")
+	var badge_norm := _box_margins(badge_bg, badge_border, 12, 10, 4, 10, 4, 1)
+	var badge_hov := _box_margins(badge_bg.lightened(0.08), primary, 12, 10, 4, 10, 4, 1)
+	theme.set_stylebox("normal", &"M3PillBadge", badge_norm)
+	theme.set_stylebox("hover", &"M3PillBadge", badge_hov)
+	theme.set_stylebox("pressed", &"M3PillBadge", badge_norm)
+	theme.set_stylebox("focus", &"M3PillBadge", badge_norm)
+	theme.set_color("font_color", &"M3PillBadge", on_surface)
+	theme.set_font_size("font_size", &"M3PillBadge", 12)
+
+	# Composer Send Circle Button
 	theme.set_type_variation(&"M3SendCircleBtn", &"Button")
-	var send_bg := Color("#22c55e")
-	theme.set_stylebox("normal", &"M3SendCircleBtn", _box(send_bg, Color.TRANSPARENT, 16, 4))
-	theme.set_stylebox("hover", &"M3SendCircleBtn", _box(send_bg.lightened(0.1), Color.TRANSPARENT, 16, 4))
-	theme.set_stylebox("pressed", &"M3SendCircleBtn", _box(send_bg.darkened(0.1), Color.TRANSPARENT, 16, 4))
-	theme.set_stylebox("focus", &"M3SendCircleBtn", _box(send_bg, primary, 16, 4, 1))
-	theme.set_color("font_color", &"M3SendCircleBtn", Color("#000000"))
+	var send_circle_bg := Color("#282932") if not is_light else Color("#d0d2d9")
+	var send_circle_norm := _box_margins(send_circle_bg, Color("#363744") if not is_light else Color("#c0c2cb"), 14, 6, 4, 6, 4, 1)
+	var send_circle_hov := _box_margins(primary, Color.TRANSPARENT, 14, 6, 4, 6, 4, 0)
+	theme.set_stylebox("normal", &"M3SendCircleBtn", send_circle_norm)
+	theme.set_stylebox("hover", &"M3SendCircleBtn", send_circle_hov)
+	theme.set_stylebox("pressed", &"M3SendCircleBtn", send_circle_norm)
+	theme.set_stylebox("focus", &"M3SendCircleBtn", send_circle_norm)
+	theme.set_color("font_color", &"M3SendCircleBtn", on_surface)
 
 	# Surfaces
 	for control_type in [&"Tree", &"ItemList", &"RichTextLabel", &"TextEdit", &"CodeEdit"]:
