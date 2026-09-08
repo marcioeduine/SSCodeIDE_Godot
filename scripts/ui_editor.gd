@@ -125,8 +125,9 @@ var _git_smart_commit_btn: Button = null
 var _git_push_btn: Button = null
 var _git_pull_btn: Button = null
 var _git_sync_btn: Button = null
-var _git_progress_panel: PanelContainer = null
-var _git_progress_label: RichTextLabel = null
+var _git_progress_panel: VBoxContainer = null
+var _git_progress_bar: ProgressBar = null
+var _git_progress_label: Label = null
 var _git_console_panel: PanelContainer = null
 var _git_console_log: RichTextLabel = null
 var _themes_list: ItemList = null
@@ -260,10 +261,13 @@ func _process(delta: float) -> void:
 		var elapsed: float = (Time.get_ticks_msec() / 1000.0) - _request_start_time
 		var frame: String = SPINNER_FRAMES[frame_idx]
 		if _current_prompt.begins_with("__SMART_COMMIT__:"):
-			if _git_progress_panel and _git_progress_label:
+			if _git_progress_panel:
 				_git_progress_panel.visible = true
-				var snippet: String = _thinking_text.strip_edges()
-				_git_progress_label.text = "[color=#ffa348]%s[/color] [b]Generating commit message…[/b] [color=#858585](%.1fs)[/color]\n[color=#858585]%s[/color]" % [frame, elapsed, snippet if not snippet.is_empty() else "Analyzing git diff…"]
+			if _git_progress_bar:
+				var cycle_val: float = fmod(elapsed * 50.0, 100.0)
+				_git_progress_bar.value = cycle_val
+			if _git_progress_label:
+				_git_progress_label.text = "⚡ Gerando mensagem de commit com IA... (%.1fs)" % elapsed
 			_status_left.text = "%s Smart Commit · %s (%.1fs)" % [frame, _ai_provider, elapsed]
 		else:
 			_chat_status_label.text = "[color=#ffa348]%s[/color] [b]Thinking…[/b] [color=#858585](%.1fs)[/color]\n[color=#858585]AI thoughts (live) · Tip: Use /save, /files, /open, /cancel, /clear[/color]" % [frame, elapsed]
@@ -705,28 +709,42 @@ func _setup_sidebar_panels() -> void:
 	commit_row.add_child(_git_smart_commit_btn)
 	git_vbox.add_child(commit_row)
 
-	# Emergent SmartCommit Progress / Thinking Panel (Generous Padding & Height)
-	_git_progress_panel = PanelContainer.new()
-	_git_progress_panel.custom_minimum_size = Vector2(0, 76)
+	# Emergent SmartCommit Progress UI (Sleek ProgressBar + Status Text, no heavy box)
+	_git_progress_panel = VBoxContainer.new()
+	_git_progress_panel.add_theme_constant_override("separation", 4)
 	_git_progress_panel.visible = false
-	_git_progress_panel.theme_type_variation = &"M3Composer"
-	var prog_margin := MarginContainer.new()
-	prog_margin.add_theme_constant_override("margin_left", 10)
-	prog_margin.add_theme_constant_override("margin_right", 10)
-	prog_margin.add_theme_constant_override("margin_top", 8)
-	prog_margin.add_theme_constant_override("margin_bottom", 8)
 
-	_git_progress_label = RichTextLabel.new()
-	_git_progress_label.bbcode_enabled = true
-	_git_progress_label.scroll_following = true
-	_git_progress_label.fit_content = false
-	_git_progress_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_git_progress_label.add_theme_font_size_override("normal_font_size", 12)
-	_git_progress_label.add_theme_color_override("default_color", Color("#EDEDED"))
+	var prog_status_row := HBoxContainer.new()
+	prog_status_row.add_theme_constant_override("separation", 6)
+
+	_git_progress_label = Label.new()
+	_git_progress_label.text = "A gerar mensagem de commit com IA..."
 	_git_progress_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_git_progress_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	prog_margin.add_child(_git_progress_label)
-	_git_progress_panel.add_child(prog_margin)
+	_git_progress_label.add_theme_font_size_override("font_size", 11)
+	_git_progress_label.add_theme_color_override("font_color", Color("#A1A1A6"))
+	prog_status_row.add_child(_git_progress_label)
+	_git_progress_panel.add_child(prog_status_row)
+
+	_git_progress_bar = ProgressBar.new()
+	_git_progress_bar.show_percentage = false
+	_git_progress_bar.custom_minimum_size = Vector2(0, 4)
+	_git_progress_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_git_progress_bar.min_value = 0.0
+	_git_progress_bar.max_value = 100.0
+	_git_progress_bar.value = 0.0
+
+	var sb_bg := StyleBoxFlat.new()
+	sb_bg.bg_color = Color("#222224")
+	sb_bg.set_corner_radius_all(2)
+
+	var sb_fill := StyleBoxFlat.new()
+	sb_fill.bg_color = Color("#30D158")
+	sb_fill.set_corner_radius_all(2)
+
+	_git_progress_bar.add_theme_stylebox_override("background", sb_bg)
+	_git_progress_bar.add_theme_stylebox_override("fill", sb_fill)
+
+	_git_progress_panel.add_child(_git_progress_bar)
 	git_vbox.add_child(_git_progress_panel)
 
 	git_margin.add_child(git_vbox)
@@ -3111,6 +3129,8 @@ func _finish_smart_commit(commit_msg: String, _via_ai: bool, _note: String = "")
 	_clear_ai_busy()
 	if _git_progress_panel:
 		_git_progress_panel.visible = false
+	if _git_progress_bar:
+		_git_progress_bar.value = 0.0
 	var message: String = commit_msg.strip_edges()
 	if message.is_empty():
 		message = GitService.build_fallback_commit_message(_workspace_root)
@@ -3165,7 +3185,9 @@ func _continue_smart_commit() -> void:
 	if _git_progress_panel:
 		_git_progress_panel.visible = true
 	if _git_progress_label:
-		_git_progress_label.text = "[color=#ffa348]⠋[/color] [b]Generating commit message with AI…[/b]"
+		_git_progress_label.text = "⚡ A gerar mensagem de commit com IA..."
+	if _git_progress_bar:
+		_git_progress_bar.value = 10.0
 
 	var commit_prompt := (
 		"You are an expert software engineer. Analyse the following `git diff --cached` output " +
@@ -3192,7 +3214,9 @@ func _ai_smart_commit_request(prompt: String, diff_stat: String) -> void:
 	if _git_progress_panel:
 		_git_progress_panel.visible = true
 	if _git_progress_label:
-		_git_progress_label.text = "[color=#ffa348]⠋[/color] [b]Analyzing repository changes…[/b]"
+		_git_progress_label.text = "⚡ A analisar alterações do Git..."
+	if _git_progress_bar:
+		_git_progress_bar.value = 20.0
 	_status_left.text = "Smart Commit: generating AI message…"
 	_current_prompt = "__SMART_COMMIT__:" + diff_stat
 	_smart_commit_prompt = prompt
