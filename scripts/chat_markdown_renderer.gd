@@ -12,11 +12,11 @@ static func render(raw_text: String, is_light: bool = false) -> String:
 	var code_block_lang := ""
 	var code_block_lines: Array[String] = []
 
-	var heading_color := "#005fb8" if is_light else "#ffffff"
+	var heading_color := "#005fb8" if is_light else "#56a8f5"
 	var quote_bar := "#005fb8" if is_light else "#5bc8af"
-	var quote_text := "#333336" if is_light else "#c0bfbc"
-	var check_ok := "#107c41" if is_light else "#57e389"
-	var check_no := "#6e6e73" if is_light else "#9a9996"
+	var quote_text := "#48484a" if is_light else "#c0bfbc"
+	var check_ok := "#16a34a" if is_light else "#22c55e"
+	var check_no := "#6c6c70" if is_light else "#8e8e93"
 
 	for line in raw_text.split("\n"):
 		var trimmed := line.strip_edges()
@@ -58,12 +58,12 @@ static func render(raw_text: String, is_light: bool = false) -> String:
 static func format_code_block(code: String, language: String, is_light: bool = false) -> String:
 	var safe_code := code.replace("[", "[lb]").replace("]", "[rb]")
 	var copy_id := Marshalls.raw_to_base64(code.to_utf8_buffer())
-	var hdr_bg := "#e5e5ea" if is_light else "#25292e"
+	var hdr_bg := "#e0e0e6" if is_light else "#1e1e24"
 	var hdr_fg := "#48484a" if is_light else "#8b949e"
-	var body_bg := "#f2f2f7" if is_light else "#161b22"
-	var body_fg := "#1c1c1e" if is_light else "#e6edf3"
+	var body_bg := "#f3f3f6" if is_light else "#141418"
+	var body_fg := "#111113" if is_light else "#e6edf3"
 	var link_col := "#005fb8" if is_light else "#58a6ff"
-	return "\n[bgcolor=%s][color=%s]  %s[/color]  [url=copy:%s][color=%s][u]Copy[/u][/color][/url]\n[bgcolor=%s][color=%s]  %s\n[/color][/bgcolor]\n\n" % [hdr_bg, hdr_fg, language, copy_id, link_col, body_bg, body_fg, safe_code.replace("\n", "\n  ")]
+	return "\n[bgcolor=%s][color=%s]  %s[/color]  [url=copy:%s][color=%s]📋 Copy[/color][/url]\n[bgcolor=%s][color=%s]  %s\n[/color][/bgcolor]\n\n" % [hdr_bg, hdr_fg, language, copy_id, link_col, body_bg, body_fg, safe_code.replace("\n", "\n  ")]
 
 
 static func replace_bold(text: String) -> String:
@@ -79,8 +79,8 @@ static func replace_bold(text: String) -> String:
 
 static func replace_inline_code(text: String, is_light: bool = false) -> String:
 	var result := text
-	var code_bg := "#e5e5ea" if is_light else "#2c2c2e"
-	var code_fg := "#005fb8" if is_light else "#99c1f1"
+	var code_bg := "#e3e5ea" if is_light else "#222329"
+	var code_fg := "#005fb8" if is_light else "#56a8f5"
 	while true:
 		var first := result.find("`")
 		var second := result.find("`", first + 1)
@@ -102,7 +102,7 @@ static func replace_italic(text: String) -> String:
 
 
 static func replace_links(text: String, is_light: bool = false) -> String:
-	var link_col := "#005fb8" if is_light else "#62a0ea"
+	var link_col := "#005fb8" if is_light else "#56a8f5"
 	var result := text
 	while true:
 		var open := result.find("[")
@@ -114,5 +114,5 @@ static func replace_links(text: String, is_light: bool = false) -> String:
 			break
 		var label := result.substr(open + 1, close - open - 1)
 		var target := result.substr(close + 2, target_end - close - 2)
-		result = result.substr(0, open) + "[url=" + target + "][color=" + link_col + "][u]" + label + "[/u][/color][/url]" + result.substr(target_end + 1)
+		result = result.substr(0, open) + "[url=" + target + "][color=" + link_col + "]" + label + "[/color][/url]" + result.substr(target_end + 1)
 	return result

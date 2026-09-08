@@ -2173,6 +2173,7 @@ func _apply_theme_by_name(_name: String) -> void:
 	_populate_themes_menu()
 	_update_app_brand_menu()
 	_update_theme_toggle_btn()
+	_rebuild_chat_log()
 	if _md_preview_active and _active_index >= 0 and _active_index < _open_files.size():
 		_set_markdown_preview(true, _code_edit.text)
 	_show_toast("Theme: " + label, false)
@@ -3650,13 +3651,37 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 	_append_chat(_ai_provider.to_upper(), "Could not retrieve response (HTTP %d)%s." % [response_code, err_detail], Color("#ed333b"))
 
 
+func _rebuild_chat_log() -> void:
+	if _chat_log == null:
+		return
+	_chat_log.clear()
+	if _chat_history.is_empty():
+		_show_chat_welcome()
+		return
+	for entry in _chat_history:
+		var role: String = str(entry.get("role", "assistant"))
+		var content: String = str(entry.get("content", ""))
+		if role == "user":
+			_append_user_message_to_log(content)
+		elif role == "system":
+			var sys_col := "#6c6c70" if _theme_is_light(_active_theme) else "#8e8e93"
+			_chat_log.append_text("[color=%s]%s[/color]\n\n" % [sys_col, _format_markdown_to_bbcode(content)])
+		else:
+			_append_ai_response_to_log(content)
+
+
 func _append_user_message(prompt: String) -> void:
 	if _chat_history.is_empty():
 		_chat_log.clear()
+	_append_user_message_to_log(prompt)
+
+
+func _append_user_message_to_log(prompt: String) -> void:
 	var sanitized: String = prompt.replace("[", "[lb]")
 	var is_light := _theme_is_light(_active_theme)
-	var bg_col := "#1e3d2a" if not is_light else "#2e7d32"
-	var user_bubble := "\n[right][bgcolor=%s][color=#ffffff]  %s  [/color][/bgcolor][/right]\n\n" % [bg_col, sanitized.replace("\n", "\n  ")]
+	var bg_col := "#252830" if not is_light else "#e2e4e9"
+	var fg_col := "#ffffff" if not is_light else "#111113"
+	var user_bubble := "\n[right][bgcolor=%s][color=%s]  %s  [/color][/bgcolor][/right]\n\n" % [bg_col, fg_col, sanitized.replace("\n", "\n  ")]
 	_chat_log.append_text(user_bubble)
 	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
 
@@ -3686,14 +3711,18 @@ func _on_chat_meta_clicked(meta: Variant) -> void:
 				_ask_ai(last_user_prompt)
 
 
-func _append_ai_response(_provider: String, reply_text: String, _elapsed: float, _tokens_in: int = 0, _tokens_out: int = 0) -> void:
+func _append_ai_response(_provider: String, reply_text: String, _elapsed: float = 0.0, _tokens_in: int = 0, _tokens_out: int = 0) -> void:
+	_append_ai_response_to_log(reply_text)
+
+
+func _append_ai_response_to_log(reply_text: String) -> void:
 	var is_light := _theme_is_light(_active_theme)
-	var bg_col := "#141920" if not is_light else "#f2f2f7"
 	var formatted_body := _format_markdown_to_bbcode(reply_text)
 	var copy_id := Marshalls.raw_to_base64(reply_text.to_utf8_buffer())
-	var action_bar := "[color=#8e8e93][url=copy:%s]📋 Copy[/url]   [url=action_like]👍[/url]   [url=action_dislike]👎[/url]   [url=action_pin]📌 Pin[/url]   [url=action_download:%s]📥 Export[/url]   [url=action_retry]🔄 Regenerate[/url][/color]" % [copy_id, copy_id]
+	var action_col := "#6c6c70" if is_light else "#8e8e93"
+	var action_bar := "[color=%s][url=copy:%s]📋 Copy[/url]   [url=action_like]👍[/url]   [url=action_dislike]👎[/url]   [url=action_pin]📌 Pin[/url]   [url=action_download:%s]📥 Export[/url]   [url=action_retry]🔄 Regenerate[/url][/color]" % [action_col, copy_id, copy_id]
 
-	_chat_log.append_text("[bgcolor=%s]\n%s\n[/bgcolor]\n%s\n\n" % [bg_col, formatted_body, action_bar])
+	_chat_log.append_text("\n%s\n\n%s\n\n" % [formatted_body, action_bar])
 	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
 
 
@@ -3735,18 +3764,14 @@ func _append_tool_badge(action: String, target: String) -> void:
 
 
 func _append_chat(who: String, msg_body: String, _color: Color = Color()) -> void:
-	var is_light := _theme_is_light(_active_theme)
-	var formatted := _format_markdown_to_bbcode(msg_body)
 	var tag := who.to_upper()
 	if tag in ["YOU", "USER"]:
-		var bg_col := "#1e3d2a" if not is_light else "#2e7d32"
-		_chat_log.append_text("\n[right][bgcolor=%s][color=#ffffff]  %s  [/color][/bgcolor][/right]\n\n" % [bg_col, formatted.replace("\n", "\n  ")])
+		_append_user_message_to_log(msg_body)
 	elif tag in ["SYSTEM", "TOOL", "IDE", "WEB"]:
-		var sys_col := "#48484A" if is_light else "#8E8E93"
-		_chat_log.append_text("[color=%s]%s[/color]\n\n" % [sys_col, formatted])
+		var sys_col := "#6c6c70" if _theme_is_light(_active_theme) else "#8e8e93"
+		_chat_log.append_text("[color=%s]%s[/color]\n\n" % [sys_col, _format_markdown_to_bbcode(msg_body)])
 	else:
-		var bg_col := "#141920" if not is_light else "#f2f2f7"
-		_chat_log.append_text("[bgcolor=%s]\n%s\n[/bgcolor]\n\n" % [bg_col, formatted])
+		_append_ai_response_to_log(msg_body)
 	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
 
 
