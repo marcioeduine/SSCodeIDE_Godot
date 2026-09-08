@@ -63,7 +63,7 @@ layout_mode = 2
 
 [node name="AppBrand" type="MenuButton" parent="GridContainer/Header/PanelBrand" unique_id=782929851]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(42, 42)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "SSCodeIDE App Menu"
 icon = ExtResource("3_favicon")

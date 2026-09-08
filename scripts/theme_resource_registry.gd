@@ -20,7 +20,8 @@ static func load_theme(theme_name: String) -> Theme:
 	var custom := _load_theme_path(custom_path, true)
 	if custom != null:
 		return custom
-	return _load_theme_path(builtin_path, false)
+	var fallback_path: String = str(RESOURCE_PATHS.get(ThemeColors.MODE_DARK, "res://themes/dark.theme"))
+	return _load_theme_path(fallback_path, false)
 
 
 static func _load_theme_path(path: String, replace_cache: bool) -> Theme:

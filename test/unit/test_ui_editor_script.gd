@@ -29,11 +29,8 @@ func test_theme_menu_is_scene_backed_and_replaces_slash_selector() -> void:
 	await get_tree().process_frame
 	var menu := editor.get_node_or_null("%Themes") as PopupMenu
 	assert_not_null(menu)
-	assert_gte(editor._theme_menu_keys.size(), 2)
-	assert_eq(editor._theme_menu_keys[0], ThemeColorScheme.MODE_DARK)
-	assert_eq(editor._theme_menu_keys[1], ThemeColorScheme.MODE_LIGHT)
-	assert_eq(menu.get_item_text(0), "Dark")
-	assert_eq(menu.get_item_text(1), "Light")
+	assert_false(editor._theme_menu_keys.has(ThemeColorScheme.MODE_DARK))
+	assert_false(editor._theme_menu_keys.has(ThemeColorScheme.MODE_LIGHT))
 	assert_eq(menu.get_item_text(menu.item_count - 1), "Import XML theme…")
 	assert_false(editor._theme_menu_keys.has("monokai"))
 	assert_false(editor._theme_menu_keys.has("tokyo_night"))
@@ -63,13 +60,9 @@ func test_theme_menu_applies_a_resource_and_marks_the_active_choice() -> void:
 	add_child_autofree(editor)
 	await get_tree().process_frame
 	var previous: String = editor._active_theme
-	var light_id: int = editor._theme_menu_keys.find(ThemeColorScheme.MODE_LIGHT)
-	assert_ne(light_id, -1)
-	editor._on_theme_menu_id_pressed(light_id)
+	editor._toggle_light_dark_theme()
 	assert_eq(editor._active_theme, ThemeColorScheme.MODE_LIGHT)
 	assert_eq((editor.theme as Theme).resource_path, "res://themes/light.theme")
-	var menu := editor.get_node("%Themes") as PopupMenu
-	assert_true(menu.is_item_checked(light_id))
 	editor._apply_theme_by_name(previous)
 
 

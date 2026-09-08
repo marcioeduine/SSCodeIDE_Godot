@@ -110,6 +110,17 @@ var _stream_http: HTTPClient = HTTPClient.new()
 var _stream_active: bool = false
 var _sse_buf: String = ""
 var _stream_reply: String = ""
+
+enum SidebarTab { EXPLORER, SEARCH, GIT, THEMES, CONFIG, HELP }
+var _current_sidebar_tab: SidebarTab = SidebarTab.EXPLORER
+var _sidebar_search_panel: VBoxContainer = null
+var _sidebar_git_panel: VBoxContainer = null
+var _sidebar_themes_panel: VBoxContainer = null
+var _sidebar_config_panel: VBoxContainer = null
+var _sidebar_help_panel: VBoxContainer = null
+var _git_status_tree: Tree = null
+var _themes_list: ItemList = null
+
 const SPINNER_FRAMES: Array[String] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 const OS_NOTIFY_EXPIRE_MS: int = 4000
 const OS_NOTIFY_REPLACE_ID: int = 424242
@@ -207,6 +218,7 @@ func _ready() -> void:
 	_load_ai_config()
 	_load_theme_config()
 	_apply_kitty_fish_theme()
+	_setup_sidebar_panels()
 	_wire_signals()
 	_configure_code_edit()
 	_refresh_file_tree()
@@ -457,6 +469,273 @@ func _collapse_chat(save_offset: bool) -> void:
 	_chat_pane.visible = false
 	_status_left.text = "Chat  ◀  hidden  (Ctrl+Shift+B to restore)"
 
+
+func _select_sidebar_tab(tab: SidebarTab) -> void:
+	if not _explorer_collapsed and _current_sidebar_tab == tab:
+		_collapse_explorer(true)
+		return
+	_current_sidebar_tab = tab
+	_update_sidebar_tab_visibility()
+	_expand_explorer()
+
+
+func _update_sidebar_tab_visibility() -> void:
+	_file_tree.visible = (_current_sidebar_tab == SidebarTab.EXPLORER)
+	if _switch_workspace_btn:
+		_switch_workspace_btn.visible = (_current_sidebar_tab == SidebarTab.EXPLORER)
+	if _sidebar_search_panel:
+		_sidebar_search_panel.visible = (_current_sidebar_tab == SidebarTab.SEARCH)
+	if _sidebar_git_panel:
+		_sidebar_git_panel.visible = (_current_sidebar_tab == SidebarTab.GIT)
+		if _current_sidebar_tab == SidebarTab.GIT:
+			_refresh_git_panel()
+	if _sidebar_themes_panel:
+		_sidebar_themes_panel.visible = (_current_sidebar_tab == SidebarTab.THEMES)
+		if _current_sidebar_tab == SidebarTab.THEMES:
+			_refresh_themes_panel()
+	if _sidebar_config_panel:
+		_sidebar_config_panel.visible = (_current_sidebar_tab == SidebarTab.CONFIG)
+	if _sidebar_help_panel:
+		_sidebar_help_panel.visible = (_current_sidebar_tab == SidebarTab.HELP)
+
+	if _workspace_state:
+		match _current_sidebar_tab:
+			SidebarTab.EXPLORER:
+				var root_title: String = _workspace_root.get_file()
+				_workspace_state.text = (root_title if not root_title.is_empty() else "WORKSPACE").to_upper()
+			SidebarTab.SEARCH:
+				_workspace_state.text = "SEARCH & REPLACE"
+			SidebarTab.GIT:
+				_workspace_state.text = "SOURCE CONTROL"
+			SidebarTab.THEMES:
+				_workspace_state.text = "THEMES & IMPORTS"
+			SidebarTab.CONFIG:
+				_workspace_state.text = "SETTINGS"
+			SidebarTab.HELP:
+				_workspace_state.text = "HELP & SHORTCUTS"
+
+
+func _setup_sidebar_panels() -> void:
+	var container: Node = _file_tree.get_parent()
+	if not container:
+		return
+
+	# 1. Search Panel
+	_sidebar_search_panel = VBoxContainer.new()
+	_sidebar_search_panel.name = "SidebarSearchPanel"
+	_sidebar_search_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sidebar_search_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_sidebar_search_panel.visible = false
+	container.add_child(_sidebar_search_panel)
+
+	var s_margin := MarginContainer.new()
+	s_margin.add_theme_constant_override("margin_left", 8)
+	s_margin.add_theme_constant_override("margin_right", 8)
+	s_margin.add_theme_constant_override("margin_top", 4)
+	s_margin.add_theme_constant_override("margin_bottom", 4)
+	var s_vbox := VBoxContainer.new()
+	s_vbox.add_theme_constant_override("separation", 6)
+
+	var s_lbl := Label.new()
+	s_lbl.text = "Find in Editor:"
+	s_vbox.add_child(s_lbl)
+	var s_input := LineEdit.new()
+	s_input.placeholder_text = "Search text…"
+	s_input.text_submitted.connect(func(t: String) -> void:
+		_find_input.text = t
+		_do_find(t)
+	)
+	s_vbox.add_child(s_input)
+
+	var r_lbl := Label.new()
+	r_lbl.text = "Replace with:"
+	s_vbox.add_child(r_lbl)
+	var r_input := LineEdit.new()
+	r_input.placeholder_text = "Replacement text…"
+	r_input.text_changed.connect(func(t: String) -> void: _replace_input.text = t)
+	s_vbox.add_child(r_input)
+
+	var btn_hbox := HBoxContainer.new()
+	btn_hbox.add_theme_constant_override("separation", 6)
+	var find_next_btn := Button.new()
+	find_next_btn.text = "Find Next"
+	find_next_btn.pressed.connect(func() -> void:
+		_find_input.text = s_input.text
+		_on_find_next()
+	)
+	btn_hbox.add_child(find_next_btn)
+
+	var repl_btn := Button.new()
+	repl_btn.text = "Replace All"
+	repl_btn.pressed.connect(func() -> void:
+		_find_input.text = s_input.text
+		_replace_input.text = r_input.text
+		_replace_all_matches()
+	)
+	btn_hbox.add_child(repl_btn)
+	s_vbox.add_child(btn_hbox)
+	s_margin.add_child(s_vbox)
+	_sidebar_search_panel.add_child(s_margin)
+
+	# 2. Git Panel
+	_sidebar_git_panel = VBoxContainer.new()
+	_sidebar_git_panel.name = "SidebarGitPanel"
+	_sidebar_git_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sidebar_git_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_sidebar_git_panel.visible = false
+	container.add_child(_sidebar_git_panel)
+
+	_git_status_tree = Tree.new()
+	_git_status_tree.hide_root = true
+	_git_status_tree.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_git_status_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_sidebar_git_panel.add_child(_git_status_tree)
+
+	var git_btn_box := HBoxContainer.new()
+	git_btn_box.add_theme_constant_override("separation", 6)
+	var commit_b := Button.new()
+	commit_b.text = "Smart Commit"
+	commit_b.pressed.connect(_generate_smart_commit)
+	git_btn_box.add_child(commit_b)
+
+	var push_b := Button.new()
+	push_b.text = "Push"
+	push_b.pressed.connect(func() -> void: _on_git_menu(3))
+	git_btn_box.add_child(push_b)
+
+	var pull_b := Button.new()
+	pull_b.text = "Pull"
+	pull_b.pressed.connect(func() -> void: _on_git_menu(4))
+	git_btn_box.add_child(pull_b)
+
+	_sidebar_git_panel.add_child(git_btn_box)
+
+	# 3. Themes Panel
+	_sidebar_themes_panel = VBoxContainer.new()
+	_sidebar_themes_panel.name = "SidebarThemesPanel"
+	_sidebar_themes_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sidebar_themes_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_sidebar_themes_panel.visible = false
+	container.add_child(_sidebar_themes_panel)
+
+	var th_lbl := Label.new()
+	th_lbl.text = "Custom XML Themes:"
+	_sidebar_themes_panel.add_child(th_lbl)
+
+	_themes_list = ItemList.new()
+	_themes_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_themes_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_themes_list.item_selected.connect(func(idx: int) -> void:
+		var theme_name: String = str(_themes_list.get_item_metadata(idx))
+		_apply_theme_by_name(theme_name)
+	)
+	_sidebar_themes_panel.add_child(_themes_list)
+
+	var import_xml_btn := Button.new()
+	import_xml_btn.text = "Import XML Theme…"
+	import_xml_btn.pressed.connect(_import_theme_xml_dialog)
+	_sidebar_themes_panel.add_child(import_xml_btn)
+
+	# 4. Settings Panel
+	_sidebar_config_panel = VBoxContainer.new()
+	_sidebar_config_panel.name = "SidebarConfigPanel"
+	_sidebar_config_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sidebar_config_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_sidebar_config_panel.visible = false
+	container.add_child(_sidebar_config_panel)
+
+	var cfg_info := RichTextLabel.new()
+	cfg_info.bbcode_enabled = true
+	cfg_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cfg_info.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	cfg_info.text = "[b]Settings & AI Config[/b]\n\n"
+	cfg_info.text += "[b]AI Provider:[/b] NVIDIA NIM / Nemotron\n"
+	cfg_info.text += "[b]Workspace:[/b] " + _workspace_root + "\n\n"
+	cfg_info.text += "[color=#8E8E93]Use top menu bar for advanced options.[/color]"
+	_sidebar_config_panel.add_child(cfg_info)
+
+	# 5. Help Panel
+	_sidebar_help_panel = VBoxContainer.new()
+	_sidebar_help_panel.name = "SidebarHelpPanel"
+	_sidebar_help_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sidebar_help_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_sidebar_help_panel.visible = false
+	container.add_child(_sidebar_help_panel)
+
+	var help_info := RichTextLabel.new()
+	help_info.bbcode_enabled = true
+	help_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	help_info.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	help_info.text = HELP_TEXT
+	_sidebar_help_panel.add_child(help_info)
+
+
+func _refresh_git_panel() -> void:
+	if _git_status_tree == null:
+		return
+	_git_status_tree.clear()
+	var root := _git_status_tree.create_item()
+	if not GitService.is_git_repository(_workspace_root):
+		var item := _git_status_tree.create_item(root)
+		item.set_text(0, "No Git repository found")
+		return
+	var st: Dictionary = GitService.get_status(_workspace_root)
+	var branch: String = str(st.get("branch", "main"))
+	var is_clean: bool = bool(st.get("is_clean", true))
+
+	var branch_item := _git_status_tree.create_item(root)
+	branch_item.set_text(0, "Branch: " + branch)
+	branch_item.set_custom_color(0, Color("#30d158") if is_clean else Color("#ffa348"))
+
+	var staged: Array = st.get("staged", [])
+	if not staged.is_empty():
+		var staged_cat := _git_status_tree.create_item(root)
+		staged_cat.set_text(0, "Staged Changes (%d)" % staged.size())
+		staged_cat.set_custom_color(0, Color("#30d158"))
+		for f in staged:
+			var item := _git_status_tree.create_item(staged_cat)
+			item.set_text(0, "  " + str(f))
+
+	var unstaged: Array = st.get("unstaged", [])
+	if not unstaged.is_empty():
+		var unstaged_cat := _git_status_tree.create_item(root)
+		unstaged_cat.set_text(0, "Changes (%d)" % unstaged.size())
+		unstaged_cat.set_custom_color(0, Color("#ffa348"))
+		for f in unstaged:
+			var item := _git_status_tree.create_item(unstaged_cat)
+			item.set_text(0, "  " + str(f))
+
+	var untracked: Array = st.get("untracked", [])
+	if not untracked.is_empty():
+		var untracked_cat := _git_status_tree.create_item(root)
+		untracked_cat.set_text(0, "Untracked Files (%d)" % untracked.size())
+		untracked_cat.set_custom_color(0, Color("#8e8e93"))
+		for f in untracked:
+			var item := _git_status_tree.create_item(untracked_cat)
+			item.set_text(0, "  " + str(f))
+
+
+func _refresh_themes_panel() -> void:
+	if _themes_list == null:
+		return
+	_themes_list.clear()
+	var custom_keys: Array[String] = []
+	for raw_key in _custom_themes.keys():
+		var key := str(raw_key)
+		if not ThemeColorScheme.is_builtin_mode(key):
+			custom_keys.append(key)
+	custom_keys.sort()
+	for key in custom_keys:
+		var info: Dictionary = _custom_themes.get(key, {})
+		var label: String = str(info.get("label", key))
+		var idx := _themes_list.add_item(label + " (XML)")
+		_themes_list.set_item_metadata(idx, key)
+		if key == _active_theme:
+			_themes_list.select(idx)
+	if custom_keys.is_empty():
+		_themes_list.add_item("No custom XML themes imported")
+		_themes_list.set_item_disabled(0, true)
+
 func _on_main_split_dragged(offset: int) -> void:
 	if _explorer_collapsed:
 		return
@@ -532,36 +811,21 @@ func _wire_signals() -> void:
 	_main_split.dragged.connect(_on_main_split_dragged)
 	_center_split.dragged.connect(_on_center_split_dragged)
 	if _explorer_rail_btn:
-		_explorer_rail_btn.pressed.connect(_toggle_explorer)
+		_explorer_rail_btn.pressed.connect(func() -> void: _select_sidebar_tab(SidebarTab.EXPLORER))
 	if _edit_rail_btn:
-		_edit_rail_btn.pressed.connect(func() -> void:
-			if _edit_menu:
-				_edit_menu.popup_on_parent(Rect2i(_edit_rail_btn.get_global_rect()))
-		)
+		_edit_rail_btn.pressed.connect(func() -> void: _select_sidebar_tab(SidebarTab.SEARCH))
 	if _git_rail_btn:
-		_git_rail_btn.pressed.connect(func() -> void:
-			if _git_menu:
-				_git_menu.popup_on_parent(Rect2i(_git_rail_btn.get_global_rect()))
-		)
+		_git_rail_btn.pressed.connect(func() -> void: _select_sidebar_tab(SidebarTab.GIT))
 	if _themes_rail_btn:
 		_themes_rail_btn.visible = true
 		_themes_rail_btn.tooltip_text = "Themes & Import XML"
-		_themes_rail_btn.pressed.connect(func() -> void:
-			if _themes_menu:
-				_themes_menu.popup_on_parent(Rect2i(_themes_rail_btn.get_global_rect()))
-		)
+		_themes_rail_btn.pressed.connect(func() -> void: _select_sidebar_tab(SidebarTab.THEMES))
 	if _chat_rail_btn:
 		_chat_rail_btn.pressed.connect(_toggle_chat)
 	if _config_rail_btn:
-		_config_rail_btn.pressed.connect(func() -> void:
-			if _config_menu:
-				_config_menu.popup_on_parent(Rect2i(_config_rail_btn.get_global_rect()))
-		)
+		_config_rail_btn.pressed.connect(func() -> void: _select_sidebar_tab(SidebarTab.CONFIG))
 	if _help_rail_btn:
-		_help_rail_btn.pressed.connect(func() -> void:
-			if _help_menu:
-				_help_menu.popup_on_parent(Rect2i(_help_rail_btn.get_global_rect()))
-		)
+		_help_rail_btn.pressed.connect(func() -> void: _select_sidebar_tab(SidebarTab.HELP))
 	if _drawer_collapse_btn:
 		_drawer_collapse_btn.pressed.connect(_toggle_explorer)
 	if _switch_workspace_btn:
@@ -1321,7 +1585,7 @@ func _populate_themes_menu() -> void:
 		return
 	_themes_menu.clear()
 	_theme_menu_keys.clear()
-	var keys: Array[String] = [ThemeColorScheme.MODE_DARK, ThemeColorScheme.MODE_LIGHT]
+	var keys: Array[String] = []
 	var custom_keys: Array[String] = []
 	for raw_key in _custom_themes.keys():
 		var key := str(raw_key)
@@ -1346,7 +1610,7 @@ func _populate_themes_menu() -> void:
 		_themes_menu.set_item_tooltip(item_index, "Currently selected" if key == _active_theme else "Apply " + str(info.get("label", key)))
 		_theme_menu_keys.append(key)
 	if _theme_menu_keys.is_empty():
-		_themes_menu.add_item("No theme resources available")
+		_themes_menu.add_item("No custom XML themes imported")
 		_themes_menu.set_item_disabled(0, true)
 	_themes_menu.add_separator()
 	_themes_menu.add_item("Import XML theme…", THEME_MENU_IMPORT_ID)
@@ -1504,6 +1768,8 @@ func _apply_kitty_fish_theme() -> bool:
 
 func _apply_theme_resource(theme_name: String) -> bool:
 	var selected := ThemeResources.load_theme(theme_name)
+	if selected == null:
+		selected = ThemeResources.load_theme(ThemeColorScheme.MODE_DARK)
 	if selected == null:
 		return false
 	theme = selected
