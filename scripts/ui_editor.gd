@@ -472,6 +472,7 @@ func _expand_explorer() -> void:
 	var target := _explorer_split_offset if _explorer_split_offset > SPLIT_COLLAPSE_PX else int(get_viewport_rect().size.x * 0.18)
 	_main_split.split_offset = target
 	_status_left.text = "Explorer  ▶  shown"
+	_update_sidebar_tab_visibility()
 
 
 func _collapse_explorer(save_offset: bool) -> void:
@@ -482,6 +483,7 @@ func _collapse_explorer(save_offset: bool) -> void:
 	_explorer_collapsed = true
 	_explorer_pane.visible = false
 	_status_left.text = "Explorer  ◀  hidden  (Ctrl+B to restore)"
+	_update_sidebar_tab_visibility()
 
 
 func _expand_chat() -> void:
@@ -490,6 +492,7 @@ func _expand_chat() -> void:
 	var target := _chat_split_offset if _chat_split_offset > SPLIT_COLLAPSE_PX else int(get_viewport_rect().size.x * 0.50)
 	_center_split.split_offset = target
 	_status_left.text = "Chat  ▶  shown"
+	_update_sidebar_tab_visibility()
 
 
 func _collapse_chat(save_offset: bool) -> void:
@@ -500,6 +503,7 @@ func _collapse_chat(save_offset: bool) -> void:
 	_chat_collapsed = true
 	_chat_pane.visible = false
 	_status_left.text = "Chat  ◀  hidden  (Ctrl+Shift+B to restore)"
+	_update_sidebar_tab_visibility()
 
 
 func _select_sidebar_tab(tab: SidebarTab) -> void:
@@ -529,6 +533,23 @@ func _update_sidebar_tab_visibility() -> void:
 		_sidebar_config_panel.visible = (_current_sidebar_tab == SidebarTab.CONFIG)
 	if _sidebar_help_panel:
 		_sidebar_help_panel.visible = (_current_sidebar_tab == SidebarTab.HELP)
+
+	var rail_buttons := [
+		[_explorer_rail_btn, _current_sidebar_tab == SidebarTab.EXPLORER],
+		[_edit_rail_btn, _current_sidebar_tab == SidebarTab.SEARCH],
+		[_git_rail_btn, _current_sidebar_tab == SidebarTab.GIT],
+		[_themes_rail_btn, _current_sidebar_tab == SidebarTab.THEMES],
+		[_config_rail_btn, _current_sidebar_tab == SidebarTab.CONFIG],
+		[_help_rail_btn, _current_sidebar_tab == SidebarTab.HELP],
+	]
+	for pair in rail_buttons:
+		var btn: Button = pair[0]
+		var is_active: bool = pair[1] and not _explorer_collapsed
+		if btn:
+			btn.theme_type_variation = &"M3RailButtonActive" if is_active else &"M3RailButton"
+
+	if _chat_rail_btn:
+		_chat_rail_btn.theme_type_variation = &"M3RailButtonActive" if not _chat_collapsed else &"M3RailButton"
 
 	if _workspace_state:
 		match _current_sidebar_tab:
@@ -1352,6 +1373,8 @@ func _wire_signals() -> void:
 		_about_menu.id_pressed.connect(_on_about_menu)
 	if _app_brand:
 		_setup_app_brand_menu()
+	if _chat_history.is_empty():
+		_show_chat_welcome()
 	_open_file_dlg.file_selected.connect(_open_path)
 	_open_dir_dlg.dir_selected.connect(_on_dir_selected)
 	_save_as_dlg.file_selected.connect(_save_as_path)
@@ -2328,12 +2351,18 @@ func _update_ai_status() -> void:
 		_status_ai.text = "AI: %s · on" % display_title
 	else:
 		_status_ai.text = "AI: %s · key needed" % display_title
-	_chat_input.placeholder_text = "Describe what to build or ask %s…" % display_title
+	_chat_input.placeholder_text = "How can i help you today?"
+
+
+func _show_chat_welcome() -> void:
+	_chat_log.clear()
+	var welcome := "\n\n\n\n\n[center][font_size=28][color=#e2996d]✴[/color] [b]Let's Talk[/b][/font_size]\n[color=#7a7e85][font_size=13]Ask any question or start coding with AI[/font_size][/color][/center]\n"
+	_chat_log.append_text(welcome)
 
 
 func _on_clear_chat_pressed() -> void:
-	_chat_log.clear()
 	_chat_history.clear()
+	_show_chat_welcome()
 	_send_os_notification("Chat", "Chat history cleared.")
 
 
@@ -2636,8 +2665,14 @@ func _load_active_into_editor() -> void:
 	_update_cursor_status()
 	if not path.is_empty():
 		_chat_context_chip.text = "+ " + path.get_file()
+		var root_name: String = _workspace_root.get_file() if not _workspace_root.is_empty() else "My Project"
+		if root_name.is_empty():
+			root_name = "My Project"
+		var rel: String = path.replace(_workspace_root, "").trim_prefix("/")
+		_status_left.text = root_name + " > " + rel.replace("/", " > ")
 	else:
 		_chat_context_chip.text = "+ Untitled"
+		_status_left.text = "My Project > Untitled"
 	# Markdown preview toggle
 	var is_md: bool = path.to_lower().ends_with(".md")
 	_set_markdown_preview(is_md, str(info.get("content", "")))
@@ -2729,7 +2764,7 @@ func _on_caret_changed() -> void:
 func _update_cursor_status() -> void:
 	var line: int = _code_edit.get_caret_line() + 1
 	var col: int = _code_edit.get_caret_column() + 1
-	_status_cursor.text = "Ln %d, Col %d" % [line, col]
+	_status_cursor.text = "Ln %d, Col %d   < Code Navigation Help" % [line, col]
 
 
 func _do_find(query: String) -> void:
@@ -3616,6 +3651,8 @@ func _on_ai_chat_http_completed(result: int, response_code: int, _headers: Packe
 
 
 func _append_user_message(prompt: String) -> void:
+	if _chat_history.is_empty():
+		_chat_log.clear()
 	var sanitized: String = prompt.replace("[", "[lb]")
 	var is_light := _theme_is_light(_active_theme)
 	var bg_col := "#1e3d2a" if not is_light else "#2e7d32"

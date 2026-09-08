@@ -12,10 +12,10 @@ const DARK_THEMES: Dictionary = {
 	"adwaita_darker": {
 		"label": "Dark",
 		"variant": "dark",
-		"bg_black":   "#0F0F10", "bg_darker":  "#111112", "bg_surface": "#141415",
-		"bg_card":    "#1C1C1E", "bg_lighter": "#222224",
+		"bg_black":   "#0c0c0e", "bg_darker":  "#0e0f12", "bg_surface": "#141417",
+		"bg_card":    "#19191d", "bg_lighter": "#222329",
 		"fg":         "#EDEDED", "fg_bright":  "#FFFFFF", "muted":      "#8E8E93",
-		"blue":       "#3574f0", "green":      "#3ac474", "cyan":       "#3bbdbd", "red": "#e05561",
+		"blue":       "#3574f0", "green":      "#22c55e", "cyan":       "#3bbdbd", "red": "#e05561",
 		"hl_number":  "#2aacb8", "hl_symbol":  "#bcbec4", "hl_func":    "#56a8f5",
 		"hl_member":  "#c77dbb", "hl_comment": "#7a7e85", "hl_string":  "#6aab73",
 		"hl_keyword": "#cf8e6d", "hl_type":    "#2aacb8", "hl_const":   "#2aacb8",

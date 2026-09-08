@@ -14,14 +14,21 @@ const RESOURCE_PATHS: Dictionary = {
 static func load_theme(theme_name: String) -> Theme:
 	var custom_path := "user://themes/%s.theme" % safe_key(theme_name)
 	var builtin_path: String = str(RESOURCE_PATHS.get(theme_name, ""))
-	## Dark/Light always use the shipped resources. Imported XML uses user://.
 	if ThemeColors.is_builtin_mode(theme_name):
-		return _load_theme_path(builtin_path, false)
+		var built := _load_theme_path(builtin_path, true)
+		if built != null:
+			return built
+		var palette: Dictionary = ThemeColors.MODE_THEMES.get(theme_name, ThemeColors.MODE_THEMES[ThemeColors.MODE_DARK])
+		return _build_material3_theme(palette)
+
 	var custom := _load_theme_path(custom_path, true)
 	if custom != null:
 		return custom
 	var fallback_path: String = str(RESOURCE_PATHS.get(ThemeColors.MODE_DARK, "res://themes/dark.theme"))
-	return _load_theme_path(fallback_path, false)
+	var fallback := _load_theme_path(fallback_path, true)
+	if fallback != null:
+		return fallback
+	return _build_material3_theme(ThemeColors.MODE_THEMES[ThemeColors.MODE_DARK])
 
 
 static func _load_theme_path(path: String, replace_cache: bool) -> Theme:
@@ -107,33 +114,34 @@ static func _build_material3_theme(palette: Dictionary) -> Theme:
 	for control_type in [&"Panel", &"PanelContainer", &"PopupPanel", &"FileDialog", &"AcceptDialog"]:
 		_set_surface(theme, control_type, panel, focus_panel)
 
-	# JetBrains / VS Code IDE Panels: clean borders with refined padding
+	# Vibe IDE / Floating Card Panels: rounded corners (12px) with subtle borders
+	var card_border := Color("#24252e") if not is_light else outline
 	theme.set_type_variation(&"M3SidePanel", &"PanelContainer")
-	theme.set_stylebox("panel", &"M3SidePanel", _box_margins(surface, outline, 0, 10, 8, 10, 8, 1))
-	theme.set_stylebox("focus", &"M3SidePanel", _box_margins(surface, primary, 0, 10, 8, 10, 8, 1))
+	theme.set_stylebox("panel", &"M3SidePanel", _box_margins(surface, card_border, 12, 10, 8, 10, 8, 1))
+	theme.set_stylebox("focus", &"M3SidePanel", _box_margins(surface, primary, 12, 10, 8, 10, 8, 1))
 
 	theme.set_type_variation(&"M3EditorSurface", &"PanelContainer")
-	theme.set_stylebox("panel", &"M3EditorSurface", _box(background, outline, 0, 0, 1))
-	theme.set_stylebox("focus", &"M3EditorSurface", _box(background, primary, 0, 0, 2))
+	theme.set_stylebox("panel", &"M3EditorSurface", _box_margins(surface, card_border, 12, 0, 0, 0, 0, 1))
+	theme.set_stylebox("focus", &"M3EditorSurface", _box_margins(surface, primary, 12, 0, 0, 0, 0, 1))
 
 	theme.set_type_variation(&"M3ChatSurface", &"PanelContainer")
-	theme.set_stylebox("panel", &"M3ChatSurface", _box_margins(surface, outline, 0, 12, 10, 12, 10, 1))
-	theme.set_stylebox("focus", &"M3ChatSurface", _box_margins(surface, primary, 0, 12, 10, 12, 10, 1))
+	theme.set_stylebox("panel", &"M3ChatSurface", _box_margins(surface, card_border, 12, 12, 10, 12, 10, 1))
+	theme.set_stylebox("focus", &"M3ChatSurface", _box_margins(surface, primary, 12, 12, 10, 12, 10, 1))
 
-	# NavBar (Top Bar) — JetBrains subtle header styling with comfortable padding
+	# NavBar (Top Bar) — Vibe subtle header styling with comfortable padding
 	theme.set_type_variation(&"M3TopAppBar", &"PanelContainer")
-	theme.set_stylebox("panel", &"M3TopAppBar", _box_margins(surface, outline, 0, 8, 3, 8, 3, 1))
-	theme.set_stylebox("focus", &"M3TopAppBar", _box_margins(surface, primary, 0, 8, 3, 8, 3, 1))
+	theme.set_stylebox("panel", &"M3TopAppBar", _box_margins(background, Color.TRANSPARENT, 0, 10, 4, 10, 4, 0))
+	theme.set_stylebox("focus", &"M3TopAppBar", _box_margins(background, primary, 0, 10, 4, 10, 4, 1))
 
-	# StatusBar — JetBrains IDE status line with clean separation and padding
+	# StatusBar — Vibe IDE status line with clean separation and padding
 	theme.set_type_variation(&"M3StatusBar", &"PanelContainer")
-	theme.set_stylebox("panel", &"M3StatusBar", _box_margins(container, outline, 0, 12, 2, 12, 2, 1))
-	theme.set_stylebox("focus", &"M3StatusBar", _box_margins(container, primary, 0, 12, 2, 12, 2, 1))
+	theme.set_stylebox("panel", &"M3StatusBar", _box_margins(background, card_border, 0, 12, 4, 12, 4, 1))
+	theme.set_stylebox("focus", &"M3StatusBar", _box_margins(background, primary, 0, 12, 4, 12, 4, 1))
 
 	# Chat Composer Box (Floating Rounded Input Card)
 	theme.set_type_variation(&"M3Composer", &"PanelContainer")
-	theme.set_stylebox("panel", &"M3Composer", _box_margins(container, outline, 16, 12, 10, 12, 10, 1))
-	theme.set_stylebox("focus", &"M3Composer", _box_margins(container, primary, 16, 12, 10, 12, 10, 1))
+	theme.set_stylebox("panel", &"M3Composer", _box_margins(container, card_border, 12, 12, 10, 12, 10, 1))
+	theme.set_stylebox("focus", &"M3Composer", _box_margins(container, primary, 12, 12, 10, 12, 10, 1))
 
 	# Vibrant Emerald Green Send Circle Button
 	theme.set_type_variation(&"M3SendCircleBtn", &"Button")
@@ -240,11 +248,11 @@ static func _build_material3_theme(palette: Dictionary) -> Theme:
 	# Minimal Collapsible NavRail panel (Untitled UI style slim vertical bar)
 	theme.set_type_variation(&"M3NavRail", &"PanelContainer")
 	var rail_box := StyleBoxFlat.new()
-	rail_box.bg_color = background if is_light else Color("#0F0F10")
-	rail_box.border_color = outline
-	rail_box.set_border_width(SIDE_RIGHT, 1)
-	rail_box.content_margin_left = 8
-	rail_box.content_margin_right = 8
+	rail_box.bg_color = Color.TRANSPARENT
+	rail_box.border_color = Color.TRANSPARENT
+	rail_box.set_border_width_all(0)
+	rail_box.content_margin_left = 6
+	rail_box.content_margin_right = 6
 	rail_box.content_margin_top = 4
 	rail_box.content_margin_bottom = 4
 	rail_box.anti_aliasing = true
@@ -266,6 +274,17 @@ static func _build_material3_theme(palette: Dictionary) -> Theme:
 	theme.set_color("icon_hover_color", &"M3RailButton", primary if is_light else Color.WHITE)
 	theme.set_color("icon_pressed_color", &"M3RailButton", primary)
 	theme.set_font_size("font_size", &"M3RailButton", 14)
+
+	# Active NavRail Pill Button Variation
+	theme.set_type_variation(&"M3RailButtonActive", &"Button")
+	var rail_active_bg := primary.darkened(0.70) if not is_light else primary.lightened(0.75)
+	var rail_active_box := _box_margins(rail_active_bg, primary, 6, 6, 6, 6, 6, 1)
+	theme.set_stylebox("normal", &"M3RailButtonActive", rail_active_box)
+	theme.set_stylebox("hover", &"M3RailButtonActive", rail_active_box)
+	theme.set_stylebox("pressed", &"M3RailButtonActive", rail_active_box)
+	theme.set_stylebox("focus", &"M3RailButtonActive", rail_active_box)
+	theme.set_color("font_color", &"M3RailButtonActive", primary if is_light else Color.WHITE)
+	theme.set_color("icon_normal_color", &"M3RailButtonActive", primary if is_light else Color.WHITE)
 
 	# NavDrawer pill items (e.g. Analytics, Explorer, Git)
 	theme.set_type_variation(&"M3NavPillButton", &"Button")
