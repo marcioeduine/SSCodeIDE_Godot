@@ -244,13 +244,13 @@ func _ready() -> void:
 	_setup_sidebar_panels()
 	_wire_signals()
 	_configure_code_edit()
-	_refresh_file_tree()
 	_open_untitled()
 	_update_ai_status()
-	_update_git_status_bar()
 	_status_left.text = "READY"
 	_status_enc.text = "UTF-8"
 	call_deferred("_apply_split_offsets")
+	call_deferred("_refresh_file_tree")
+	call_deferred("_update_git_status_bar")
 
 
 func _process(delta: float) -> void:
@@ -2103,7 +2103,7 @@ func _setup_composer_dropdowns() -> void:
 		_model_badge_btn.expand_icon = true
 		var model_popup := _model_badge_btn.get_popup()
 		model_popup.clear()
-		model_popup.add_radio_check_item("Opus-4.5 (Default)", 0)
+		model_popup.add_radio_check_item("Nemotron 3 Omni", 0)
 		model_popup.add_radio_check_item("Nemotron 3.5 Lightning", 1)
 		model_popup.add_radio_check_item("Kimi K3", 2)
 		model_popup.add_radio_check_item("DeepSeek V4", 3)
@@ -2132,15 +2132,15 @@ func _on_model_badge_popup_selected(id: int) -> void:
 
 func _update_model_badge_text() -> void:
 	var titles := {
-		"nemotron": "Opus-4.5",
-		"nemotron_lightning": "Nemotron 3.5",
+		"nemotron": "Nemotron 3 Omni",
+		"nemotron_lightning": "Nemotron 3.5 Lightning",
 		"kimi_k3": "Kimi K3",
 		"deepseek_v4": "DeepSeek V4",
 		"laguna": "Laguna Code",
 	}
-	var display_title: String = titles.get(_ai_provider, "Opus-4.5")
+	var display_title: String = titles.get(_ai_provider, "Nemotron 3 Omni")
 	if _model_badge_btn:
-		_model_badge_btn.text = display_title + " ⌵"
+		_model_badge_btn.text = "✴ " + display_title + " ⌵"
 		var model_popup := _model_badge_btn.get_popup()
 		var names: Array[String] = ["nemotron", "nemotron_lightning", "kimi_k3", "deepseek_v4", "laguna"]
 		for i in range(names.size()):
@@ -3780,13 +3780,8 @@ func _append_ai_response(_provider: String, reply_text: String, _elapsed: float 
 
 
 func _append_ai_response_to_log(reply_text: String) -> void:
-	var is_light := _theme_is_light(_active_theme)
 	var formatted_body := _format_markdown_to_bbcode(reply_text)
-	var copy_id := Marshalls.raw_to_base64(reply_text.to_utf8_buffer())
-	var action_col := "#6c6c70" if is_light else "#8e8e93"
-	var action_bar := "[color=%s][url=copy:%s]📋 Copy[/url]   [url=action_like]👍[/url]   [url=action_dislike]👎[/url]   [url=action_pin]📌 Pin[/url]   [url=action_download:%s]📥 Export[/url]   [url=action_retry]🔄 Regenerate[/url][/color]" % [action_col, copy_id, copy_id]
-
-	_chat_log.append_text("\n%s\n\n%s\n\n" % [formatted_body, action_bar])
+	_chat_log.append_text("\n%s\n\n" % formatted_body)
 	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
 
 
@@ -3830,11 +3825,14 @@ func _append_tool_badge(action: String, target: String) -> void:
 func _append_chat(who: String, msg_body: String, _color: Color = Color()) -> void:
 	var tag := who.to_upper()
 	if tag in ["YOU", "USER"]:
+		_chat_history.append({"role": "user", "content": msg_body})
 		_append_user_message_to_log(msg_body)
 	elif tag in ["SYSTEM", "TOOL", "IDE", "WEB"]:
+		_chat_history.append({"role": "system", "content": msg_body})
 		var sys_col := "#6c6c70" if _theme_is_light(_active_theme) else "#8e8e93"
 		_chat_log.append_text("[color=%s]%s[/color]\n\n" % [sys_col, _format_markdown_to_bbcode(msg_body)])
 	else:
+		_chat_history.append({"role": "assistant", "content": msg_body})
 		_append_ai_response_to_log(msg_body)
 	_chat_log.scroll_to_line(_chat_log.get_line_count() - 1)
 

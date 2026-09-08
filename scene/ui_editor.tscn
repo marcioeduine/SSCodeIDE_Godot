@@ -12,9 +12,9 @@
 [ext_resource type="Texture2D" uid="uid://bhmmg2p4eq0lw" path="res://icons/nav_settings.svg" id="9_nav_settings"]
 [ext_resource type="Texture2D" uid="uid://lweabxd0tqlv" path="res://icons/nav_help.svg" id="10_nav_help"]
 [ext_resource type="Texture2D" uid="uid://bvru54cisp7ec" path="res://icons/nav_sun.svg" id="11_nav_sun"]
-[ext_resource type="Texture2D" path="res://icons/paperclip.svg" id="12_icon_paperclip"]
-[ext_resource type="Texture2D" path="res://icons/send.svg" id="13_icon_send"]
-[ext_resource type="Texture2D" path="res://icons/sparkles.svg" id="14_icon_sparkles"]
+[ext_resource type="Texture2D" uid="uid://ckrrn3umee0gi" path="res://icons/paperclip.svg" id="12_icon_paperclip"]
+[ext_resource type="Texture2D" uid="uid://be4naoa25p4pc" path="res://icons/send.svg" id="13_icon_send"]
+[ext_resource type="Texture2D" uid="uid://dnbljohqbnuux" path="res://icons/sparkles.svg" id="14_icon_sparkles"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_backdrop"]
 shader = ExtResource("2_backdrop")
@@ -379,6 +379,7 @@ layout_mode = 2
 theme_override_constants/separation = 4
 
 [node name="ChatHeaderRow" type="HBoxContainer" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent" unique_id=440622983]
+visible = false
 custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 theme_override_constants/separation = 4
@@ -530,8 +531,8 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(96, 24)
 layout_mode = 2
 theme_type_variation = &"M3PillBadge"
+text = "Models ⌵"
 icon = ExtResource("14_icon_sparkles")
-text = "Opus-4.5 ⌵"
 expand_icon = true
 
 [node name="InputSpacer" type="Control" parent="GridContainer/AppHBox/MainSplit/CenterSplit/ChatPane/ChatContent/ChatInputCard/ChatInputVBox/ChatInputBottomRow" unique_id=1877726678]
