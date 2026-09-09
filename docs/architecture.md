@@ -20,11 +20,14 @@ ui_editor.tscn  →  ui_editor.gd (primary orchestrator & public state holder)
                       ├── EditorSidebarBuilder   (Lazy on-demand sidebar panel creation for Search, Git, Themes, Config, Help)
                       ├── EditorDialogController  (Lazy on-demand modal overlay dialogs, input prompts, toasts)
                       ├── EditorInputHandler     (Keyboard shortcuts routing, ESC focus release, CodeEdit input hooks)
+                      ├── ThemeController        (theme loading, application, config persistence, palette table)
                       ├── ThemeColorScheme       (Dark and Light mode palettes)
                       ├── ThemeResourceRegistry  (theme resource compiler with CACHE_MODE_REUSE)
                       ├── FileKind               (icon mapping & 14px Lanczos texture scaling)
+                      ├── FileController         (file explorer and buffer management)
                       ├── GitService             (OS.execute git)
                       ├── AIService              (HTTPRequest → NVIDIA NIM API)
+                      ├── AgentWorkspaceService  (Agent Mode workspace file mutation)
                       ├── WebSearchService       (live web search retrieval & context injection)
                       └── ChatMarkdownRenderer   (chat Markdown & GFM table renderer)
 ```
@@ -57,9 +60,17 @@ Provides real-time Internet search and documentation lookup capabilities:
 
 Wraps the system `git` binary (`OS.execute`). Used for status, diff, log, commit, push, pull, fetch, sync, branch, checkout, remote, config, clone, and GitHub URL parsing.
 
+### `agent_workspace_service.gd` (`class_name AgentWorkspaceService`)
+
+Provides **Agent Mode** workspace file mutation. Parses `<sscode-write path="...">…</sscode-write>` and `<sscode-delete path="..."/>` markup emitted by the AI in its reply, validates paths against the active workspace root, and safely creates, updates, or deletes files. Paths outside the workspace are silently rejected.
+
 ### `file_kind.gd`
 
 Maps extensions (`.gd`, `.py`, `.js`, `.ts`, `.cpp`, `.rs`, `.go`, `.tscn`, `.json`, images, audio, archives, …) to SVG icons in `icons/` and generates scaled 14px Lanczos vector textures for tab bars.
+
+### `theme_controller.gd` (`class_name ThemeController`)
+
+Encapsulates theme loading, application, configuration persistence (`user://ui_config.cfg`), and the built-in palette table. Delegates visual resource construction to `ThemeResourceRegistry`. Exposes `request_theme_change()` and emits `theme_changed` signal.
 
 ## Packed resources vs host files
 
@@ -69,6 +80,4 @@ After export, `res://` is the `.pck`. A project-root `.env` is **not** inside th
 2. A sidecar `.env` next to the executable (or next to the `.app` on macOS), or
 3. `user://.env` in Godot’s user data directory.
 
-## Tests
 
-GUT scripts under `test/unit/` cover `AIService` (including env preference), `FileKind`, `GitService`, and script-level checks on `ui_editor.gd`.

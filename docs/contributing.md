@@ -22,6 +22,6 @@
 
 Prefer Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`).
 
-Remote (canonical): `git@github.com:marcioeduine/ss_code_ide_godot.git`.
+Remote (canonical): `git@github.com:marcioeduine/SSCodeIDE_Godot.git`.
 
 If history was rewritten to remove a leaked key, collaborators must re-clone or hard-reset to the new `main`; a normal pull will not reconcile rewritten hashes.

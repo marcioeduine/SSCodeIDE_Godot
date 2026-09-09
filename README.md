@@ -12,6 +12,27 @@
 
 Full technical documentation lives in [`docs/`](docs/README.md).
 
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/01_overview_dark.png" alt="Overview – Dark Mode" width="49%">
+  <img src="screenshots/03_editor_dark.png" alt="Code Editor – Dark Mode" width="49%">
+</p>
+<p align="center">
+  <img src="screenshots/06_editor_light.png" alt="Code Editor – Light Mode" width="49%">
+  <img src="screenshots/04_git_panel.png" alt="Git & Source Control Panel" width="49%">
+</p>
+<p align="center">
+  <img src="screenshots/05_search_replace_panel.png" alt="Workspace Search & Replace" width="49%">
+  <img src="screenshots/07_themes_panel.png" alt="Themes & XML Import Panel" width="49%">
+</p>
+<p align="center">
+  <img src="screenshots/02_nim_api_key_prompt.png" alt="NVIDIA NIM API Key Prompt" width="49%">
+  <img src="screenshots/08_help_shortcuts.png" alt="Help & Keyboard Shortcuts" width="49%">
+</p>
+
+---
+
 ## Overview
 
 **SSCodeIDE** is a dedicated code editor and development environment engineered entirely with **Godot Engine 4.x** and **GDScript** with a modern JetBrains / VS Code inspired UI/UX. Featuring Dark and Light modes, clean flat TabBar styling with accent indicators, full typographic support with *FiraCode Nerd Font*, a hierarchical workspace file explorer, and a native AI coding assistant with automated candidate fallback, SSCodeIDE provides a streamlined coding experience without external runtime dependencies or mandatory login requirements.
@@ -23,7 +44,7 @@ Full technical documentation lives in [`docs/`](docs/README.md).
 - **Minimal Collapsible Sidebar Navigation & Styling**:
   - Slim vertical activity navigation rail (`NavRail`) featuring quick access to Explorer, Edit, Git, Themes, AI Chat, Settings, and Help.
   - Dynamic **Theme Toggle** button in the navigation rail for instant Light and Dark mode switching.
-  - Interactive **AppBrand** (`favicon.svg`) providing About dialogue and exit (`Ctrl+Q`).
+  - Interactive **AppBrand** providing About dialogue and exit (`Ctrl+Q`).
   - Collapsible side drawer (`ExplorerPane`) with workspace switcher (`Switch Workspace…`), file tree, and zero-distraction collapse (`Ctrl+B`).
   - Streamlined tab bar (`TabBar`) featuring flat active tabs with bottom accent indicator bars and comfortable padding.
   - Built-in **Dark** and **Light** modes, plus runtime XML theme importing from the Themes menu.
@@ -36,7 +57,7 @@ Full technical documentation lives in [`docs/`](docs/README.md).
 
 - **Workspace File Explorer (`FileTree`)**:
   - Hierarchical directory inspection and real-time workspace tree updates.
-  - Automatic file kind recognition and dedicated visual iconography (`at-icons`) across scripts (`.gd`, `.py`, `.js`, `.ts`, `.cpp`, `.rs`, `.go`), scenes (`.tscn`, `.scn`), configurations (`.json`, `.cfg`, `.toml`, `.yaml`), images, audio, video, documents, and archives.
+  - Automatic file kind recognition and dedicated visual iconography across scripts (`.gd`, `.py`, `.js`, `.ts`, `.cpp`, `.rs`, `.go`), scenes (`.tscn`, `.scn`), configurations (`.json`, `.cfg`, `.toml`, `.yaml`), images, audio, video, documents, and archives.
 
 - **Native Git & GitHub Integration (`GitService`)**:
   - Dedicated **Git** Menu Bar with status, commits, push, pull, fetch, sync, branch management, diffs, log history, and configuration.
@@ -57,9 +78,7 @@ Full technical documentation lives in [`docs/`](docs/README.md).
   - Intelligent multi-model candidate fallback mechanism to mitigate transient service errors.
   - On first Chat or Smart Commit use the editor asks for an NVIDIA NIM API key and stores it in Godot user data (`user://ai_secrets.cfg`). Change it under Config. Optional override: `NVIDIA_NIM_API_KEY` or a sidecar `.env` (see `.env.example`). Never commit real keys.
   - Non-blocking asynchronous requests with cancellation support (<kbd>Esc</kbd>) and animated toast notifications.
-
-- **Automated Test Suite**:
-  - Unit test coverage powered by **GUT (Godot Unit Test)**.
+  - **Agent Mode**: the assistant can create or modify workspace files using `<sscode-write path="...">…</sscode-write>` markup blocks. Paths outside the active workspace are rejected.
 
 ---
 
@@ -104,6 +123,7 @@ Full technical documentation lives in [`docs/`](docs/README.md).
 | <kbd>Ctrl</kbd> + <kbd>,</kbd> | Display Configuration dialogue |
 | <kbd>Ctrl</kbd> + <kbd>P</kbd> | Focus File Explorer |
 | <kbd>Ctrl</kbd> + <kbd>B</kbd> | Toggle file explorer sidebar |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd> | Toggle AI chat panel |
 | <kbd>Ctrl</kbd> + <kbd>J</kbd> / <kbd>K</kbd> / <kbd>`</kbd> | Focus AI chat input |
 | <kbd>Esc</kbd> | Cancel ongoing AI generation / dismiss dialogue |
 
@@ -113,15 +133,19 @@ Full technical documentation lives in [`docs/`](docs/README.md).
 
 ```text
 .
-├── addons/                         # Godot addons (at-icons, gut test framework)
 ├── docs/                           # Comprehensive technical documentation
 ├── fonts/                          # Typography (FiraCode Nerd Font)
 ├── icons/                          # SVG icons and visual assets
 ├── scene/                          # Godot scenes
+│   ├── chat_pane.tscn              # AI chat panel scene
+│   ├── editor_pane.tscn            # Code editor panel scene
+│   ├── explorer_pane.tscn          # File explorer panel scene
+│   ├── nav_rail.tscn               # Navigation rail scene
 │   ├── ui_editor.tscn              # Main IDE scene
 │   └── welcome.tscn                # Instant asynchronous welcome loader scene
+├── screenshots/                    # UI screenshots for documentation
 ├── scripts/                        # Modular GDScript controllers & services
-│   ├── agent_workspace_service.gd  # Workspace file mutation service
+│   ├── agent_workspace_service.gd  # Workspace file mutation service (Agent Mode)
 │   ├── ai_service.gd               # NVIDIA NIM API integration and fallback logic
 │   ├── app_brand_button.gd         # AppBrand menu button controller
 │   ├── chat_markdown_renderer.gd   # Markdown & GFM renderer for chat
@@ -129,7 +153,7 @@ Full technical documentation lives in [`docs/`](docs/README.md).
 │   ├── editor_chat_controller.gd   # AI assistant, reasoning tokens & streaming controller
 │   ├── editor_dialog_controller.gd # Lazy modal overlay dialog & toast controller
 │   ├── editor_file_manager.gd      # Multi-tab buffers, file tree & workspace search
-│   ├── editor_git_controller.gd   # Git status, smart commits, push/pull/sync & diffs
+│   ├── editor_git_controller.gd    # Git status, smart commits, push/pull/sync & diffs
 │   ├── editor_input_handler.gd     # Global keyboard shortcuts & CodeEdit input router
 │   ├── editor_sidebar_builder.gd   # Lazy on-demand sidebar panel generator
 │   ├── editor_theme_manager.gd     # Theme manager, Kitty/Fish highlighters & XML importer
@@ -141,17 +165,13 @@ Full technical documentation lives in [`docs/`](docs/README.md).
 │   ├── theme_controller.gd         # Theme application and config controller
 │   ├── theme_resource_registry.gd  # Theme resource manager with cache reuse (CACHE_MODE_REUSE)
 │   ├── ui_editor.gd                # Primary IDE orchestrator
-│   └── web_search_service.gd       # Real-time Internet and web search service
-├── test/                           # Automated unit tests (GUT)
-│   └── unit/
-│       ├── test_ai_service.gd
-│       ├── test_file_kind.gd
-│       ├── test_git_service.gd
-│       ├── test_ui_editor_script.gd
-│       └── test_web_search_service.gd
+│   ├── web_search.py               # Python web search helper script
+│   ├── web_search_service.gd       # Real-time Internet and web search service
+│   └── welcome.gd                  # Welcome screen loader script
 ├── themes/                         # dark.theme, light.theme, and example XML import template
 ├── project.godot                   # Godot project settings and engine configuration
-├── .gutconfig.json                 # GUT test runner configuration
+├── export_presets.cfg              # Linux and Windows export configurations
+├── .env.example                    # Environment variable template (never commit real keys)
 ├── LICENSE                         # Proprietary licence agreement
 └── README.md                       # Technical documentation
 ```
@@ -161,22 +181,12 @@ Full technical documentation lives in [`docs/`](docs/README.md).
 ## Prerequisites & Launch
 
 ### Requirements
-- **Godot Engine 4.x** (version 4.3 or higher recommended).
+- **Godot Engine 4.x** (version 4.7 or higher recommended).
 
 ### Running the Project
 1. Open Godot Engine Project Manager.
 2. Select **Import**, navigate to the project directory, and select `project.godot`.
 3. Launch the project by pressing <kbd>F5</kbd> or clicking **Run** in the Godot interface.
-
----
-
-## Running Unit Tests
-
-Unit tests are managed via **GUT**. To run the test suite in headless mode via command line:
-
-```bash
-godot --headless -s addons/gut/gut_cmdln.gd -gconfig=.gutconfig.json
-```
 
 ---
 

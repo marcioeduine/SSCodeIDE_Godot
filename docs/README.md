@@ -8,7 +8,7 @@ Technical documentation for **SSCodeIDE**, a lightweight IDE written in native G
 | :--- | :--- |
 | [architecture.md](architecture.md) | Modular controller layout, lazy node instantiation, theme caching, and data flow |
 | [user-guide.md](user-guide.md) | Editor usage, shortcuts, Git, and AI chat |
-| [development.md](development.md) | Local setup, tests, and export |
+| [development.md](development.md) | Local setup and export |
 | [credentials-and-export.md](credentials-and-export.md) | First-use prompt, stored key, optional env / `.env` |
 | [contributing.md](contributing.md) | Language rules, secrets, and pull-request hygiene |
 
@@ -16,7 +16,7 @@ Technical documentation for **SSCodeIDE**, a lightweight IDE written in native G
 
 | Path | Role |
 | :--- | :--- |
-| `project.godot` | Godot 4.7 project; main scene `res://scene/ui_editor.tscn` |
+| `project.godot` | Godot 4.7 project; main scene `res://scene/welcome.tscn` |
 | `scripts/ui_editor.gd` | Shell orchestrator: tabs, menus, explorer, chat, shortcuts |
 | `scripts/editor_chat_controller.gd` | Modular AI assistant controller, reasoning tokens, stream polling & markdown rendering |
 | `scripts/editor_file_manager.gd` | Multi-tab editor controller, workspace file tree, search & replace operations |
@@ -26,15 +26,18 @@ Technical documentation for **SSCodeIDE**, a lightweight IDE written in native G
 | `scripts/editor_dialog_controller.gd` | On-demand lazy modal overlay dialog & toast notification controller |
 | `scripts/editor_input_handler.gd` | Global shortcut router, ESC focus release & CodeEdit key event interceptor |
 | `scripts/theme_color_scheme.gd` | Dark and Light mode palettes |
+| `scripts/theme_controller.gd` | Theme loading, application, config persistence, and palette table |
 | `scripts/theme_resource_registry.gd` | Theme resource manager with cache reuse (`CACHE_MODE_REUSE`) |
 | `scripts/file_kind.gd` | Workspace icon mapping with Lanczos 14px tab icon scaling |
 | `scripts/ai_service.gd` | NVIDIA NIM HTTP client, candidate fallback logic, credential loader |
 | `scripts/git_service.gd` | Git / GitHub CLI wrapper |
 | `scripts/web_search_service.gd` | Real-time Internet search and documentation retrieval service |
+| `scripts/agent_workspace_service.gd` | Agent Mode workspace file mutation service |
+| `scripts/file_controller.gd` | File explorer and buffer management |
 | `scene/ui_editor.tscn` | Lightweight main editor scene hierarchy |
 | `scene/welcome.tscn` | Instant asynchronous welcome loader scene |
 | `themes/` | `dark.theme`, `light.theme`, and `example_theme.xml` import template |
-| `test/unit/` | GUT unit tests |
+| `screenshots/` | UI screenshots for documentation and README |
 
 ## Quick start
 
