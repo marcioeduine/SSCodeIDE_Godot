@@ -8,7 +8,73 @@ var _e  ## Reference to the main ui_editor Control node
 func _init(editor: Control) -> void:
 	_e = editor
 
+func ensure_overlay_dialog() -> void:
+	if _e.overlay != null:
+		return
+
+	_e.overlay = ColorRect.new()
+	_e.overlay.name = "Overlay"
+	_e.overlay.visible = false
+	_e.overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_e.overlay.color = Color(0, 0, 0, 0.55)
+	_e.add_child(_e.overlay)
+
+	_e.dialog_panel = PanelContainer.new()
+	_e.dialog_panel.name = "DialogPanel"
+	_e.dialog_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_e.dialog_panel.anchor_left = 0.5
+	_e.dialog_panel.anchor_top = 0.05
+	_e.dialog_panel.anchor_right = 0.5
+	_e.dialog_panel.anchor_bottom = 0.95
+	_e.dialog_panel.offset_left = -300.0
+	_e.dialog_panel.offset_right = 300.0
+	_e.overlay.add_child(_e.dialog_panel)
+
+	var dialog_vbox = VBoxContainer.new()
+	dialog_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	dialog_vbox.add_theme_constant_override("separation", 8)
+	_e.dialog_panel.add_child(dialog_vbox)
+
+	_e.dialog_title = Label.new()
+	_e.dialog_title.text = "Config"
+	dialog_vbox.add_child(_e.dialog_title)
+
+	var dialog_scroll = ScrollContainer.new()
+	dialog_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	dialog_vbox.add_child(dialog_scroll)
+
+	_e.dialog_body = RichTextLabel.new()
+	_e.dialog_body.bbcode_enabled = true
+	_e.dialog_body.fit_content = true
+	_e.dialog_body.scroll_active = false
+	_e.dialog_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dialog_scroll.add_child(_e.dialog_body)
+
+	_e.dialog_input_row = HBoxContainer.new()
+	_e.dialog_input_row.visible = false
+	_e.dialog_input_row.add_theme_constant_override("separation", 6)
+
+	_e.dialog_input = LineEdit.new()
+	_e.dialog_input.placeholder_text = "Enter value…"
+	_e.dialog_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_e.dialog_input_row.add_child(_e.dialog_input)
+
+	_e.dialog_action_btn = Button.new()
+	_e.dialog_action_btn.theme_type_variation = &"M3FilledButton"
+	_e.dialog_action_btn.text = "Confirm"
+	_e.dialog_action_btn.pressed.connect(on_dialog_action_pressed)
+	_e.dialog_input_row.add_child(_e.dialog_action_btn)
+	dialog_vbox.add_child(_e.dialog_input_row)
+
+	_e.dialog_close = Button.new()
+	_e.dialog_close.theme_type_variation = &"M3TextButton"
+	_e.dialog_close.text = "Close"
+	_e.dialog_close.pressed.connect(hide_overlay)
+	dialog_vbox.add_child(_e.dialog_close)
+
+
 func show_overlay(title: String, body: String) -> void:
+	ensure_overlay_dialog()
 	_e.dialog_title.text = title
 	_e.dialog_body.text = body
 	_e.dialog_body.visible = true
@@ -18,8 +84,8 @@ func show_overlay(title: String, body: String) -> void:
 	_e.overlay.visible = true
 
 
-
 func show_input_dialog(title: String, body: String, placeholder: String, default_val: String, btn_label: String, callback: Callable, secret: bool = false) -> void:
+	ensure_overlay_dialog()
 	_e.dialog_title.text = title
 	_e.dialog_body.text = body
 	_e.dialog_body.visible = true

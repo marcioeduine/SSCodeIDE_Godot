@@ -1,7 +1,7 @@
 class_name EditorSidebarBuilder
 extends RefCounted
 
-## Builds the sidebar panels for the editor
+## Builds the sidebar panels for the editor on-demand (lazy initialization)
 
 var _e  ## Reference to the main ui_editor Control node
 
@@ -17,13 +17,20 @@ static func _load_svg_icon(path: String) -> Texture2D:
 	return null
 
 func setup_sidebar_panels() -> void:
+	# Legacy hook retained for interface compatibility; panels are now constructed lazily when tabs are selected.
+	pass
+
+
+# -------------------------------------------------------------
+# 1. Search Panel (VS Code Style Find/Replace in Workspace)
+# -------------------------------------------------------------
+func ensure_search_panel() -> void:
+	if _e.sidebar_search_panel != null:
+		return
 	var container: Node = _e.file_tree.get_parent()
 	if not container:
 		return
 
-	# -------------------------------------------------------------
-	# 1. Search Panel (VS Code Style Find/Replace in Workspace)
-	# -------------------------------------------------------------
 	_e.sidebar_search_panel = VBoxContainer.new()
 	_e.sidebar_search_panel.name = "SidebarSearchPanel"
 	_e.sidebar_search_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -108,9 +115,17 @@ func setup_sidebar_panels() -> void:
 	_e.search_results_tree.item_activated.connect(_e.files.on_search_result_activated)
 	_e.sidebar_search_panel.add_child(_e.search_results_tree)
 
-	# -------------------------------------------------------------
-	# 2. Source Control & GitHub Panel (VS Code Style, Dynamic & Spacious)
-	# -------------------------------------------------------------
+
+# -------------------------------------------------------------
+# 2. Source Control & GitHub Panel (VS Code Style, Dynamic & Spacious)
+# -------------------------------------------------------------
+func ensure_git_panel() -> void:
+	if _e.sidebar_git_panel != null:
+		return
+	var container: Node = _e.file_tree.get_parent()
+	if not container:
+		return
+
 	_e.sidebar_git_panel = VBoxContainer.new()
 	_e.sidebar_git_panel.name = "SidebarGitPanel"
 	_e.sidebar_git_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -176,7 +191,7 @@ func setup_sidebar_panels() -> void:
 	commit_row.add_child(_e.git_smart_commit_btn)
 	git_vbox.add_child(commit_row)
 
-	# Emergent SmartCommit Progress UI (Sleek ProgressBar + Status Text, no heavy box)
+	# Emergent SmartCommit Progress UI
 	_e.git_progress_panel = VBoxContainer.new()
 	_e.git_progress_panel.add_theme_constant_override("separation", 4)
 	_e.git_progress_panel.visible = false
@@ -328,9 +343,17 @@ func setup_sidebar_panels() -> void:
 	_e.git_console_panel.add_child(console_margin)
 	git_vsplit.add_child(_e.git_console_panel)
 
-	# -------------------------------------------------------------
-	# 3. Themes Panel
-	# -------------------------------------------------------------
+
+# -------------------------------------------------------------
+# 3. Themes Panel
+# -------------------------------------------------------------
+func ensure_themes_panel() -> void:
+	if _e.sidebar_themes_panel != null:
+		return
+	var container: Node = _e.file_tree.get_parent()
+	if not container:
+		return
+
 	_e.sidebar_themes_panel = VBoxContainer.new()
 	_e.sidebar_themes_panel.name = "SidebarThemesPanel"
 	_e.sidebar_themes_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -356,9 +379,17 @@ func setup_sidebar_panels() -> void:
 	import_xml_btn.pressed.connect(_e.dialog.import_theme_xml_dialog)
 	_e.sidebar_themes_panel.add_child(import_xml_btn)
 
-	# -------------------------------------------------------------
-	# 4. Settings Panel
-	# -------------------------------------------------------------
+
+# -------------------------------------------------------------
+# 4. Settings Panel
+# -------------------------------------------------------------
+func ensure_config_panel() -> void:
+	if _e.sidebar_config_panel != null:
+		return
+	var container: Node = _e.file_tree.get_parent()
+	if not container:
+		return
+
 	_e.sidebar_config_panel = VBoxContainer.new()
 	_e.sidebar_config_panel.name = "SidebarConfigPanel"
 	_e.sidebar_config_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -376,9 +407,17 @@ func setup_sidebar_panels() -> void:
 	cfg_info.text += "[color=#8E8E93]Use top menu bar for advanced options.[/color]"
 	_e.sidebar_config_panel.add_child(cfg_info)
 
-	# -------------------------------------------------------------
-	# 5. Help Panel
-	# -------------------------------------------------------------
+
+# -------------------------------------------------------------
+# 5. Help Panel
+# -------------------------------------------------------------
+func ensure_help_panel() -> void:
+	if _e.sidebar_help_panel != null:
+		return
+	var container: Node = _e.file_tree.get_parent()
+	if not container:
+		return
+
 	_e.sidebar_help_panel = VBoxContainer.new()
 	_e.sidebar_help_panel.name = "SidebarHelpPanel"
 	_e.sidebar_help_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL

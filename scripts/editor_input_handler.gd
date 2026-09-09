@@ -21,13 +21,13 @@ func handle_input(event: InputEvent) -> void:
 
 
 func handle_escape() -> void:
-	if _e.find_row.visible:
+	if _e.find_row != null and _e.find_row.visible:
 		_e.find_row.visible = false
 		return
-	if _e.chat_suggestions_popup.visible:
+	if _e.chat_suggestions_popup != null and _e.chat_suggestions_popup.visible:
 		_e.chat_suggestions_popup.visible = false
 		return
-	if _e.dialog_panel.visible:
+	if _e.dialog_panel != null and _e.dialog_panel.visible:
 		_e.dialog.hide_overlay()
 		return
 	if _e.ai_busy:

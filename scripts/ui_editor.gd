@@ -352,18 +352,33 @@ func _update_sidebar_tab_visibility() -> void:
 	file_tree.visible = (current_sidebar_tab == SidebarTab.EXPLORER)
 	if switch_workspace_btn:
 		switch_workspace_btn.visible = (current_sidebar_tab == SidebarTab.EXPLORER)
+
+	if current_sidebar_tab == SidebarTab.SEARCH:
+		sidebar.ensure_search_panel()
 	if sidebar_search_panel:
 		sidebar_search_panel.visible = (current_sidebar_tab == SidebarTab.SEARCH)
+
+	if current_sidebar_tab == SidebarTab.GIT:
+		sidebar.ensure_git_panel()
 	if sidebar_git_panel:
 		sidebar_git_panel.visible = (current_sidebar_tab == SidebarTab.GIT)
 		if current_sidebar_tab == SidebarTab.GIT:
 			git.refresh_git_panel()
+
+	if current_sidebar_tab == SidebarTab.THEMES:
+		sidebar.ensure_themes_panel()
 	if sidebar_themes_panel:
 		sidebar_themes_panel.visible = (current_sidebar_tab == SidebarTab.THEMES)
 		if current_sidebar_tab == SidebarTab.THEMES:
 			themes.refresh_themes_panel()
+
+	if current_sidebar_tab == SidebarTab.CONFIG:
+		sidebar.ensure_config_panel()
 	if sidebar_config_panel:
 		sidebar_config_panel.visible = (current_sidebar_tab == SidebarTab.CONFIG)
+
+	if current_sidebar_tab == SidebarTab.HELP:
+		sidebar.ensure_help_panel()
 	if sidebar_help_panel:
 		sidebar_help_panel.visible = (current_sidebar_tab == SidebarTab.HELP)
 
@@ -506,7 +521,8 @@ func _wire_signals() -> void:
 		save_as_dlg.file_selected.connect(files.save_as_path)
 	if open_theme_xml_dlg:
 		open_theme_xml_dlg.file_selected.connect(themes.import_theme_from_xml)
-	dialog_close.pressed.connect(dialog.hide_overlay)
+	if dialog_close:
+		dialog_close.pressed.connect(dialog.hide_overlay)
 	if dialog_action_btn:
 		dialog_action_btn.pressed.connect(dialog.on_dialog_action_pressed)
 	if dialog_input:
