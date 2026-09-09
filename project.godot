@@ -8,10 +8,6 @@
 
 config_version=5
 
-[debug]
-
-gdscript/warnings/unused_private_class_variable=0
-
 [application]
 
 config/name="SSCodeIDE"
@@ -20,6 +16,10 @@ config/features=PackedStringArray("4.7")
 boot_splash/stretch_mode=5
 boot_splash/image="uid://c0bjnbod0tl5h"
 config/icon="res://icon.png"
+
+[debug]
+
+gdscript/warnings/unused_private_class_variable=0
 
 [display]
 

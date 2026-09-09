@@ -11,21 +11,21 @@ const RESOURCE_PATHS: Dictionary = {
 	ThemeColors.MODE_LIGHT: "res://themes/light.theme",
 }
 
-static func load_theme(theme_name: String) -> Theme:
+static func load_theme(theme_name: String, replace_cache: bool = false) -> Theme:
 	var custom_path := "user://themes/%s.theme" % safe_key(theme_name)
 	var builtin_path: String = str(RESOURCE_PATHS.get(theme_name, ""))
 	if ThemeColors.is_builtin_mode(theme_name):
-		var built := _load_theme_path(builtin_path, true)
+		var built := _load_theme_path(builtin_path, replace_cache)
 		if built != null:
 			return built
 		var palette: Dictionary = ThemeColors.MODE_THEMES.get(theme_name, ThemeColors.MODE_THEMES[ThemeColors.MODE_DARK])
 		return _build_material3_theme(palette)
 
-	var custom := _load_theme_path(custom_path, true)
+	var custom := _load_theme_path(custom_path, replace_cache)
 	if custom != null:
 		return custom
 	var fallback_path: String = str(RESOURCE_PATHS.get(ThemeColors.MODE_DARK, "res://themes/dark.theme"))
-	var fallback := _load_theme_path(fallback_path, true)
+	var fallback := _load_theme_path(fallback_path, replace_cache)
 	if fallback != null:
 		return fallback
 	return _build_material3_theme(ThemeColors.MODE_THEMES[ThemeColors.MODE_DARK])
