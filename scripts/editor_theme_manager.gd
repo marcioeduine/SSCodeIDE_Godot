@@ -12,44 +12,44 @@ func _init(editor: Control) -> void:
 	_e = editor
 
 func refresh_themes_panel() -> void:
-	if _e._themes_list == null:
+	if _e.themes_list == null:
 		return
-	_e._themes_list.clear()
+	_e.themes_list.clear()
 	var custom_keys: Array[String] = []
-	for raw_key in _e._custom_themes.keys():
+	for raw_key in _e.custom_themes.keys():
 		var key = str(raw_key)
 		if not ThemeColorScheme.is_builtin_mode(key):
 			custom_keys.append(key)
 	custom_keys.sort()
 	for key in custom_keys:
-		var info: Dictionary = _e._custom_themes.get(key, {})
+		var info: Dictionary = _e.custom_themes.get(key, {})
 		var label: String = str(info.get("label", key))
-		var idx = _e._themes_list.add_item(label + " (XML)")
-		_e._themes_list.set_item_metadata(idx, key)
-		if key == _e._active_theme:
-			_e._themes_list.select(idx)
+		var idx = _e.themes_list.add_item(label + " (XML)")
+		_e.themes_list.set_item_metadata(idx, key)
+		if key == _e.active_theme:
+			_e.themes_list.select(idx)
 	if custom_keys.is_empty():
-		_e._themes_list.add_item("No custom XML themes imported")
-		_e._themes_list.set_item_disabled(0, true)
+		_e.themes_list.add_item("No custom XML themes imported")
+		_e.themes_list.set_item_disabled(0, true)
 
 
 func setup_app_brand_menu() -> void:
-	if _e._app_brand == null:
+	if _e.app_brand == null:
 		return
-	var popup = _e._app_brand.get_popup()
+	var popup = _e.app_brand.get_popup()
 	if not popup.id_pressed.is_connected(on_app_brand_menu_id_pressed):
 		popup.id_pressed.connect(on_app_brand_menu_id_pressed)
-	if _e._theme_toggle_btn and not _e._theme_toggle_btn.pressed.is_connected(toggle_light_dark_theme):
-		_e._theme_toggle_btn.pressed.connect(toggle_light_dark_theme)
+	if _e.theme_toggle_btn and not _e.theme_toggle_btn.pressed.is_connected(toggle_light_dark_theme):
+		_e.theme_toggle_btn.pressed.connect(toggle_light_dark_theme)
 	update_app_brand_menu()
 	update_theme_toggle_btn()
 
 
 
 func update_app_brand_menu() -> void:
-	if _e._app_brand == null:
+	if _e.app_brand == null:
 		return
-	var popup = _e._app_brand.get_popup()
+	var popup = _e.app_brand.get_popup()
 	popup.clear()
 	popup.add_item("About SSCodeIDE", 1)
 	popup.add_item("Close\tCtrl+Q", 2)
@@ -57,12 +57,12 @@ func update_app_brand_menu() -> void:
 
 
 func update_theme_toggle_btn() -> void:
-	if _e._theme_toggle_btn == null:
+	if _e.theme_toggle_btn == null:
 		return
-	var is_light = theme_is_light(_e._active_theme)
-	_e._theme_toggle_btn.icon = preload("res://icons/nav_moon.svg") if is_light else preload("res://icons/nav_sun.svg")
-	_e._theme_toggle_btn.text = ""
-	_e._theme_toggle_btn.tooltip_text = "Switch to Dark Mode" if is_light else "Switch to Light Mode"
+	var is_light = theme_is_light(_e.active_theme)
+	_e.theme_toggle_btn.icon = preload("res://icons/nav_moon.svg") if is_light else preload("res://icons/nav_sun.svg")
+	_e.theme_toggle_btn.text = ""
+	_e.theme_toggle_btn.tooltip_text = "Switch to Dark Mode" if is_light else "Switch to Light Mode"
 
 
 
@@ -72,7 +72,7 @@ func theme_is_light(theme_name: String) -> bool:
 
 
 func toggle_light_dark_theme() -> void:
-	var target = ThemeColorScheme.MODE_DARK if theme_is_light(_e._active_theme) else ThemeColorScheme.MODE_LIGHT
+	var target = ThemeColorScheme.MODE_DARK if theme_is_light(_e.active_theme) else ThemeColorScheme.MODE_LIGHT
 	apply_theme_by_name(target)
 
 
@@ -88,16 +88,16 @@ func on_app_brand_menu_id_pressed(id: int) -> void:
 
 func all_themes() -> Dictionary:
 	var merged = ThemeColorScheme.MODE_THEMES.duplicate()
-	for key in _e._custom_themes:
+	for key in _e.custom_themes:
 		if ThemeColorScheme.is_builtin_mode(str(key)):
 			continue
-		merged[key] = _e._custom_themes[key]
+		merged[key] = _e.custom_themes[key]
 	return merged
 
 
 
 func resolve_theme_name(_name: String) -> String:
-	if _e._custom_themes.has(_name) and not ThemeColorScheme.is_builtin_mode(_name):
+	if _e.custom_themes.has(_name) and not ThemeColorScheme.is_builtin_mode(_name):
 		return _name
 	if ThemeColorScheme.is_builtin_mode(_name):
 		return _name
@@ -109,29 +109,29 @@ func load_theme_config() -> void:
 	load_custom_themes()
 	var cfg = ConfigFile.new()
 	if cfg.load("user://ui_config.cfg") == OK:
-		_e._active_theme = str(cfg.get_value("theme", "name", ThemeColorScheme.MODE_DARK))
-	_e._active_theme = resolve_theme_name(_e._active_theme)
-	if not all_themes().has(_e._active_theme) or ThemeResources.load_theme(_e._active_theme) == null:
-		_e._active_theme = ThemeColorScheme.MODE_DARK
+		_e.active_theme = str(cfg.get_value("theme", "name", ThemeColorScheme.MODE_DARK))
+	_e.active_theme = resolve_theme_name(_e.active_theme)
+	if not all_themes().has(_e.active_theme) or ThemeResources.load_theme(_e.active_theme) == null:
+		_e.active_theme = ThemeColorScheme.MODE_DARK
 
 
 
 func save_theme_config() -> void:
 	var cfg = ConfigFile.new()
 	cfg.load("user://ui_config.cfg")
-	cfg.set_value("theme", "name", _e._active_theme)
+	cfg.set_value("theme", "name", _e.active_theme)
 	cfg.save("user://ui_config.cfg")
 
 
 
 func apply_theme_by_name(_name: String) -> void:
 	var resolved = resolve_theme_name(_name)
-	if resolved == _e._active_theme:
+	if resolved == _e.active_theme:
 		return
-	var previous_theme = _e._active_theme
-	_e._active_theme = resolved
+	var previous_theme = _e.active_theme
+	_e.active_theme = resolved
 	if not apply_kitty_fish_theme():
-		_e._active_theme = previous_theme
+		_e.active_theme = previous_theme
 		_e.chat.append_chat("IDE", "[color=#ed333b]Theme not found:[/color] " + resolved, Color("#ed333b"))
 		_e.dialog.show_toast("Theme not found: " + resolved, true)
 		return
@@ -141,20 +141,20 @@ func apply_theme_by_name(_name: String) -> void:
 	update_app_brand_menu()
 	update_theme_toggle_btn()
 	_e.chat.rebuild_chat_log()
-	if _e._md_preview_active and _e._active_index >= 0 and _e._active_index < _e._open_files.size():
-		_e._set_markdown_preview(true, _e._code_edit.text)
+	if _e.md_preview_active and _e.active_index >= 0 and _e.active_index < _e.open_files.size():
+		_e.set_markdown_preview(true, _e.code_edit.text)
 	_e.dialog.show_toast("Theme: " + label, false)
 
 
 
 func populate_themes_menu() -> void:
-	if _e._themes_menu == null:
+	if _e.themes_menu == null:
 		return
-	_e._themes_menu.clear()
-	_e._theme_menu_keys.clear()
+	_e.themes_menu.clear()
+	_e.theme_menu_keys.clear()
 	var keys: Array[String] = []
 	var custom_keys: Array[String] = []
-	for raw_key in _e._custom_themes.keys():
+	for raw_key in _e.custom_themes.keys():
 		var key = str(raw_key)
 		if ThemeColorScheme.is_builtin_mode(key):
 			continue
@@ -168,19 +168,19 @@ func populate_themes_menu() -> void:
 		if ThemeResources.load_theme(key) == null:
 			continue
 		var info: Dictionary = all_themes().get(key, {})
-		var item_index = _e._themes_menu.item_count
+		var item_index = _e.themes_menu.item_count
 		var label: String = str(info.get("label", key))
-		if _e._custom_themes.has(key):
+		if _e.custom_themes.has(key):
 			label += "  (XML)"
-		_e._themes_menu.add_radio_check_item(label, _e._theme_menu_keys.size())
-		_e._themes_menu.set_item_checked(item_index, key == _e._active_theme)
-		_e._themes_menu.set_item_tooltip(item_index, "Currently selected" if key == _e._active_theme else "Apply " + str(info.get("label", key)))
-		_e._theme_menu_keys.append(key)
-	if _e._theme_menu_keys.is_empty():
-		_e._themes_menu.add_item("No custom XML themes imported")
-		_e._themes_menu.set_item_disabled(0, true)
-	_e._themes_menu.add_separator()
-	_e._themes_menu.add_item("Import XML theme…", _e.THEME_MENU_IMPORT_ID)
+		_e.themes_menu.add_radio_check_item(label, _e.theme_menu_keys.size())
+		_e.themes_menu.set_item_checked(item_index, key == _e.active_theme)
+		_e.themes_menu.set_item_tooltip(item_index, "Currently selected" if key == _e.active_theme else "Apply " + str(info.get("label", key)))
+		_e.theme_menu_keys.append(key)
+	if _e.theme_menu_keys.is_empty():
+		_e.themes_menu.add_item("No custom XML themes imported")
+		_e.themes_menu.set_item_disabled(0, true)
+	_e.themes_menu.add_separator()
+	_e.themes_menu.add_item("Import XML theme…", _e.THEME_MENU_IMPORT_ID)
 
 
 
@@ -188,14 +188,14 @@ func on_theme_menu_id_pressed(id: int) -> void:
 	if id == _e.THEME_MENU_IMPORT_ID:
 		_e.dialog.import_theme_xml_dialog()
 		return
-	if id >= 0 and id < _e._theme_menu_keys.size():
-		apply_theme_by_name(_e._theme_menu_keys[id])
+	if id >= 0 and id < _e.theme_menu_keys.size():
+		apply_theme_by_name(_e.theme_menu_keys[id])
 
 
 
 func load_custom_themes() -> void:
-	## Scans user://themes/ and loads all valid .xml theme files into _e._custom_themes
-	_e._custom_themes.clear()
+	## Scans user://themes/ and loads all valid .xml theme files into _e.custom_themes
+	_e.custom_themes.clear()
 	var dir = DirAccess.open("user://themes")
 	if dir == null:
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://themes"))
@@ -212,7 +212,7 @@ func load_custom_themes() -> void:
 				if ThemeColorScheme.is_builtin_mode(key):
 					fname = dir.get_next()
 					continue
-				_e._custom_themes[key] = result
+				_e.custom_themes[key] = result
 				ThemeResources.save_custom_theme(key, result)
 		fname = dir.get_next()
 	dir.list_dir_end()
@@ -307,9 +307,9 @@ func import_theme_from_xml(xml_path: String) -> void:
 func apply_kitty_fish_theme() -> bool:
 	## Theme assets are authored in Godot resources. This only selects one;
 	## it deliberately does not build or override any visual styles at runtime.
-	if not apply_theme_resource(_e._active_theme):
+	if not apply_theme_resource(_e.active_theme):
 		return false
-	_e._code_edit.syntax_highlighter = _e._create_adwaita_fish_highlighter()
+	_e.code_edit.syntax_highlighter = _e.create_adwaita_fish_highlighter()
 	return true
 
 
@@ -321,7 +321,7 @@ func apply_theme_resource(theme_name: String) -> bool:
 	if selected == null:
 		return false
 	_e.theme = selected
-	_e._root_vbox.theme = selected
+	_e.root_vbox.theme = selected
 	return true
 
 

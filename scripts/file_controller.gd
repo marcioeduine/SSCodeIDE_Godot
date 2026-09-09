@@ -199,13 +199,22 @@ func on_tab_changed(tab_idx: int, code_edit: CodeEdit) -> void:
 func on_tab_close(tab_idx: int, tab_bar: TabBar) -> void:
 	if tab_idx < 0 or tab_idx >= open_files.size():
 		return
+	suppress_tab = true
+	var closing_active: bool = (tab_idx == active_index)
 	open_files.remove_at(tab_idx)
 	tab_bar.remove_tab(tab_idx)
 	if open_files.is_empty():
+		active_index = -1
+		suppress_tab = false
 		open_untitled(tab_bar)
-	else:
-		active_index = clamp(active_index, 0, open_files.size() - 1)
-		tab_bar.current_tab = active_index
+		return
+	if closing_active:
+		active_index = clamp(tab_idx, 0, open_files.size() - 1)
+	elif tab_idx < active_index:
+		active_index -= 1
+	active_index = clamp(active_index, 0, open_files.size() - 1)
+	tab_bar.current_tab = active_index
+	suppress_tab = false
 
 func on_code_changed(tab_bar: TabBar, code_edit: CodeEdit) -> void:
 	if suppress_tab or active_index < 0 or active_index >= open_files.size():

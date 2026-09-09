@@ -165,6 +165,27 @@ static func texture_for_path(path: String, is_dir: bool = false, is_open: bool =
 	return null
 
 
+static var _small_texture_cache: Dictionary = {}
+
+static func small_texture_for_path(path: String, target_size: int = 14) -> Texture2D:
+	var key: String = FileKind.icon_key_for_path(path, false, false) + "_s%d" % target_size
+	if _small_texture_cache.has(key):
+		return _small_texture_cache[key]
+	var base_tex: Texture2D = texture_for_path(path, false, false)
+	if not base_tex:
+		_small_texture_cache[key] = null
+		return null
+	var img: Image = base_tex.get_image()
+	if img and not img.is_empty():
+		var img_copy: Image = img.duplicate()
+		img_copy.resize(target_size, target_size, Image.INTERPOLATE_LANCZOS)
+		var small_tex: ImageTexture = ImageTexture.create_from_image(img_copy)
+		_small_texture_cache[key] = small_tex
+		return small_tex
+	_small_texture_cache[key] = base_tex
+	return base_tex
+
+
 static func color_for_path(path: String, is_dir: bool = false) -> Color:
 	if is_dir:
 		return Color("#8ec4f7")

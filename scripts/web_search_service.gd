@@ -84,14 +84,15 @@ static func search_web(query: String, max_results: int = 5) -> Array[Dictionary]
 
 
 static func format_search_results_bbcode(query: String, results: Array[Dictionary]) -> String:
+	var safe_query := query.replace("[", "[lb]").replace("]", "[rb]")
 	if results.is_empty():
-		return "[color=#ffa348]Nenhum resultado encontrado na Internet para:[/color] [b]%s[/b]" % query.replace("[", "[lb]")
+		return "[color=#ffa348]Nenhum resultado encontrado na Internet para:[/color] [b]%s[/b]" % safe_query
 
-	var bbcode := "[b][color=#57e389]🌐 Resultados da Pesquisa na Internet para:[/color] '%s'[/b]\n\n" % query.replace("[", "[lb]")
+	var bbcode := "[b][color=#57e389]🌐 Resultados da Pesquisa na Internet para:[/color] '%s'[/b]\n\n" % safe_query
 	for i in range(results.size()):
 		var item := results[i]
-		var title: String = str(item.get("title", "")).replace("[", "[lb]")
-		var snippet: String = str(item.get("snippet", "")).replace("[", "[lb]")
+		var title: String = str(item.get("title", "")).replace("[", "[lb]").replace("]", "[rb]")
+		var snippet: String = str(item.get("snippet", "")).replace("[", "[lb]").replace("]", "[rb]")
 		var url: String = str(item.get("url", ""))
 		bbcode += "[b]%d. %s[/b]\n" % [i + 1, title]
 		bbcode += "%s\n" % snippet

@@ -41,54 +41,54 @@ func _init(editor: Control) -> void:
 
 func start_chat_stream(payload_json: String) -> bool:
 	stop_chat_stream()
-	var err = _e._stream_http.connect_to_host("integrate.api.nvidia.com", 443, TLSOptions.client())
+	var err = _e.stream_http.connect_to_host("integrate.api.nvidia.com", 443, TLSOptions.client())
 	if err != OK:
 		return false
-	_e._stream_active = true
-	_e._sse_buf = ""
-	_e._stream_reply = ""
-	_e._thinking_text = ""
+	_e.stream_active = true
+	_e.sse_buf = ""
+	_e.stream_reply = ""
+	_e.thinking_text = ""
 	## Handshake is completed in poll_chat_stream; stash payload on the client via meta.
-	_e._stream_http.set_meta("payload", payload_json)
-	_e._stream_http.set_meta("sent", false)
+	_e.stream_http.set_meta("payload", payload_json)
+	_e.stream_http.set_meta("sent", false)
 	return true
 
 
 func stop_chat_stream() -> void:
-	_e._stream_active = false
-	if _e._stream_http.get_status() != HTTPClient.STATUS_DISCONNECTED:
-		_e._stream_http.close()
-	_e._sse_buf = ""
+	_e.stream_active = false
+	if _e.stream_http.get_status() != HTTPClient.STATUS_DISCONNECTED:
+		_e.stream_http.close()
+	_e.sse_buf = ""
 
 
 func poll_chat_stream() -> void:
-	_e._stream_http.poll()
-	var st = _e._stream_http.get_status()
+	_e.stream_http.poll()
+	var st = _e.stream_http.get_status()
 	if st == HTTPClient.STATUS_CONNECTING or st == HTTPClient.STATUS_RESOLVING:
 		return
-	if st == HTTPClient.STATUS_CONNECTED and not bool(_e._stream_http.get_meta("sent", false)):
+	if st == HTTPClient.STATUS_CONNECTED and not bool(_e.stream_http.get_meta("sent", false)):
 		var headers = PackedStringArray([
 			"Content-Type: application/json",
 			"Authorization: Bearer " + AIService.get_nvidia_api_key(),
 			"Accept: text/event-stream",
 		])
-		var payload: String = str(_e._stream_http.get_meta("payload", ""))
-		var req_err = _e._stream_http.request(HTTPClient.METHOD_POST, "/v1/chat/completions", headers, payload)
-		_e._stream_http.set_meta("sent", true)
+		var payload: String = str(_e.stream_http.get_meta("payload", ""))
+		var req_err = _e.stream_http.request(HTTPClient.METHOD_POST, "/v1/chat/completions", headers, payload)
+		_e.stream_http.set_meta("sent", true)
 		if req_err != OK:
 			stop_chat_stream()
 			on_ai_chat_http_completed(HTTPRequest.RESULT_CONNECTION_ERROR, 0, PackedStringArray(), PackedByteArray())
 		return
 	if st == HTTPClient.STATUS_BODY:
-		var chunk = _e._stream_http.read_response_body_chunk()
+		var chunk = _e.stream_http.read_response_body_chunk()
 		if chunk.size() > 0:
-			_e._sse_buf += chunk.get_string_from_utf8()
+			_e.sse_buf += chunk.get_string_from_utf8()
 			consume_sse_buffer()
-		if not _e._stream_http.has_response() or _e._stream_http.get_status() == HTTPClient.STATUS_DISCONNECTED:
+		if not _e.stream_http.has_response() or _e.stream_http.get_status() == HTTPClient.STATUS_DISCONNECTED:
 			finish_chat_stream()
 		return
 	if st == HTTPClient.STATUS_DISCONNECTED or st == HTTPClient.STATUS_CONNECTION_ERROR or st == HTTPClient.STATUS_TLS_HANDSHAKE_ERROR:
-		if not _e._stream_reply.is_empty() or not _e._thinking_text.is_empty():
+		if not _e.stream_reply.is_empty() or not _e.thinking_text.is_empty():
 			finish_chat_stream()
 		else:
 			stop_chat_stream()
@@ -97,11 +97,11 @@ func poll_chat_stream() -> void:
 
 func consume_sse_buffer() -> void:
 	while true:
-		var nl = _e._sse_buf.find("\n")
+		var nl = _e.sse_buf.find("\n")
 		if nl < 0:
 			break
-		var line = _e._sse_buf.substr(0, nl).strip_edges()
-		_e._sse_buf = _e._sse_buf.substr(nl + 1)
+		var line = _e.sse_buf.substr(0, nl).strip_edges()
+		_e.sse_buf = _e.sse_buf.substr(nl + 1)
 		if line.is_empty() or not line.begins_with("data:"):
 			continue
 		var data = line.substr(5).strip_edges()
@@ -121,49 +121,61 @@ func consume_sse_buffer() -> void:
 		for src in [delta, msg]:
 			var thought = extract_reasoning(src)
 			if not thought.is_empty():
-				if thought.begins_with(_e._thinking_text):
-					_e._thinking_text = thought
+				if thought.begins_with(_e.thinking_text):
+					_e.thinking_text = thought
 				else:
-					var separator = "" if _e._thinking_text.is_empty() or _e._thinking_text.ends_with(" ") or thought.begins_with(" ") else " "
-					_e._thinking_text += separator + thought
+					var separator = "" if _e.thinking_text.is_empty() or _e.thinking_text.ends_with(" ") or thought.begins_with(" ") else " "
+					_e.thinking_text += separator + thought
 			var piece = str(src.get("content", ""))
 			if not piece.is_empty() and piece != "<null>":
-				_e._stream_reply += piece
+				_e.stream_reply += piece
 
 
 func finish_chat_stream() -> void:
-	if _e._response_rendered:
+	if _e.response_rendered:
 		return
-	if not _e._stream_active and _e._stream_reply.is_empty() and _e._thinking_text.is_empty():
+	if not _e.stream_active and _e.stream_reply.is_empty() and _e.thinking_text.is_empty():
 		return
 	stop_chat_stream()
-	var elapsed: float = maxf(0.1, (Time.get_ticks_msec() / 1000.0) - _e._request_start_time)
-	if _e._current_prompt.begins_with("__SMART_COMMIT__:"):
-		if _e._stream_reply.strip_edges().is_empty():
+	var elapsed: float = maxf(0.1, (Time.get_ticks_msec() / 1000.0) - _e.request_start_time)
+	if _e.current_prompt.begins_with("__SMART_COMMIT__:"):
+		if _e.stream_reply.strip_edges().is_empty():
 			_e.git.fallback_smart_commit("Empty AI reply.")
 			return
-		_e.git.finish_smart_commit(_e._stream_reply.strip_edges(), true)
+		_e.git.finish_smart_commit(_e.stream_reply.strip_edges(), true)
 		return
-	var reply = _e._stream_reply.strip_edges()
-	if reply.is_empty() and not _e._thinking_text.is_empty():
-		reply = _e._thinking_text.strip_edges()
+	var reply = _e.stream_reply.strip_edges()
+	if reply.is_empty() and not _e.thinking_text.is_empty():
+		reply = _e.thinking_text.strip_edges()
 	if reply.is_empty():
 		if try_next_ai_candidate("Empty stream. Attempting candidate model…"):
 			return
-		append_chat(_e._ai_provider.to_upper(), "Empty server response. Please retry.", Color("#ed333b"))
+		clear_ai_busy()
+		append_chat(_e.ai_provider.to_upper(), "Empty server response. Please retry.", Color("#ed333b"))
 		return
-	_e._response_rendered = true
+	_e.response_rendered = true
 	reply = execute_agent_file_writes(reply)
-	_e._chat_history.append({"role": "assistant", "content": reply})
+	_e.chat_history.append({"role": "assistant", "content": reply})
 	clear_ai_busy()
-	append_ai_response(_e._ai_provider, reply, elapsed)
+	append_ai_response(_e.ai_provider, reply, elapsed)
+
+
+static func _clean_content_string(val: Variant) -> String:
+	if val == null:
+		return ""
+	var s := str(val).strip_edges()
+	if s == "<null>" or s == "null":
+		return ""
+	return s
 
 
 func extract_reasoning(msg: Dictionary) -> String:
 	for key in ["reasoning_content", "reasoning", "thinking", "reasoning_text"]:
 		if msg.has(key) and str(msg[key]).strip_edges() != "":
-			return str(msg[key]).strip_edges()
-	var content = str(msg.get("content", ""))
+			var val = str(msg[key]).strip_edges()
+			if val != "<null>" and val != "null":
+				return val
+	var content = _clean_content_string(msg.get("content", null))
 	var start = content.find("<think>")
 	var end = content.find("</think>")
 	if start >= 0 and end > start:
@@ -172,12 +184,12 @@ func extract_reasoning(msg: Dictionary) -> String:
 
 
 func refresh_thinking_panel() -> void:
-	if _e._chat_thinking_label == null:
+	if _e.chat_thinking_label == null:
 		return
-	var body: String = format_thinking_text(_e._thinking_text)
+	var body: String = format_thinking_text(_e.thinking_text)
 	if body.is_empty():
 		body = "Waiting for the model’s reasoning tokens…"
-	_e._chat_thinking_label.text = "[color=#9a9996][i]%s[/i][/color]" % body.replace("[", "[lb]")
+	_e.chat_thinking_label.text = "[color=#9a9996][i]%s[/i][/color]" % body.replace("[", "[lb]").replace("]", "[rb]")
 
 
 func format_thinking_text(raw: String) -> String:
@@ -203,46 +215,46 @@ func format_thinking_text(raw: String) -> String:
 
 func on_chat_submitted(text: String) -> void:
 	var prompt: String = text.strip_edges()
-	if prompt.is_empty() or _e._ai_busy:
+	if prompt.is_empty() or _e.ai_busy:
 		return
-	if _e._prompt_history.is_empty() or _e._prompt_history.back() != prompt:
-		_e._prompt_history.append(prompt)
-	_e._prompt_history_idx = -1
-	_e._prompt_draft = ""
-	_e._chat_input.text = ""
-	_e._chat_suggestions_popup.visible = false
+	if _e.prompt_history.is_empty() or _e.prompt_history.back() != prompt:
+		_e.prompt_history.append(prompt)
+	_e.prompt_history_idx = -1
+	_e.prompt_draft = ""
+	_e.chat_input.text = ""
+	_e.chat_suggestions_popup.visible = false
 	append_user_message(prompt)
 	if prompt.begins_with("/"):
 		handle_slash(prompt)
 		return
-	_e._chat_history.append({"role": "user", "content": prompt})
+	_e.chat_history.append({"role": "user", "content": prompt})
 	_e.dialog.ensure_api_key(func() -> void: ask_ai(prompt))
 
 
 func on_chat_send_pressed() -> void:
-	var txt = _e._chat_input.text.strip_edges()
+	var txt = _e.chat_input.text.strip_edges()
 	if not txt.is_empty():
 		on_chat_submitted(txt)
-	elif _e._ai_busy:
+	elif _e.ai_busy:
 		cancel_ai_request()
 
 
 func on_chat_input_text_changed(new_text: String) -> void:
-	if not _e._ai_busy:
-		_e._chat_send.text = "↑"
+	if not _e.ai_busy:
+		_e.chat_send.text = "↑"
 	update_chat_suggestions(new_text)
 
 
 func update_chat_suggestions(input_text: String) -> void:
 	var query = input_text.strip_edges()
-	_e._chat_suggestions_list.clear()
+	_e.chat_suggestions_list.clear()
 	
 	if query.begins_with("/"):
 		for item: Dictionary in CHAT_SLASH_COMMANDS:
 			var cmd: String = str(item.get("cmd", ""))
 			if query == "/" or cmd.begins_with(query):
-				_e._chat_suggestions_list.add_item(cmd + "  —  " + str(item.get("desc", "")))
-				_e._chat_suggestions_list.set_item_metadata(_e._chat_suggestions_list.get_item_count() - 1, cmd)
+				_e.chat_suggestions_list.add_item(cmd + "  —  " + str(item.get("desc", "")))
+				_e.chat_suggestions_list.set_item_metadata(_e.chat_suggestions_list.get_item_count() - 1, cmd)
 	elif query.contains("@") or query.begins_with("open ") or query.begins_with("read "):
 		var at_idx = query.rfind("@")
 		var filter = ""
@@ -251,71 +263,76 @@ func update_chat_suggestions(input_text: String) -> void:
 		var files = _e.files.get_workspace_files_list()
 		for f in files:
 			if filter.is_empty() or f.to_lower().contains(filter):
-				_e._chat_suggestions_list.add_item("📁 @" + f)
-				_e._chat_suggestions_list.set_item_metadata(_e._chat_suggestions_list.get_item_count() - 1, "@" + f)
-				if _e._chat_suggestions_list.get_item_count() >= 8:
+				_e.chat_suggestions_list.add_item("📁 @" + f)
+				_e.chat_suggestions_list.set_item_metadata(_e.chat_suggestions_list.get_item_count() - 1, "@" + f)
+				if _e.chat_suggestions_list.get_item_count() >= 8:
 					break
 	
-	_e._chat_suggestions_popup.visible = _e._chat_suggestions_list.get_item_count() > 0
+	_e.chat_suggestions_popup.visible = _e.chat_suggestions_list.get_item_count() > 0
 
 
 func on_chat_suggestion_selected(index: int) -> void:
-	if index < 0 or index >= _e._chat_suggestions_list.get_item_count():
+	if index < 0 or index >= _e.chat_suggestions_list.get_item_count():
 		return
-	var meta: Variant = _e._chat_suggestions_list.get_item_metadata(index)
+	var meta: Variant = _e.chat_suggestions_list.get_item_metadata(index)
 	if meta is String:
 		var insert_val: String = meta
-		if insert_val.begins_with("@") and _e._chat_input.text.contains("@"):
-			var at_idx = _e._chat_input.text.rfind("@")
-			_e._chat_input.text = _e._chat_input.text.substr(0, at_idx) + insert_val + " "
+		if insert_val.begins_with("@") and _e.chat_input.text.contains("@"):
+			var at_idx = _e.chat_input.text.rfind("@")
+			_e.chat_input.text = _e.chat_input.text.substr(0, at_idx) + insert_val + " "
 		else:
-			_e._chat_input.text = insert_val + " "
-		_e._chat_input.caret_column = _e._chat_input.text.length()
-	_e._chat_suggestions_popup.visible = false
-	_e._chat_input.grab_focus()
+			_e.chat_input.text = insert_val + " "
+		_e.chat_input.caret_column = _e.chat_input.text.length()
+	_e.chat_suggestions_popup.visible = false
+	_e.chat_input.grab_focus()
 
 
 func on_chat_input_gui_input(event: InputEvent) -> void:
 	if not (event is InputEventKey) or not event.pressed:
 		return
 	var key: InputEventKey = event
-	if key.keycode == KEY_UP and not _e._chat_suggestions_popup.visible:
-		if _e._prompt_history.is_empty():
+	if key.keycode == KEY_UP and not _e.chat_suggestions_popup.visible:
+		if _e.prompt_history.is_empty():
 			return
-		if _e._prompt_history_idx == -1:
-			_e._prompt_draft = _e._chat_input.text
-			_e._prompt_history_idx = _e._prompt_history.size() - 1
-		elif _e._prompt_history_idx > 0:
-			_e._prompt_history_idx -= 1
-		_e._chat_input.text = _e._prompt_history[_e._prompt_history_idx]
-		_e._chat_input.caret_column = _e._chat_input.text.length()
-		_e._chat_input.accept_event()
-	elif key.keycode == KEY_DOWN and not _e._chat_suggestions_popup.visible:
-		if _e._prompt_history_idx == -1:
+		if _e.prompt_history_idx == -1:
+			_e.prompt_draft = _e.chat_input.text
+			_e.prompt_history_idx = _e.prompt_history.size() - 1
+		elif _e.prompt_history_idx > 0:
+			_e.prompt_history_idx -= 1
+		_e.chat_input.text = _e.prompt_history[_e.prompt_history_idx]
+		_e.chat_input.caret_column = _e.chat_input.text.length()
+		_e.chat_input.accept_event()
+	elif key.keycode == KEY_DOWN and not _e.chat_suggestions_popup.visible:
+		if _e.prompt_history_idx == -1:
 			return
-		if _e._prompt_history_idx < _e._prompt_history.size() - 1:
-			_e._prompt_history_idx += 1
-			_e._chat_input.text = _e._prompt_history[_e._prompt_history_idx]
+		if _e.prompt_history_idx < _e.prompt_history.size() - 1:
+			_e.prompt_history_idx += 1
+			_e.chat_input.text = _e.prompt_history[_e.prompt_history_idx]
 		else:
-			_e._prompt_history_idx = -1
-			_e._chat_input.text = _e._prompt_draft
-		_e._chat_input.caret_column = _e._chat_input.text.length()
-		_e._chat_input.accept_event()
+			_e.prompt_history_idx = -1
+			_e.chat_input.text = _e.prompt_draft
+		_e.chat_input.caret_column = _e.chat_input.text.length()
+		_e.chat_input.accept_event()
 
 
 func append_chat(who: String, msg_body: String, _color: Color = Color()) -> void:
 	var tag = who.to_upper()
+	var is_err_msg = (
+		msg_body.begins_with("Could not retrieve") or msg_body.begins_with("Failed to") or
+		msg_body.begins_with("Empty server") or msg_body.begins_with("NVIDIA NIM rejected") or
+		msg_body.begins_with("The model timed out")
+	)
 	if tag in ["YOU", "USER"]:
-		_e._chat_history.append({"role": "user", "content": msg_body})
+		_e.chat_history.append({"role": "user", "content": msg_body})
 		append_user_message_to_log(msg_body)
-	elif tag in ["SYSTEM", "TOOL", "IDE", "WEB"]:
-		_e._chat_history.append({"role": "system", "content": msg_body})
-		var sys_col = "#6c6c70" if _e._theme_is_light(_e._active_theme) else "#8e8e93"
-		_e._chat_log.append_text("[color=%s]%s[/color]\n\n" % [sys_col, format_markdown_to_bbcode(msg_body)])
+	elif tag in ["SYSTEM", "TOOL", "IDE", "WEB"] or is_err_msg:
+		_e.chat_history.append({"role": "system", "content": msg_body})
+		var sys_col = "#6c6c70" if _e.themes.theme_is_light(_e.active_theme) else "#8e8e93"
+		_e.chat_log.append_text("[color=%s]%s[/color]\n\n" % [sys_col, format_markdown_to_bbcode(msg_body)])
 	else:
-		_e._chat_history.append({"role": "assistant", "content": msg_body})
+		_e.chat_history.append({"role": "assistant", "content": msg_body})
 		append_ai_response_to_log(msg_body)
-	_e._chat_log.scroll_to_line(_e._chat_log.get_line_count() - 1)
+	_e.chat_log.scroll_to_line(_e.chat_log.get_line_count() - 1)
 
 
 func append_ai_response(_provider: String, reply_text: String, _elapsed: float = 0.0, _tokens_in: int = 0, _tokens_out: int = 0) -> void:
@@ -324,46 +341,46 @@ func append_ai_response(_provider: String, reply_text: String, _elapsed: float =
 
 func append_ai_response_to_log(reply_text: String) -> void:
 	var formatted_body = format_markdown_to_bbcode(reply_text)
-	_e._chat_log.append_text("\n%s\n\n" % formatted_body)
-	_e._chat_log.scroll_to_line(_e._chat_log.get_line_count() - 1)
+	_e.chat_log.append_text("\n%s\n\n" % formatted_body)
+	_e.chat_log.scroll_to_line(_e.chat_log.get_line_count() - 1)
 
 
 func append_user_message(prompt: String) -> void:
-	if _e._chat_history.is_empty():
-		_e._chat_log.clear()
+	if _e.chat_history.is_empty():
+		_e.chat_log.clear()
 	append_user_message_to_log(prompt)
 
 
 func append_user_message_to_log(prompt: String) -> void:
-	var sanitized: String = prompt.replace("[", "[lb]")
-	var is_light = _e._theme_is_light(_e._active_theme)
+	var sanitized: String = prompt.replace("[", "[lb]").replace("]", "[rb]")
+	var is_light = _e.themes.theme_is_light(_e.active_theme)
 	var bg_col = "#252830" if not is_light else "#e2e4e9"
 	var fg_col = "#ffffff" if not is_light else "#111113"
 	var user_bubble = "\n[right][bgcolor=%s][color=%s]  %s  [/color][/bgcolor][/right]\n\n" % [bg_col, fg_col, sanitized.replace("\n", "\n  ")]
-	_e._chat_log.append_text(user_bubble)
-	_e._chat_log.scroll_to_line(_e._chat_log.get_line_count() - 1)
+	_e.chat_log.append_text(user_bubble)
+	_e.chat_log.scroll_to_line(_e.chat_log.get_line_count() - 1)
 
 
 func append_tool_badge(action: String, target: String) -> void:
-	_e._chat_log.append_text("[color=#57e389]●[/color] [b]%s[/b][color=#9a9996](%s)[/color]\n\n" % [action, target])
-	_e._chat_log.scroll_to_line(_e._chat_log.get_line_count() - 1)
+	_e.chat_log.append_text("[color=#57e389]●[/color] [b]%s[/b][color=#9a9996](%s)[/color]\n\n" % [action, target])
+	_e.chat_log.scroll_to_line(_e.chat_log.get_line_count() - 1)
 
 
 func rebuild_chat_log() -> void:
-	if _e._chat_log == null:
+	if _e.chat_log == null:
 		return
-	_e._chat_log.clear()
-	if _e._chat_history.is_empty():
+	_e.chat_log.clear()
+	if _e.chat_history.is_empty():
 		show_chat_welcome()
 		return
-	for entry in _e._chat_history:
+	for entry in _e.chat_history:
 		var role: String = str(entry.get("role", "assistant"))
 		var content: String = str(entry.get("content", ""))
 		if role == "user":
 			append_user_message_to_log(content)
 		elif role == "system":
-			var sys_col = "#6c6c70" if _e._theme_is_light(_e._active_theme) else "#8e8e93"
-			_e._chat_log.append_text("[color=%s]%s[/color]\n\n" % [sys_col, format_markdown_to_bbcode(content)])
+			var sys_col = "#6c6c70" if _e.themes.theme_is_light(_e.active_theme) else "#8e8e93"
+			_e.chat_log.append_text("[color=%s]%s[/color]\n\n" % [sys_col, format_markdown_to_bbcode(content)])
 		else:
 			append_ai_response_to_log(content)
 
@@ -384,9 +401,9 @@ func on_chat_meta_clicked(meta: Variant) -> void:
 		DisplayServer.clipboard_set(text)
 		_e.dialog.show_toast("Response text copied for export.", false)
 	elif value == "action_retry":
-		if not _e._chat_history.is_empty():
+		if not _e.chat_history.is_empty():
 			var last_user_prompt = ""
-			for entry in _e._chat_history:
+			for entry in _e.chat_history:
 				if entry.get("role") == "user":
 					last_user_prompt = str(entry.get("content", ""))
 			if not last_user_prompt.is_empty():
@@ -394,15 +411,15 @@ func on_chat_meta_clicked(meta: Variant) -> void:
 
 
 func show_chat_welcome() -> void:
-	_e._chat_log.clear()
+	_e.chat_log.clear()
 	var welcome = "\n\n\n\n\n[center][font_size=28][b]Let's Talk[/b][/font_size]\n[color=#7a7e85][font_size=13]Ask any question or start coding with AI[/font_size][/color][/center]\n"
-	_e._chat_log.append_text(welcome)
+	_e.chat_log.append_text(welcome)
 
 
 func on_clear_chat_pressed() -> void:
-	_e._chat_history.clear()
+	_e.chat_history.clear()
 	show_chat_welcome()
-	_e._send_os_notification("Chat", "Chat history cleared.")
+	_e.dialog.send_os_notification("Chat", "Chat history cleared.")
 
 
 func on_compact_chat_pressed() -> void:
@@ -410,7 +427,7 @@ func on_compact_chat_pressed() -> void:
 
 
 func format_markdown_to_bbcode(raw_text: String) -> String:
-	var is_light = _e._theme_is_light(_e._active_theme)
+	var is_light = _e.themes.theme_is_light(_e.active_theme)
 	return ChatMarkdown.render(raw_text, is_light)
 
 
@@ -435,16 +452,18 @@ func replace_links(text: String) -> String:
 
 
 func ask_ai(prompt: String) -> void:
-	_e._ai_busy = true
-	_e._response_rendered = false
-	_e._request_start_time = Time.get_ticks_msec() / 1000.0
-	_e._spinner_time = 0.0
-	_e._chat_status_banner.visible = true
-	_e._chat_send.text = "■"
-	_e._status_left.text = "Generating response…"
-	_e._current_prompt = prompt
-	_e._model_candidates = AIService.get_candidate_models(_e._ai_provider)
-	_e._model_candidate_index = 0
+	_e.ai_chat_http.cancel_request()
+	stop_chat_stream()
+	_e.ai_busy = true
+	_e.response_rendered = false
+	_e.request_start_time = Time.get_ticks_msec() / 1000.0
+	_e.spinner_time = 0.0
+	_e.chat_status_banner.visible = true
+	_e.chat_send.text = "■"
+	_e.status_left.text = "Generating response…"
+	_e.current_prompt = prompt
+	_e.model_candidates = AIService.get_candidate_models(_e.ai_provider)
+	_e.model_candidate_index = 0
 
 	var lower = prompt.to_lower()
 	var needs_web = (
@@ -459,36 +478,36 @@ func ask_ai(prompt: String) -> void:
 			var web_res = WebSearchService.search_web(search_q, 4)
 			if not web_res.is_empty():
 				var web_context = WebSearchService.format_search_context_for_prompt(search_q, web_res)
-				_e._chat_history.append({"role": "system", "content": web_context})
+				_e.chat_history.append({"role": "system", "content": web_context})
 
 	send_chat_completion()
 
 
 func send_chat_completion() -> void:
-	if _e._model_candidate_index >= _e._model_candidates.size():
-		if _e._is_smart_commit_pending():
+	if _e.model_candidate_index >= _e.model_candidates.size():
+		if _e.git.is_smart_commit_pending():
 			_e.git.fallback_smart_commit("NVIDIA NIM models exhausted.")
 			return
-		_e._smart_commit_prompt = ""
+		_e.smart_commit_prompt = ""
 		clear_ai_busy()
-		append_chat(_e._ai_provider.to_upper(), "Could not retrieve response from NVIDIA NIM models. Please retry.", Color("#ed333b"))
+		append_chat(_e.ai_provider.to_upper(), "Could not retrieve response from NVIDIA NIM models. Please retry.", Color("#ed333b"))
 		return
 
-	var model_name: String = _e._model_candidates[_e._model_candidate_index]
+	var model_name: String = _e.model_candidates[_e.model_candidate_index]
 	var target_url: String = AIService.NVIDIA_BASE_URL
 	var headers = PackedStringArray([
 		"Content-Type: application/json",
 		"Authorization: Bearer " + AIService.get_nvidia_api_key(),
 		"Accept: application/json"
 	])
-	var is_smart_commit = _e._current_prompt.begins_with("__SMART_COMMIT__:")
+	var is_smart_commit = _e.current_prompt.begins_with("__SMART_COMMIT__:")
 	var messages_payload: Array[Dictionary] = []
 	var payload_dict: Dictionary = {}
 
 	if is_smart_commit:
 		messages_payload = [
 			{"role": "system", "content": "You are an expert Git commit message writer. Output ONLY the commit message with no extra text or markdown."},
-			{"role": "user", "content": _e._smart_commit_prompt}
+			{"role": "user", "content": _e.smart_commit_prompt}
 		]
 		payload_dict = {
 			"model": model_name,
@@ -503,7 +522,7 @@ func send_chat_completion() -> void:
 		var current_year: String = str(Time.get_date_dict_from_system().get("year", 2026))
 		var workspace_info: String = get_workspace_context()
 		var system_role_content: String = ""
-		if _e._agent_mode:
+		if _e.agent_mode:
 			system_role_content = (
 				"You are SSBot, an elite autonomous AI programming partner and agent integrated directly into SSCodeIDE created by Ser Superior (SS).\n" +
 				"You have direct access and visibility to the project workspace files, directory tree, active file, and real-time Internet search capabilities.\n\n" +
@@ -557,14 +576,25 @@ func send_chat_completion() -> void:
 		messages_payload = [
 			{"role": "system", "content": system_role_content}
 		]
-		var history_limit: int = 60 if _e._agent_mode else 30
-		var start_idx: int = maxi(0, _e._chat_history.size() - history_limit)
-		for i in range(start_idx, _e._chat_history.size()):
-			messages_payload.append(_e._chat_history[i])
+		var history_limit: int = 60 if _e.agent_mode else 30
+		var start_idx: int = maxi(0, _e.chat_history.size() - history_limit)
+		for i in range(start_idx, _e.chat_history.size()):
+			var entry: Dictionary = _e.chat_history[i]
+			var role: String = str(entry.get("role", "assistant"))
+			var content: String = str(entry.get("content", "")).strip_edges()
+			if content.is_empty() or content == "<null>" or content == "null":
+				continue
+			if role == "system" and (
+				content.begins_with("Could not retrieve") or content.begins_with("Failed to") or
+				content.begins_with("Empty server") or content.begins_with("NVIDIA NIM rejected") or
+				content.begins_with("The model timed out")
+			):
+				continue
+			messages_payload.append({"role": role, "content": content})
 		payload_dict = {
 			"model": model_name,
 			"messages": messages_payload,
-			"temperature": 0.7 if _e._agent_mode else 0.5,
+			"temperature": 0.7 if _e.agent_mode else 0.5,
 			"top_p": 0.95,
 			"max_tokens": 4096,
 			"stream": false
@@ -574,24 +604,24 @@ func send_chat_completion() -> void:
 
 	var payload_json = JSON.stringify(payload_dict)
 	if not is_smart_commit:
-		_e._thinking_text = ""
+		_e.thinking_text = ""
 		refresh_thinking_panel()
-	var err: Error = _e._ai_chat_http.request(target_url, headers, HTTPClient.METHOD_POST, payload_json)
+	var err: Error = _e.ai_chat_http.request(target_url, headers, HTTPClient.METHOD_POST, payload_json)
 	if err != OK:
-		if _e._is_smart_commit_pending():
+		if _e.git.is_smart_commit_pending():
 			_e.git.fallback_smart_commit("Failed to start HTTP request (code %d)." % err)
 			return
-		_e._smart_commit_prompt = ""
+		_e.smart_commit_prompt = ""
 		clear_ai_busy()
 		_e.dialog.show_toast("Failed to initiate HTTP request (Code %d)." % err, true)
-		append_chat(_e._ai_provider.to_upper(), "Failed to initiate HTTP request (Code %d)." % err, Color("#ed333b"))
+		append_chat(_e.ai_provider.to_upper(), "Failed to initiate HTTP request (Code %d)." % err, Color("#ed333b"))
 
 
 func on_ai_chat_http_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
-	if _e._response_rendered:
+	if _e.response_rendered:
 		return
-	var is_smart_commit = _e._current_prompt.begins_with("__SMART_COMMIT__:")
-	var elapsed: float = maxf(0.1, (Time.get_ticks_msec() / 1000.0) - _e._request_start_time)
+	var is_smart_commit = _e.current_prompt.begins_with("__SMART_COMMIT__:")
+	var elapsed: float = maxf(0.1, (Time.get_ticks_msec() / 1000.0) - _e.request_start_time)
 
 	if result != HTTPRequest.RESULT_SUCCESS:
 		var timeout_toast = "Request timeout. Attempting candidate model…"
@@ -600,8 +630,9 @@ func on_ai_chat_http_completed(result: int, response_code: int, _headers: Packed
 		if is_smart_commit:
 			_e.git.fallback_smart_commit("The model timed out.")
 			return
+		clear_ai_busy()
 		_e.dialog.show_toast("Response timeout exceeded. Request cancelled.", true)
-		append_chat(_e._ai_provider.to_upper(), "The model timed out. The request was cancelled automatically.", Color("#ff7800"))
+		append_chat(_e.ai_provider.to_upper(), "The model timed out. The request was cancelled automatically.", Color("#ff7800"))
 		return
 
 	if body.is_empty():
@@ -610,8 +641,9 @@ func on_ai_chat_http_completed(result: int, response_code: int, _headers: Packed
 		if is_smart_commit:
 			_e.git.fallback_smart_commit("Empty server response.")
 			return
+		clear_ai_busy()
 		_e.dialog.show_toast("Empty server response.", true)
-		append_chat(_e._ai_provider.to_upper(), "Empty server response. Please retry.", Color("#ed333b"))
+		append_chat(_e.ai_provider.to_upper(), "Empty server response. Please retry.", Color("#ed333b"))
 		return
 
 	var text = body.get_string_from_utf8()
@@ -625,15 +657,29 @@ func on_ai_chat_http_completed(result: int, response_code: int, _headers: Packed
 			var msg: Dictionary = choices[0].get("message", {})
 			var thought = extract_reasoning(msg)
 			if not thought.is_empty():
-				_e._thinking_text = thought
+				_e.thinking_text = thought
 				refresh_thinking_panel()
-			var reply_text: String = str(msg.get("content", "")).strip_edges()
+			var raw_content: Variant = msg.get("content", null)
+			var reply_text: String = _clean_content_string(raw_content)
+
+			if reply_text.contains("<think>") and reply_text.contains("</think>"):
+				var t_start = reply_text.find("<think>")
+				var t_end = reply_text.find("</think>")
+				if t_end > t_start:
+					var extracted_t = reply_text.substr(t_start + 7, t_end - t_start - 7).strip_edges()
+					if thought.is_empty():
+						thought = extracted_t
+						_e.thinking_text = thought
+						refresh_thinking_panel()
+					reply_text = (reply_text.substr(0, t_start) + reply_text.substr(t_end + 8)).strip_edges()
+
 			if reply_text.is_empty() and not thought.is_empty():
 				reply_text = thought
+
 			if not reply_text.is_empty():
 				reply_text = execute_agent_file_writes(reply_text)
 
-				if _e._current_prompt.begins_with("__SMART_COMMIT__:") :
+				if _e.current_prompt.begins_with("__SMART_COMMIT__:") :
 					var commit_msg = reply_text.strip_edges()
 					commit_msg = commit_msg.trim_prefix("```").trim_suffix("```").strip_edges()
 					if commit_msg.is_empty():
@@ -642,31 +688,31 @@ func on_ai_chat_http_completed(result: int, response_code: int, _headers: Packed
 					_e.git.finish_smart_commit(commit_msg, true)
 					return
 
-				_e._chat_history.append({"role": "assistant", "content": reply_text})
+				_e.chat_history.append({"role": "assistant", "content": reply_text})
 				var usage: Dictionary = parsed.get("usage", {})
-				var prompt_tokens: int = int(usage.get("prompt_tokens", float(_e._current_prompt.length()) / 4.0))
+				var prompt_tokens: int = int(usage.get("prompt_tokens", float(_e.current_prompt.length()) / 4.0))
 				var completion_tokens: int = int(usage.get("completion_tokens", float(reply_text.length()) / 4.0))
 				clear_ai_busy()
-				append_ai_response(_e._ai_provider, reply_text, elapsed, prompt_tokens, completion_tokens)
+				append_ai_response(_e.ai_provider, reply_text, elapsed, prompt_tokens, completion_tokens)
 				return
 	elif response_code in [200, 201] and not text.strip_edges().is_empty() and not text.begins_with("{"):
 		var plain_reply = execute_agent_file_writes(text.strip_edges())
-		_e._chat_history.append({"role": "assistant", "content": plain_reply})
+		_e.chat_history.append({"role": "assistant", "content": plain_reply})
 		clear_ai_busy()
-		append_ai_response(_e._ai_provider, plain_reply, elapsed)
+		append_ai_response(_e.ai_provider, plain_reply, elapsed)
 		return
 
-	if response_code == 401:
+	if response_code in [401, 403]:
 		AIService.invalidate_cached_api_key()
 		if is_smart_commit:
-			_e.git.fallback_smart_commit("The NVIDIA NIM key was rejected (HTTP 401).")
+			_e.git.fallback_smart_commit("The NVIDIA NIM key was rejected (HTTP %d)." % response_code)
 			_e.dialog.prompt_api_key(true, Callable())
 			return
-		_e._smart_commit_prompt = ""
+		_e.smart_commit_prompt = ""
 		clear_ai_busy()
-		_e.dialog.show_toast("NVIDIA NIM rejected the API key (HTTP 401). Enter a new key.", true)
-		append_chat(_e._ai_provider.to_upper(), "Could not retrieve response (HTTP 401). The API key was rejected. Paste a new NVIDIA NIM key to continue.", Color("#ed333b"))
-		var retry_prompt = _e._current_prompt
+		_e.dialog.show_toast("NVIDIA NIM rejected the API key (HTTP %d). Enter a new key." % response_code, true)
+		append_chat(_e.ai_provider.to_upper(), "Could not retrieve response (HTTP %d). The API key was rejected or invalid. Paste a new NVIDIA NIM key to continue." % response_code, Color("#ed333b"))
+		var retry_prompt = _e.current_prompt
 		_e.dialog.prompt_api_key(true, func() -> void:
 			if retry_prompt.is_empty() or retry_prompt.begins_with("__SMART_COMMIT__:"):
 				return
@@ -680,64 +726,70 @@ func on_ai_chat_http_completed(result: int, response_code: int, _headers: Packed
 		_e.git.fallback_smart_commit("AI service error (HTTP %d)." % response_code)
 		return
 	var err_detail: String = ""
-	if parsed is Dictionary and parsed.has("error"):
-		var err_dict: Dictionary = parsed["error"] if parsed["error"] is Dictionary else {}
-		err_detail = " — " + str(err_dict.get("message", parsed["error"]))
+	if parsed is Dictionary:
+		if parsed.has("error"):
+			var err_dict: Dictionary = parsed["error"] if parsed["error"] is Dictionary else {}
+			err_detail = " — " + str(err_dict.get("message", parsed["error"]))
+		elif parsed.has("detail"):
+			err_detail = " — " + str(parsed.get("detail", ""))
+		elif parsed.has("title"):
+			err_detail = " — " + str(parsed.get("title", ""))
+	clear_ai_busy()
 	_e.dialog.show_toast("AI Service Error (HTTP %d)" % response_code, true)
-	append_chat(_e._ai_provider.to_upper(), "Could not retrieve response (HTTP %d)%s." % [response_code, err_detail], Color("#ed333b"))
+	append_chat(_e.ai_provider.to_upper(), "Could not retrieve response (HTTP %d)%s." % [response_code, err_detail], Color("#ed333b"))
 
 
 func try_next_ai_candidate(toast_message: String) -> bool:
-	_e._model_candidate_index += 1
-	if _e._model_candidate_index < _e._model_candidates.size():
-		_e._ai_busy = true
-		_e._chat_status_banner.visible = true
-		_e._chat_send.text = "■"
+	_e.model_candidate_index += 1
+	if _e.model_candidate_index < _e.model_candidates.size():
+		_e.ai_busy = true
+		_e.chat_status_banner.visible = true
+		_e.chat_send.text = "■"
 		_e.dialog.show_toast(toast_message, true)
 		send_chat_completion()
 		return true
-	if _e._is_smart_commit_pending():
+	if _e.git.is_smart_commit_pending():
 		_e.git.fallback_smart_commit("Todos os modelos candidatos falharam.")
 		return false
-	_e._smart_commit_prompt = ""
+	_e.smart_commit_prompt = ""
 	clear_ai_busy()
 	return false
 
 
 func cancel_ai_request() -> void:
-	var pending_smart = _e._is_smart_commit_pending()
-	_e._ai_chat_http.cancel_request()
+	var pending_smart = _e.git.is_smart_commit_pending()
+	_e.ai_chat_http.cancel_request()
 	stop_chat_stream()
 	if pending_smart:
 		_e.git.fallback_smart_commit("Request cancelled.")
 		return
-	_e._smart_commit_prompt = ""
+	_e.smart_commit_prompt = ""
 	clear_ai_busy()
 	_e.dialog.show_toast("Request cancelled.", false)
 	append_chat("IDE", "Request cancelled.", Color("#ffa348"))
 
 
 func clear_ai_busy() -> void:
-	_e._ai_busy = false
+	_e.ai_busy = false
 	stop_chat_stream()
-	_e._chat_status_banner.visible = false
-	_e._thinking_text = ""
-	_e._chat_thinking_label.text = ""
-	_e._chat_send.text = "↑"
-	_e._status_left.text = "READY"
+	_e.chat_status_banner.visible = false
+	_e.thinking_text = ""
+	_e.chat_thinking_label.text = ""
+	_e.chat_send.text = "↑"
+	_e.status_left.text = "READY"
 
 
 func get_workspace_context() -> String:
-	var context_str: String = "Workspace Root: " + _e._workspace_root + "\n"
+	var context_str: String = "Workspace Root: " + _e.workspace_root + "\n"
 	
 	var open_paths: Array[String] = []
-	for f in _e._open_files:
+	for f in _e.open_files:
 		open_paths.append(f.get("path", ""))
 	context_str += "Open Files in Tabs: " + ", ".join(open_paths) + "\n\n"
 	
-	if _e._active_index >= 0 and _e._active_index < _e._open_files.size():
-		var active_path: String = _e._open_files[_e._active_index].get("path", "untitled")
-		var active_code: String = _e._code_edit.text
+	if _e.active_index >= 0 and _e.active_index < _e.open_files.size():
+		var active_path: String = _e.open_files[_e.active_index].get("path", "untitled")
+		var active_code: String = _e.code_edit.text
 		if active_code.length() > 4000:
 			active_code = active_code.substr(0, 4000) + "\n... [content truncated for length]"
 		context_str += "--- Active File: " + active_path + " ---\n" + active_code + "\n-------------------------\n\n"
@@ -771,7 +823,7 @@ func handle_slash(cmd: String) -> void:
 				append_chat("WEB", WebSearchService.format_search_results_bbcode(q, res), Color("#57e389"))
 				var web_context = WebSearchService.format_search_context_for_prompt(q, res)
 				if not web_context.is_empty():
-					_e._chat_history.append({"role": "system", "content": web_context})
+					_e.chat_history.append({"role": "system", "content": web_context})
 					_e.dialog.ensure_api_key(func() -> void: ask_ai("Sintetiza de forma clara e actualizada os resultados da pesquisa sobre: " + q))
 		"/git":
 			var subcmd_raw: String = parts[1].strip_edges() if parts.size() > 1 else "status"
@@ -781,24 +833,24 @@ func handle_slash(cmd: String) -> void:
 			
 			match subcmd:
 				"status":
-					var st: Dictionary = GitService.get_status(_e._workspace_root)
-					var gh: Dictionary = GitService.get_github_info(_e._workspace_root)
+					var st: Dictionary = GitService.get_status(_e.workspace_root)
+					var gh: Dictionary = GitService.get_github_info(_e.workspace_root)
 					_e.git.append_git_output("Git Status", GitService.format_status_bbcode(st, gh))
 					_e.git.update_git_status_bar()
 				"diff":
-					var res: Dictionary = GitService.get_diff(sub_arg, false, _e._workspace_root)
+					var res: Dictionary = GitService.get_diff(sub_arg, false, _e.workspace_root)
 					_e.git.append_git_output("Git Diff", GitService.format_diff_bbcode(str(res.get("output", ""))))
 				"log":
 					var count: int = sub_arg.to_int() if sub_arg.to_int() > 0 else 10
-					var log_entries: Array[Dictionary] = GitService.get_log(count, _e._workspace_root)
+					var log_entries: Array[Dictionary] = GitService.get_log(count, _e.workspace_root)
 					_e.git.append_git_output("Git Log", GitService.format_log_bbcode(log_entries))
 				"commit":
 					if sub_arg.is_empty():
 						_e.git.generate_smart_commit()
 					else:
 						_e.git.set_git_panel_busy(true)
-						GitService.stage_all(_e._workspace_root)
-						var commit_res: Dictionary = GitService.commit(sub_arg, _e._workspace_root)
+						GitService.stage_all(_e.workspace_root)
+						var commit_res: Dictionary = GitService.commit(sub_arg, _e.workspace_root)
 						if bool(commit_res.get("success", false)):
 							_e.git.append_git_output("Git Commit", "Commit created successfully:\n" + sub_arg)
 							_e.dialog.show_toast("Git commit: " + sub_arg, false)
@@ -826,7 +878,7 @@ func handle_slash(cmd: String) -> void:
 					_e.git._git_fetch(remote_name)
 				"branch":
 					if sub_arg.is_empty():
-						var branches: Array[Dictionary] = GitService.get_branches(_e._workspace_root)
+						var branches: Array[Dictionary] = GitService.get_branches(_e.workspace_root)
 						var b_out = "[b][color=#62a0ea]Git Branches:[/color][/b]\n"
 						for b in branches:
 							var prefix = "● " if bool(b.get("is_current", false)) else "  "
@@ -835,7 +887,7 @@ func handle_slash(cmd: String) -> void:
 						_e.git.append_git_output("Git Branches", b_out)
 					else:
 						_e.git.set_git_panel_busy(true)
-						var create_res: Dictionary = GitService.create_branch(sub_arg, _e._workspace_root)
+						var create_res: Dictionary = GitService.create_branch(sub_arg, _e.workspace_root)
 						if bool(create_res.get("success", false)):
 							_e.git.append_git_output("Git Branch", "Branch '%s' created successfully." % sub_arg)
 						else:
@@ -849,7 +901,7 @@ func handle_slash(cmd: String) -> void:
 						_e.git.set_git_panel_busy(true)
 						var create_new = sub_arg.begins_with("-b ") or sub_arg.begins_with("+")
 						var branch_target = sub_arg.trim_prefix("-b ").trim_prefix("+").strip_edges()
-						var co_res: Dictionary = GitService.checkout_branch(branch_target, create_new, _e._workspace_root)
+						var co_res: Dictionary = GitService.checkout_branch(branch_target, create_new, _e.workspace_root)
 						if bool(co_res.get("success", false)):
 							_e.git.append_git_output("Git Branch", "Switched to branch '%s' successfully." % branch_target)
 							_e.dialog.show_toast("Branch: " + branch_target, false)
@@ -858,8 +910,8 @@ func handle_slash(cmd: String) -> void:
 						_e.git.set_git_panel_busy(false)
 						_e.git.update_git_status_bar()
 				"remote":
-					var remotes: Array[Dictionary] = GitService.get_remotes(_e._workspace_root)
-					var gh: Dictionary = GitService.get_github_info(_e._workspace_root)
+					var remotes: Array[Dictionary] = GitService.get_remotes(_e.workspace_root)
+					var gh: Dictionary = GitService.get_github_info(_e.workspace_root)
 					var r_out = "[b][color=#62a0ea]Git Remotes & GitHub:[/color][/b]\n\n"
 					for r in remotes:
 						r_out += "• [b]%s[/b] (%s): `%s`\n" % [str(r.get("name", "")), str(r.get("type", "")), str(r.get("url", ""))]
@@ -868,7 +920,7 @@ func handle_slash(cmd: String) -> void:
 					_e.git.append_git_output("Git Remotes", r_out)
 				"config":
 					if sub_arg.is_empty():
-						var u: Dictionary = GitService.get_user_config(_e._workspace_root)
+						var u: Dictionary = GitService.get_user_config(_e.workspace_root)
 						_e.git.append_git_output("Git Config", "Git User: `%s <%s>`" % [str(u.get("name", "")), str(u.get("email", ""))])
 					else:
 						var name_val = sub_arg
@@ -878,7 +930,7 @@ func handle_slash(cmd: String) -> void:
 							var e_idx = sub_arg.find(">")
 							name_val = sub_arg.substr(0, s_idx).strip_edges()
 							email_val = sub_arg.substr(s_idx + 1, e_idx - s_idx - 1).strip_edges()
-						var cfg_res: Dictionary = GitService.set_user_config(name_val, email_val, false, _e._workspace_root)
+						var cfg_res: Dictionary = GitService.set_user_config(name_val, email_val, false, _e.workspace_root)
 						if bool(cfg_res.get("success", false)):
 							_e.git.append_git_output("Git Config", "Git user configured: %s <%s>" % [name_val, email_val])
 						else:
@@ -888,7 +940,7 @@ func handle_slash(cmd: String) -> void:
 						_e.git._prompt_git_clone()
 					else:
 						_e.git.set_git_panel_busy(true)
-						var target_dir: String = _e._workspace_root.path_join(sub_arg.get_file().trim_suffix(".git"))
+						var target_dir: String = _e.workspace_root.path_join(sub_arg.get_file().trim_suffix(".git"))
 						_e.dialog.show_toast("Cloning repository…", false)
 						var cl_res: Dictionary = GitService.clone_repository(sub_arg, target_dir)
 						if bool(cl_res.get("success", false)):
@@ -910,7 +962,7 @@ func handle_slash(cmd: String) -> void:
 			append_chat("IDE", "[color=#9a9996]Themes are now selected from the [b]Themes[/b] menu in the navigation bar.[/color]", Color("#9a9996"))
 		"/save":
 			_e.files.save_active()
-			var p: String = _e._open_files[_e._active_index]["path"] if _e._active_index >= 0 else "untitled"
+			var p: String = _e.open_files[_e.active_index]["path"] if _e.active_index >= 0 else "untitled"
 			append_tool_badge("Save", p)
 		"/files":
 			_e.files.refresh_file_tree()
@@ -922,14 +974,14 @@ func handle_slash(cmd: String) -> void:
 		"/goto":
 			if parts.size() > 1:
 				var line_num: int = parts[1].strip_edges().to_int()
-				if line_num > 0 and _e._code_edit:
-					var target_idx: int = clampi(line_num - 1, 0, maxi(0, _e._code_edit.get_line_count() - 1))
-					_e._code_edit.set_caret_line(target_idx)
-					_e._code_edit.grab_focus()
+				if line_num > 0 and _e.code_edit:
+					var target_idx: int = clampi(line_num - 1, 0, maxi(0, _e.code_edit.get_line_count() - 1))
+					_e.code_edit.set_caret_line(target_idx)
+					_e.code_edit.grab_focus()
 					append_tool_badge("Go to Line", str(line_num))
 		"/clear":
-			_e._chat_history.clear()
-			_e._chat_log.clear()
+			_e.chat_history.clear()
+			_e.chat_log.clear()
 			append_chat("IDE", "Chat history and context cleared.", Color("#57e389"))
 		"/compact":
 			compact_chat_history()
@@ -954,14 +1006,14 @@ func show_tools_list() -> void:
 func compact_chat_history() -> void:
 	const RECENT_MESSAGES := 12
 	const SUMMARY_LIMIT := 6000
-	if _e._chat_history.size() <= RECENT_MESSAGES:
-		append_chat("IDE", "Context is already compact (%d messages)." % _e._chat_history.size(), Color("#9a9996"))
+	if _e.chat_history.size() <= RECENT_MESSAGES:
+		append_chat("IDE", "Context is already compact (%d messages)." % _e.chat_history.size(), Color("#9a9996"))
 		return
 
-	var compact_count = _e._chat_history.size() - RECENT_MESSAGES
+	var compact_count = _e.chat_history.size() - RECENT_MESSAGES
 	var summary = "Conversation summary (generated by /compact):\n"
 	for i in range(compact_count):
-		var entry: Dictionary = _e._chat_history[i]
+		var entry: Dictionary = _e.chat_history[i]
 		var role = str(entry.get("role", "message")).capitalize()
 		var content = str(entry.get("content", "")).strip_edges()
 		if content.is_empty():
@@ -974,17 +1026,17 @@ func compact_chat_history() -> void:
 			break
 
 	var recent: Array[Dictionary] = []
-	for i in range(compact_count, _e._chat_history.size()):
-		recent.append(_e._chat_history[i])
-	_e._chat_history.clear()
-	_e._chat_history.append({"role": "user", "content": summary.strip_edges()})
-	_e._chat_history.append({"role": "assistant", "content": "Summary recorded. Continue from the preserved recent context."})
-	_e._chat_history.append_array(recent)
+	for i in range(compact_count, _e.chat_history.size()):
+		recent.append(_e.chat_history[i])
+	_e.chat_history.clear()
+	_e.chat_history.append({"role": "user", "content": summary.strip_edges()})
+	_e.chat_history.append({"role": "assistant", "content": "Summary recorded. Continue from the preserved recent context."})
+	_e.chat_history.append_array(recent)
 	append_chat("IDE", "Context compacted: %d older messages summarised; %d recent messages preserved." % [compact_count, RECENT_MESSAGES], Color("#57e389"))
 
 
 func execute_agent_file_writes(reply: String) -> String:
-	var result = AgentWorkspace.execute_markup(reply, _e._workspace_root)
+	var result = AgentWorkspace.execute_markup(reply, _e.workspace_root)
 	for path: String in result.written_paths:
 		reload_open_file(path)
 	for path: String in result.deleted_paths:
@@ -995,42 +1047,42 @@ func execute_agent_file_writes(reply: String) -> String:
 
 
 func reload_open_file(path: String) -> void:
-	for i in _e._open_files.size():
-		if str(_e._open_files[i].get("path", "")).simplify_path() == path.simplify_path():
+	for i in _e.open_files.size():
+		if str(_e.open_files[i].get("path", "")).simplify_path() == path.simplify_path():
 			var f = FileAccess.open(path, FileAccess.READ)
 			if f:
-				_e._open_files[i]["content"] = f.get_as_text()
-				_e._open_files[i]["dirty"] = false
-				if i == _e._active_index:
-					_e._suppress_tab = true
-					_e._code_edit.text = _e._open_files[i]["content"]
-					_e._suppress_tab = false
-					_e._update_cursor_status()
-				_e._tab_bar.set_tab_title(i, str(_e._open_files[i].get("title", "")))
+				_e.open_files[i]["content"] = f.get_as_text()
+				_e.open_files[i]["dirty"] = false
+				if i == _e.active_index:
+					_e.suppress_tab = true
+					_e.code_edit.text = _e.open_files[i]["content"]
+					_e.suppress_tab = false
+					_e.update_cursor_status()
+				_e.tab_bar.set_tab_title(i, str(_e.open_files[i].get("title", "")))
 
 
 func close_open_file_path(path: String) -> void:
-	for i in range(_e._open_files.size() - 1, -1, -1):
-		if str(_e._open_files[i].get("path", "")).simplify_path() == path.simplify_path():
-			_e._on_tab_close(i)
+	for i in range(_e.open_files.size() - 1, -1, -1):
+		if str(_e.open_files[i].get("path", "")).simplify_path() == path.simplify_path():
+			_e.files.on_tab_close(i)
 
 
 func setup_composer_dropdowns() -> void:
-	if _e._agent_mode_btn:
-		var agent_popup = _e._agent_mode_btn.get_popup()
+	if _e.agent_mode_btn:
+		var agent_popup = _e.agent_mode_btn.get_popup()
 		agent_popup.clear()
 		agent_popup.add_radio_check_item("Build (Agent Autopilot)", 0)
 		agent_popup.add_radio_check_item("Chat (Standard Chat)", 1)
-		agent_popup.set_item_checked(0, _e._agent_mode)
-		agent_popup.set_item_checked(1, not _e._agent_mode)
+		agent_popup.set_item_checked(0, _e.agent_mode)
+		agent_popup.set_item_checked(1, not _e.agent_mode)
 		if not agent_popup.id_pressed.is_connected(on_agent_mode_popup_selected):
 			agent_popup.id_pressed.connect(on_agent_mode_popup_selected)
-		_e._agent_mode_btn.text = "Build ⌵" if _e._agent_mode else "Chat ⌵"
+		_e.agent_mode_btn.text = "Build ⌵" if _e.agent_mode else "Chat ⌵"
 
-	if _e._model_badge_btn:
-		_e._model_badge_btn.icon = preload("res://icons/sparkles.svg")
-		_e._model_badge_btn.expand_icon = true
-		var model_popup = _e._model_badge_btn.get_popup()
+	if _e.model_badge_btn:
+		_e.model_badge_btn.icon = preload("res://icons/sparkles.svg")
+		_e.model_badge_btn.expand_icon = true
+		var model_popup = _e.model_badge_btn.get_popup()
 		model_popup.clear()
 		model_popup.add_radio_check_item("Nemotron 3 Omni", 0)
 		model_popup.add_radio_check_item("Nemotron 3.5 Lightning", 1)
@@ -1043,13 +1095,13 @@ func setup_composer_dropdowns() -> void:
 
 
 func on_agent_mode_popup_selected(id: int) -> void:
-	_e._agent_mode = (id == 0)
-	if _e._agent_mode_btn:
-		_e._agent_mode_btn.text = "Build ⌵" if _e._agent_mode else "Chat ⌵"
-		var agent_popup = _e._agent_mode_btn.get_popup()
-		agent_popup.set_item_checked(0, _e._agent_mode)
-		agent_popup.set_item_checked(1, not _e._agent_mode)
-	if _e._agent_mode:
+	_e.agent_mode = (id == 0)
+	if _e.agent_mode_btn:
+		_e.agent_mode_btn.text = "Build ⌵" if _e.agent_mode else "Chat ⌵"
+		var agent_popup = _e.agent_mode_btn.get_popup()
+		agent_popup.set_item_checked(0, _e.agent_mode)
+		agent_popup.set_item_checked(1, not _e.agent_mode)
+	if _e.agent_mode:
 		_e.dialog.show_toast("Switched to Build (Agent Autopilot) mode", false)
 	else:
 		_e.dialog.show_toast("Switched to Chat mode", false)
@@ -1067,50 +1119,50 @@ func update_model_badge_text() -> void:
 		"deepseek_v4": "DeepSeek V4",
 		"laguna": "Laguna Code",
 	}
-	var display_title: String = titles.get(_e._ai_provider, "Nemotron 3 Omni")
-	if _e._model_badge_btn:
-		_e._model_badge_btn.text = display_title + " ⌵"
-		var model_popup = _e._model_badge_btn.get_popup()
+	var display_title: String = titles.get(_e.ai_provider, "Nemotron 3 Omni")
+	if _e.model_badge_btn:
+		_e.model_badge_btn.text = display_title + " ⌵"
+		var model_popup = _e.model_badge_btn.get_popup()
 		var names: Array[String] = ["nemotron", "nemotron_lightning", "kimi_k3", "deepseek_v4", "laguna"]
 		for i in range(names.size()):
-			model_popup.set_item_checked(i, names[i] == _e._ai_provider)
+			model_popup.set_item_checked(i, names[i] == _e.ai_provider)
 
 
 func on_provider_selected(index: int) -> void:
-	if _e._ai_busy:
+	if _e.ai_busy:
 		cancel_ai_request()
 	var names: Array[String] = ["nemotron", "nemotron_lightning", "kimi_k3", "deepseek_v4", "laguna"]
 	if index >= 0 and index < names.size():
-		_e._ai_provider = names[index]
+		_e.ai_provider = names[index]
 	save_ai_config()
 	update_ai_status()
 	update_model_badge_text()
 
 
 func load_ai_config() -> void:
-	_e._provider_select.clear()
-	_e._provider_select.add_item("Nemotron 3 Omni (NVIDIA)")
-	_e._provider_select.add_item("Nemotron 3.5 Lightning (NVIDIA)")
-	_e._provider_select.add_item("Kimi K3 (NVIDIA)")
-	_e._provider_select.add_item("DeepSeek V4 (NVIDIA)")
-	_e._provider_select.add_item("Laguna Code (NVIDIA)")
+	_e.provider_select.clear()
+	_e.provider_select.add_item("Nemotron 3 Omni (NVIDIA)")
+	_e.provider_select.add_item("Nemotron 3.5 Lightning (NVIDIA)")
+	_e.provider_select.add_item("Kimi K3 (NVIDIA)")
+	_e.provider_select.add_item("DeepSeek V4 (NVIDIA)")
+	_e.provider_select.add_item("Laguna Code (NVIDIA)")
 	var cfg = ConfigFile.new()
 	if cfg.load("user://ai_config.cfg") == OK:
-		_e._ai_provider = str(cfg.get_value("ai", "provider", "nemotron"))
+		_e.ai_provider = str(cfg.get_value("ai", "provider", "nemotron"))
 	else:
-		_e._ai_provider = "nemotron"
+		_e.ai_provider = "nemotron"
 	var names: Array[String] = ["nemotron", "nemotron_lightning", "kimi_k3", "deepseek_v4", "laguna"]
-	var idx: int = names.find(_e._ai_provider)
+	var idx: int = names.find(_e.ai_provider)
 	if idx < 0:
 		idx = 0
-		_e._ai_provider = "nemotron"
-	_e._provider_select.select(idx)
-	_e._chat_send.text = "↑"
+		_e.ai_provider = "nemotron"
+	_e.provider_select.select(idx)
+	_e.chat_send.text = "↑"
 
 
 func save_ai_config() -> void:
 	var cfg = ConfigFile.new()
-	cfg.set_value("ai", "provider", _e._ai_provider)
+	cfg.set_value("ai", "provider", _e.ai_provider)
 	cfg.save("user://ai_config.cfg")
 
 
@@ -1122,39 +1174,39 @@ func update_ai_status() -> void:
 		"deepseek_v4": "DeepSeek V4",
 		"laguna": "Laguna Code",
 	}
-	var display_title: String = titles.get(_e._ai_provider, "Nemotron 3 Omni")
+	var display_title: String = titles.get(_e.ai_provider, "Nemotron 3 Omni")
 	if AIService.has_nvidia_api_key():
-		_e._status_ai.text = "AI: %s · on" % display_title
+		_e.status_ai.text = "AI: %s · on" % display_title
 	else:
-		_e._status_ai.text = "AI: %s · key needed" % display_title
-	if _e._model_badge_btn:
-		_e._model_badge_btn.text = display_title + " ⌵"
-	_e._chat_input.placeholder_text = "How can i help you today?"
+		_e.status_ai.text = "AI: %s · key needed" % display_title
+	if _e.model_badge_btn:
+		_e.model_badge_btn.text = display_title + " ⌵"
+	_e.chat_input.placeholder_text = "How can i help you today?"
 
 
 func on_context_chip_pressed() -> void:
-	if _e._active_index >= 0 and _e._active_index < _e._open_files.size():
-		var fname: String = _e._open_files[_e._active_index].get("path", "").get_file()
-		_e._chat_input.text = "Review " + fname + ": "
-		_e._chat_input.caret_column = _e._chat_input.text.length()
-		_e._chat_input.grab_focus()
+	if _e.active_index >= 0 and _e.active_index < _e.open_files.size():
+		var fname: String = _e.open_files[_e.active_index].get("path", "").get_file()
+		_e.chat_input.text = "Review " + fname + ": "
+		_e.chat_input.caret_column = _e.chat_input.text.length()
+		_e.chat_input.grab_focus()
 
 
 func on_attach_btn_pressed() -> void:
-	if _e._active_index >= 0 and _e._active_index < _e._open_files.size():
-		var p: String = _e._open_files[_e._active_index].get("path", "")
-		_e._chat_input.text += " @" + p.get_file() + " "
-		_e._chat_input.caret_column = _e._chat_input.text.length()
-		_e._chat_input.grab_focus()
+	if _e.active_index >= 0 and _e.active_index < _e.open_files.size():
+		var p: String = _e.open_files[_e.active_index].get("path", "")
+		_e.chat_input.text += " @" + p.get_file() + " "
+		_e.chat_input.caret_column = _e.chat_input.text.length()
+		_e.chat_input.grab_focus()
 
 
 func on_agent_mode_pressed() -> void:
-	_e._agent_mode = not _e._agent_mode
-	if _e._agent_mode:
-		_e._agent_mode_btn.text = "</> Agent"
-		if _e._chat_context_badge:
-			_e._chat_context_badge.text = "Local · Autopilot"
+	_e.agent_mode = not _e.agent_mode
+	if _e.agent_mode:
+		_e.agent_mode_btn.text = "</> Agent"
+		if _e.chat_context_badge:
+			_e.chat_context_badge.text = "Local · Autopilot"
 	else:
-		_e._agent_mode_btn.text = "Chat"
-		if _e._chat_context_badge:
-			_e._chat_context_badge.text = "Local · Chat"
+		_e.agent_mode_btn.text = "Chat"
+		if _e.chat_context_badge:
+			_e.chat_context_badge.text = "Local · Chat"

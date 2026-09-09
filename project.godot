@@ -8,6 +8,10 @@
 
 config_version=5
 
+[debug]
+
+gdscript/warnings/unused_private_class_variable=0
+
 [application]
 
 config/name="SSCodeIDE"

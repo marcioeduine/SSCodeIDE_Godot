@@ -21,16 +21,16 @@ func handle_input(event: InputEvent) -> void:
 
 
 func handle_escape() -> void:
-	if _e._find_row.visible:
-		_e._find_row.visible = false
+	if _e.find_row.visible:
+		_e.find_row.visible = false
 		return
-	if _e._chat_suggestions_popup.visible:
-		_e._chat_suggestions_popup.visible = false
+	if _e.chat_suggestions_popup.visible:
+		_e.chat_suggestions_popup.visible = false
 		return
-	if _e._dialog_panel.visible:
-		_e._hide_overlay()
+	if _e.dialog_panel.visible:
+		_e.dialog.hide_overlay()
 		return
-	if _e._ai_busy:
+	if _e.ai_busy:
 		_e.chat.cancel_ai_request()
 		return
 	_e.get_viewport().gui_release_focus()
@@ -43,15 +43,15 @@ func handle_unhandled_input(event: InputEvent) -> void:
 	var ctrl: bool = key.ctrl_pressed
 	var shift: bool = key.shift_pressed
 	var alt: bool = key.alt_pressed
-	if key.keycode == KEY_DELETE and _e._file_tree.has_focus():
+	if key.keycode == KEY_DELETE and _e.file_tree.has_focus():
 		_e.files.delete_selected_file()
 		_e.get_viewport().set_input_as_handled()
 		return
 
 	# Code completion (Ctrl+Space)
 	if ctrl and key.keycode == KEY_SPACE:
-		_e._update_code_completion()
-		_e._code_edit.request_code_completion(true)
+		_e.update_code_completion()
+		_e.code_edit.request_code_completion(true)
 		_e.get_viewport().set_input_as_handled()
 		return
 
@@ -107,8 +107,8 @@ func handle_unhandled_input(event: InputEvent) -> void:
 		_e.get_viewport().set_input_as_handled()
 		return
 	if ctrl and key.keycode == KEY_W:
-		if _e._active_index >= 0:
-			_e.files.on_tab_close(_e._active_index)
+		if _e.active_index >= 0:
+			_e.files.on_tab_close(_e.active_index)
 		_e.get_viewport().set_input_as_handled()
 		return
 	if ctrl and key.keycode == KEY_Q:
@@ -128,45 +128,45 @@ func handle_unhandled_input(event: InputEvent) -> void:
 
 	# Panels & Focus Navigation
 	if ctrl and not shift and key.keycode == KEY_B:
-		_e._toggle_explorer()
+		_e.toggle_explorer()
 		_e.get_viewport().set_input_as_handled()
 		return
 	if ctrl and shift and key.keycode == KEY_B:
-		_e._toggle_chat()
+		_e.toggle_chat()
 		_e.get_viewport().set_input_as_handled()
 		return
 	if ctrl and (key.keycode == KEY_J or key.keycode == KEY_K or key.keycode == KEY_QUOTELEFT):
-		if _e._chat_collapsed:
-			_e._toggle_chat()
-		_e._chat_input.grab_focus()
+		if _e.chat_collapsed:
+			_e.toggle_chat()
+		_e.chat_input.grab_focus()
 		_e.get_viewport().set_input_as_handled()
 		return
 	if ctrl and key.keycode == KEY_P:
-		if _e._explorer_collapsed:
-			_e._toggle_explorer()
-		_e._file_tree.grab_focus()
+		if _e.explorer_collapsed:
+			_e.toggle_explorer()
+		_e.file_tree.grab_focus()
 		_e.get_viewport().set_input_as_handled()
 		return
 
 	# Find & Replace (Ctrl+F)
 	if ctrl and key.keycode == KEY_F:
-		_e._find_row.visible = true
-		_e._find_input.grab_focus()
+		_e.find_row.visible = true
+		_e.find_input.grab_focus()
 		_e.get_viewport().set_input_as_handled()
 		return
 	if ctrl and key.keycode == KEY_H:
-		_e._find_row.visible = true
-		_e._replace_input.visible = true
-		_e._replace_all.visible = true
-		_e._find_input.grab_focus()
+		_e.find_row.visible = true
+		_e.replace_input.visible = true
+		_e.replace_all.visible = true
+		_e.find_input.grab_focus()
 		_e.get_viewport().set_input_as_handled()
 		return
 
 	# Go to Line (Ctrl+G)
 	if ctrl and key.keycode == KEY_G:
-		_e._chat_input.text = "/goto "
-		_e._chat_input.grab_focus()
-		_e._chat_input.caret_column = _e._chat_input.text.length()
+		_e.chat_input.text = "/goto "
+		_e.chat_input.grab_focus()
+		_e.chat_input.caret_column = _e.chat_input.text.length()
 		_e.get_viewport().set_input_as_handled()
 		return
 
@@ -194,12 +194,12 @@ func on_code_editor_gui_input(event: InputEvent) -> void:
 		return
 	var key: InputEventKey = event
 	if key.ctrl_pressed and key.keycode == KEY_F:
-		_e._find_row.visible = true
-		_e._find_input.grab_focus()
+		_e.find_row.visible = true
+		_e.find_input.grab_focus()
 		_e.get_viewport().set_input_as_handled()
 	elif key.ctrl_pressed and key.keycode == KEY_H:
-		_e._find_row.visible = true
-		_e._replace_input.visible = true
-		_e._replace_all.visible = true
-		_e._find_input.grab_focus()
+		_e.find_row.visible = true
+		_e.replace_input.visible = true
+		_e.replace_all.visible = true
+		_e.find_input.grab_focus()
 		_e.get_viewport().set_input_as_handled()

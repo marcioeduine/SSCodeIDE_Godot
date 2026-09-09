@@ -354,28 +354,34 @@ static func _build_material3_theme(palette: Dictionary) -> Theme:
 	tab_sel.bg_color = background
 	tab_sel.border_color = primary
 	tab_sel.set_border_width(SIDE_BOTTOM, 2)
-	tab_sel.content_margin_left = 14
-	tab_sel.content_margin_right = 14
-	tab_sel.content_margin_top = 7
-	tab_sel.content_margin_bottom = 7
+	tab_sel.content_margin_left = 10
+	tab_sel.content_margin_right = 10
+	tab_sel.content_margin_top = 4
+	tab_sel.content_margin_bottom = 4
+	tab_sel.corner_radius_top_left = 4
+	tab_sel.corner_radius_top_right = 4
 	tab_sel.anti_aliasing = true
 
 	var tab_unsel := StyleBoxFlat.new()
-	tab_unsel.bg_color = Color.TRANSPARENT
+	tab_unsel.bg_color = surface.darkened(0.12) if not is_light else surface.lightened(0.1)
 	tab_unsel.border_color = Color.TRANSPARENT
-	tab_unsel.content_margin_left = 14
-	tab_unsel.content_margin_right = 14
-	tab_unsel.content_margin_top = 7
-	tab_unsel.content_margin_bottom = 7
+	tab_unsel.content_margin_left = 10
+	tab_unsel.content_margin_right = 10
+	tab_unsel.content_margin_top = 4
+	tab_unsel.content_margin_bottom = 4
+	tab_unsel.corner_radius_top_left = 4
+	tab_unsel.corner_radius_top_right = 4
 	tab_unsel.anti_aliasing = true
 
 	var tab_hov := StyleBoxFlat.new()
 	tab_hov.bg_color = variant.darkened(0.15) if not is_light else variant.lightened(0.2)
 	tab_hov.border_color = Color.TRANSPARENT
-	tab_hov.content_margin_left = 14
-	tab_hov.content_margin_right = 14
-	tab_hov.content_margin_top = 7
-	tab_hov.content_margin_bottom = 7
+	tab_hov.content_margin_left = 10
+	tab_hov.content_margin_right = 10
+	tab_hov.content_margin_top = 4
+	tab_hov.content_margin_bottom = 4
+	tab_hov.corner_radius_top_left = 4
+	tab_hov.corner_radius_top_right = 4
 	tab_hov.anti_aliasing = true
 
 	theme.set_stylebox("tab_selected", &"TabBar", tab_sel)
@@ -384,7 +390,10 @@ static func _build_material3_theme(palette: Dictionary) -> Theme:
 	theme.set_color("font_selected_color", &"TabBar", on_surface)
 	theme.set_color("font_unselected_color", &"TabBar", on_variant)
 	theme.set_color("font_hovered_color", &"TabBar", on_surface)
-	theme.set_constant("tab_separation", &"TabBar", 0)
+	theme.set_font_size("font_size", &"TabBar", 12)
+	theme.set_constant("tab_separation", &"TabBar", 4)
+	theme.set_constant("h_separation", &"TabBar", 6)
+	theme.set_constant("icon_max_width", &"TabBar", 14)
 
 	# Global fonts and typography
 	theme.set_color("font_color", &"Label", on_surface)
