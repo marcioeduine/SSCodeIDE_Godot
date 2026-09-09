@@ -75,6 +75,7 @@ expand_icon = true
 custom_minimum_size = Vector2(0, 35)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_type_variation = &"M3NavRail"
 
 [node name="StatusGit" type="Button" parent="GridContainer/Header/PanelTopBar" unique_id=772580208]
 unique_name_in_owner = true
