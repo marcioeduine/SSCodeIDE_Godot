@@ -141,8 +141,8 @@ Full technical documentation lives in [`docs/`](docs/README.md).
 │   ├── editor_pane.tscn            # Code editor panel scene
 │   ├── explorer_pane.tscn          # File explorer panel scene
 │   ├── nav_rail.tscn               # Navigation rail scene
-│   ├── ui_editor.tscn              # Main IDE scene
-│   └── welcome.tscn                # Instant asynchronous welcome loader scene
+│   ├── splash_screen.scn           # Instant asynchronous welcome loader scene
+│   └── ui_editor.scn               # Main IDE scene
 ├── screenshots/                    # UI screenshots for documentation
 ├── scripts/                        # Modular GDScript controllers & services
 │   ├── agent_workspace_service.gd  # Workspace file mutation service (Agent Mode)

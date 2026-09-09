@@ -268,7 +268,7 @@ func _process(delta: float) -> void:
 				git_progress_label.text = "Generating AI commit message... (%.1fs)" % elapsed
 			status_left.text = "%s Smart Commit · %s (%.1fs)" % [frame, ai_provider, elapsed]
 		else:
-			chat_status_label.text = "[color=#ffa348]%s[/color] [b]Thinking…[/b] [color=#858585](%.1fs)[/color]\n[color=#858585]AI thoughts (live) · Tip: Use /save, /files, /open, /cancel, /clear[/color]" % [frame, elapsed]
+			chat_status_label.text = "[color=#ffa348]%s[/color] [b]Thinking…[/b] [color=#858585](%.1fs)[/color]\n[color=#858585]AI thoughts (live) · Tip: Use /help, /save, /open, /cancel, /clear[/color]" % [frame, elapsed]
 			status_left.text = "%s Thinking · %s (%.1fs) · esc to cancel" % [frame, ai_provider, elapsed]
 			chat.refresh_thinking_panel()
 

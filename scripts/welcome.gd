@@ -2,7 +2,7 @@ extends Control
 
 ## Welcome screen controller — handles initial boot animation and seamless
 ## asynchronous transition to ui_editor.tscn via ResourceLoader threading.
-@export var	_EDITOR_SCENE: String = "res://scene/ui_editor.tscn"
+@export var	_EDITOR_SCENE: String = "res://scene/ui_editor.scn"
 
 @onready var	_progress_bar: ProgressBar = %ProgressBar
 @onready var	_status_label: Label = %StatusLabel
