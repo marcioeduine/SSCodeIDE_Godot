@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://dj8ffo1jh57hq"]
 
 [ext_resource type="Script" uid="uid://b41a5stua1apl" path="res://scripts/welcome.gd" id="1_welcome"]
-[ext_resource type="Theme" uid="uid://by7etx7jpa61x" path="res://themes/dark.theme" id="2_theme"]
 [ext_resource type="Shader" uid="uid://crhc3gwj4ct3f" path="res://themes/glass_backdrop.gdshader" id="3_backdrop"]
-[ext_resource type="FontFile" uid="uid://inw138boqg0r" path="res://fonts/FiraCodeNerdFontPropo-Bold.ttf" id="4_1kia2"]
+[ext_resource type="FontFile" uid="uid://bg0do1qjh60r1" path="res://fonts/FiraCodeNerdFont-Bold.ttf" id="5_hi2bo"]
+[ext_resource type="FontFile" uid="uid://ur238glris0j" path="res://fonts/FiraCodeNerdFontMono-SemiBold.ttf" id="5_si833"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_backdrop"]
 shader = ExtResource("3_backdrop")
@@ -19,37 +19,54 @@ content_margin_top = 5.0
 content_margin_right = 5.0
 content_margin_bottom = 5.0
 draw_center = false
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
 border_color = Color(0, 0.7882353, 1, 1)
 border_blend = true
 corner_radius_top_right = 24
 corner_radius_bottom_left = 24
 corner_detail = 1
 shadow_color = Color(0, 0.7882353, 1, 0.3019608)
-shadow_size = 2
+shadow_size = 3
 
 [sub_resource type="LabelSettings" id="LabelSettings_0h2lm"]
-font = ExtResource("4_1kia2")
+font = ExtResource("5_hi2bo")
 font_size = 60
 font_color = Color(0, 0.7882353, 1, 1)
 outline_size = 2
 outline_color = Color(0, 0.7882353, 1, 0.3019608)
 shadow_color = Color(0, 0.7882353, 1, 0.3019608)
 
+[sub_resource type="LabelSettings" id="LabelSettings_1kia2"]
+font = ExtResource("5_si833")
+font_size = 12
+font_color = Color(0.3137255, 0.3137255, 0.36078432, 1)
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hi2bo"]
 bg_color = Color(0, 0.7882353, 1, 0.3019608)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
 border_color = Color(0, 0.7882353, 1, 1)
 border_blend = true
+corner_radius_top_left = 45
+corner_radius_top_right = 45
+corner_radius_bottom_right = 45
+corner_radius_bottom_left = 45
+shadow_color = Color(0, 0.7882353, 1, 0.3019608)
+shadow_size = 5
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_si833"]
 bg_color = Color(0, 0.7882353, 1, 1)
+corner_radius_top_left = 45
+corner_radius_top_right = 45
+corner_radius_bottom_right = 45
+corner_radius_bottom_left = 45
+shadow_color = Color(0, 0.7882353, 1, 0.3019608)
+shadow_size = 5
 
 [node name="Welcome" type="Control" unique_id=247090184]
 layout_mode = 3
@@ -58,7 +75,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = ExtResource("2_theme")
 script = ExtResource("1_welcome")
 
 [node name="Backdrop" type="ColorRect" parent="." unique_id=178323035]
@@ -71,40 +87,33 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.0784314, 0.0705882, 0.0941176, 1)
 
-[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1856555059]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="VBox" type="VBoxContainer" parent="CenterContainer" unique_id=1930471792]
-layout_mode = 2
-alignment = 1
-
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/VBox" unique_id=855073091]
-layout_mode = 2
-theme_override_constants/separation = 20
-
-[node name="Title" type="Panel" parent="CenterContainer/VBox/VBoxContainer" unique_id=1578801040]
-custom_minimum_size = Vector2(128, 128)
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-theme_override_styles/panel = SubResource("StyleBoxFlat_1kia2")
-
-[node name="Label" type="Label" parent="CenterContainer/VBox/VBoxContainer/Title" unique_id=1811669694]
+[node name="Logo" type="VBoxContainer" parent="." unique_id=855073091]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -8.0
-offset_top = -8.125
-offset_right = 8.0
-offset_bottom = 8.125
+offset_left = -180.0
+offset_top = -82.5
+offset_right = 180.0
+offset_bottom = 82.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Panel" parent="Logo" unique_id=1578801040]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_1kia2")
+
+[node name="Label" type="Label" parent="Logo/Title" unique_id=1811669694]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "SS"
@@ -112,30 +121,45 @@ label_settings = SubResource("LabelSettings_0h2lm")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Subtitle" type="Label" parent="CenterContainer/VBox/VBoxContainer" unique_id=1023776781]
+[node name="Subtitle" type="Label" parent="Logo" unique_id=1023776781]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.631373, 0.631373, 0.65098, 1)
-theme_override_font_sizes/font_size = 13
-text = "SS Code: Integrated Development Environment"
+size_flags_vertical = 1
+theme_override_fonts/font = ExtResource("5_hi2bo")
+text = "SS - Code: Integrated Development Environment"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Spacer" type="Control" parent="CenterContainer/VBox" unique_id=193819986]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
+[node name="Progress" type="VBoxContainer" parent="." unique_id=1930471792]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -256.0
+offset_top = -74.0
+offset_right = 256.0
+offset_bottom = -50.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 10
 
-[node name="ProgressBar" type="ProgressBar" parent="CenterContainer/VBox" unique_id=1581024803]
+[node name="StatusLabel" type="Label" parent="Progress" unique_id=1766278997]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 6)
 layout_mode = 2
+size_flags_vertical = 1
+theme_override_colors/font_color = Color(0, 0.7882353, 1, 0.3019608)
+theme_override_font_sizes/font_size = 11
+text = "Initialising workspace..."
+label_settings = SubResource("LabelSettings_1kia2")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ProgressBar" type="ProgressBar" parent="Progress" unique_id=1581024803]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+size_flags_vertical = 1
 theme_override_styles/background = SubResource("StyleBoxFlat_hi2bo")
 theme_override_styles/fill = SubResource("StyleBoxFlat_si833")
 show_percentage = false
-
-[node name="StatusLabel" type="Label" parent="CenterContainer/VBox" unique_id=1766278997]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.556863, 0.556863, 0.576471, 1)
-theme_override_font_sizes/font_size = 11
-text = "Initialising workspace..."
-horizontal_alignment = 1
