@@ -4,6 +4,7 @@
 [ext_resource type="Shader" uid="uid://crhc3gwj4ct3f" path="res://themes/glass_backdrop.gdshader" id="3_backdrop"]
 [ext_resource type="FontFile" uid="uid://bg0do1qjh60r1" path="res://fonts/FiraCodeNerdFont-Bold.ttf" id="5_hi2bo"]
 [ext_resource type="FontFile" uid="uid://ur238glris0j" path="res://fonts/FiraCodeNerdFontMono-SemiBold.ttf" id="5_si833"]
+[ext_resource type="Texture2D" uid="uid://c6qwfu2h8im7q" path="res://icon.svg" id="5_xdjj8"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_backdrop"]
 shader = ExtResource("3_backdrop")
@@ -12,32 +13,6 @@ shader_parameter/ambient_colour = Color(0.145098, 0.121569, 0.180392, 1)
 shader_parameter/accent_colour = Color(0.188235, 0.145098, 0.231373, 1)
 shader_parameter/glow_strength = 0.12
 shader_parameter/motion_speed = 0.008
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1kia2"]
-content_margin_left = 5.0
-content_margin_top = 5.0
-content_margin_right = 5.0
-content_margin_bottom = 5.0
-draw_center = false
-border_width_left = 5
-border_width_top = 5
-border_width_right = 5
-border_width_bottom = 5
-border_color = Color(0, 0.7882353, 1, 1)
-border_blend = true
-corner_radius_top_right = 24
-corner_radius_bottom_left = 24
-corner_detail = 1
-shadow_color = Color(0, 0.7882353, 1, 0.3019608)
-shadow_size = 3
-
-[sub_resource type="LabelSettings" id="LabelSettings_0h2lm"]
-font = ExtResource("5_hi2bo")
-font_size = 60
-font_color = Color(0, 0.7882353, 1, 1)
-outline_size = 2
-outline_color = Color(0, 0.7882353, 1, 0.3019608)
-shadow_color = Color(0, 0.7882353, 1, 0.3019608)
 
 [sub_resource type="LabelSettings" id="LabelSettings_1kia2"]
 font = ExtResource("5_si833")
@@ -102,24 +77,13 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 20
 
-[node name="Title" type="Panel" parent="Logo" unique_id=1578801040]
+[node name="TextureRect" type="TextureRect" parent="Logo" unique_id=1651711130]
 custom_minimum_size = Vector2(128, 128)
 layout_mode = 2
 size_flags_horizontal = 4
-size_flags_vertical = 4
-theme_override_styles/panel = SubResource("StyleBoxFlat_1kia2")
-
-[node name="Label" type="Label" parent="Logo/Title" unique_id=1811669694]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "SS"
-label_settings = SubResource("LabelSettings_0h2lm")
-horizontal_alignment = 1
-vertical_alignment = 1
+size_flags_vertical = 6
+texture = ExtResource("5_xdjj8")
+expand_mode = 1
 
 [node name="Subtitle" type="Label" parent="Logo" unique_id=1023776781]
 layout_mode = 2

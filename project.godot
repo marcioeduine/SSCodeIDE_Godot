@@ -10,12 +10,12 @@ config_version=5
 
 [application]
 
-config/name="SSCodeIDE"
+config/name="SS - Code IDE"
 run/main_scene="res://scene/welcome.tscn"
 config/features=PackedStringArray("4.7")
-boot_splash/stretch_mode=5
-boot_splash/image="uid://c0bjnbod0tl5h"
-config/icon="res://icon.png"
+boot_splash/stretch_mode=0
+boot_splash/image="uid://c2im3sw7d5fv7"
+config/icon="uid://c6qwfu2h8im7q"
 
 [debug]
 
