@@ -6,42 +6,35 @@ SSCodeIDE is a single-window Godot application. There is no separate language se
 
 - **Engine:** Godot 4.x (`config/features` includes `4.7`).
 - **Language:** GDScript only for application code.
-- **Entry:** `run/main_scene` = `res://scene/ui_editor.tscn`.
+- **Entry:** `run/main_scene` = `res://scene/welcome.tscn` (or `res://scene/ui_editor.tscn`).
 - **Viewport:** 1600×900, maximised, `canvas_items` stretch with `expand` aspect.
 
-## Layers
+## Layers & Modular Architecture
 
 ```
-ui_editor.tscn  →  ui_editor.gd (primary orchestrator)
-                      ├── NavRail                (slim vertical activity rail with icons & dynamic theme toggle)
-                      ├── AppBrandButton         (brand menu button with About/Close)
-                      ├── ThemeController        (Dark/Light application, persistence, XML import)
+ui_editor.tscn  →  ui_editor.gd (primary orchestrator & public state holder)
+                      ├── EditorChatController   (AI chat, reasoning tokens, stream polling, BBCode sanitisation)
+                      ├── EditorFileManager      (multi-tab buffers, file tree, workspace search & replace)
+                      ├── EditorGitController     (Git status, smart commits, push/pull/sync, logs & diffs)
+                      ├── EditorThemeManager     (Dark/Light application, Kitty/Fish highlighters, XML import)
+                      ├── EditorSidebarBuilder   (Lazy on-demand sidebar panel creation for Search, Git, Themes, Config, Help)
+                      ├── EditorDialogController  (Lazy on-demand modal overlay dialogs, input prompts, toasts)
+                      ├── EditorInputHandler     (Keyboard shortcuts routing, ESC focus release, CodeEdit input hooks)
                       ├── ThemeColorScheme       (Dark and Light mode palettes)
-                      ├── ThemeResourceRegistry  (builds & compiles .theme resources)
-                      ├── FileController         (file tree and buffer management)
-                      ├── FileKind               (icons / extension map)
+                      ├── ThemeResourceRegistry  (theme resource compiler with CACHE_MODE_REUSE)
+                      ├── FileKind               (icon mapping & 14px Lanczos texture scaling)
                       ├── GitService             (OS.execute git)
-                      ├── AIService              (HTTPRequest → NVIDIA NIM)
-                      ├── WebSearchService       (live web/internet search retrieval & context injection)
-                      ├── CodeEditorTools        (code completion & editor utilities)
-                      ├── ChatMarkdownRenderer   (chat markdown & GFM table rendering)
-                      └── MarkdownPreviewRenderer(markdown document preview rendering)
+                      ├── AIService              (HTTPRequest → NVIDIA NIM API)
+                      ├── WebSearchService       (live web search retrieval & context injection)
+                      └── ChatMarkdownRenderer   (chat Markdown & GFM table renderer)
 ```
 
-### `ui_editor.gd`
+### Modular Controller Components
 
-Owns:
-
-- Multi-tab `CodeEdit` buffers and dirty state
-- Workspace `Tree` (`FileTree`)
-- Minimal Collapsible Sidebar Navigation (`NavRail` + collapsible `ExplorerPane` drawer)
-- Dynamic theme toggle (`☀️`/`🌙`) and `AppBrand` (`favicon.svg`)
-- Status bar (branch indicator, dirty count, language, cursor position, AI status)
-- AI side panel (input, markdown preview, slash commands)
-- Keyboard routing (`_unhandled_input`)
-- Theme orchestration delegating to `ThemeController`, `ThemeColorScheme`, and `ThemeResourceRegistry`
-
-It never embeds an API key. Chat and Smart Commit call `AIService.get_nvidia_api_key()` and send `Authorization: Bearer …`.
+- **`ui_editor.gd`**: Primary orchestrator owning the public UI node references and state variables. Delegates feature execution to dedicated sub-controller instances (`chat`, `files`, `git`, `themes`, `sidebar`, `dialog`, `input_handler`).
+- **`editor_sidebar_builder.gd`**: Implements lazy on-demand panel construction (`ensure_search_panel()`, `ensure_git_panel()`, etc.), instantiating secondary UI panels only when their NavRail tabs are clicked.
+- **`editor_dialog_controller.gd`**: Implements lazy modal overlay creation (`ensure_overlay_dialog()`), building dialog panels programmatically when needed rather than cluttering the initial Scene Tree.
+- **`theme_resource_registry.gd`**: Loads built-in and custom theme resources using `CACHE_MODE_REUSE` by default, eliminating disk I/O re-parsing latency during transition.
 
 ### `web_search_service.gd` (`class_name WebSearchService`)
 
@@ -66,7 +59,7 @@ Wraps the system `git` binary (`OS.execute`). Used for status, diff, log, commit
 
 ### `file_kind.gd`
 
-Maps extensions (`.gd`, `.py`, `.js`, `.ts`, `.cpp`, `.rs`, `.go`, `.tscn`, `.json`, images, audio, archives, …) to SVG icons in `icons/`.
+Maps extensions (`.gd`, `.py`, `.js`, `.ts`, `.cpp`, `.rs`, `.go`, `.tscn`, `.json`, images, audio, archives, …) to SVG icons in `icons/` and generates scaled 14px Lanczos vector textures for tab bars.
 
 ## Packed resources vs host files
 

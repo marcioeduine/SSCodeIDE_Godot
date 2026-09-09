@@ -50,10 +50,10 @@ Full technical documentation lives in [`docs/`](docs/README.md).
   - **Live Internet & Web Search (`WebSearchService`)**: Real-time web querying (`/search <query>`, `/web <query>`) for up-to-date documentation, release notes, and real-time knowledge.
   - **Intimate Pair-Programming Persona ('Tu')**: Friendly, warm, supportive, and intimate tone in European Portuguese (pt-PT) with British English (en-GB) code standards.
   - Direct asynchronous HTTP client communicating with **NVIDIA NIM API**, supporting:
-    - `NVIDIA Nemotron` (`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, `nvidia/nemotron-3.5-lightning-30b-a3b`)
-    - `Moonshot Kimi K3` (`moonshotai/kimi-k3`)
-    - `DeepSeek V4` (`deepseek-ai/deepseek-v4-pro-0813`)
-    - `Laguna Code` (`poolside/laguna-xs-2.1`)
+	- `NVIDIA Nemotron` (`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`, `nvidia/nemotron-3.5-lightning-30b-a3b`)
+	- `Moonshot Kimi K3` (`moonshotai/kimi-k3`)
+	- `DeepSeek V4` (`deepseek-ai/deepseek-v4-pro-0813`)
+	- `Laguna Code` (`poolside/laguna-xs-2.1`)
   - Intelligent multi-model candidate fallback mechanism to mitigate transient service errors.
   - On first Chat or Smart Commit use the editor asks for an NVIDIA NIM API key and stores it in Godot user data (`user://ai_secrets.cfg`). Change it under Config. Optional override: `NVIDIA_NIM_API_KEY` or a sidecar `.env` (see `.env.example`). Never commit real keys.
   - Non-blocking asynchronous requests with cancellation support (<kbd>Esc</kbd>) and animated toast notifications.
@@ -118,20 +118,28 @@ Full technical documentation lives in [`docs/`](docs/README.md).
 ├── fonts/                          # Typography (FiraCode Nerd Font)
 ├── icons/                          # SVG icons and visual assets
 ├── scene/                          # Godot scenes
-│   └── ui_editor.tscn              # Main IDE scene and node hierarchy
-├── scripts/                        # Core GDScript modules
+│   ├── ui_editor.tscn              # Main IDE scene
+│   └── welcome.tscn                # Instant asynchronous welcome loader scene
+├── scripts/                        # Modular GDScript controllers & services
 │   ├── agent_workspace_service.gd  # Workspace file mutation service
 │   ├── ai_service.gd               # NVIDIA NIM API integration and fallback logic
 │   ├── app_brand_button.gd         # AppBrand menu button controller
 │   ├── chat_markdown_renderer.gd   # Markdown & GFM renderer for chat
 │   ├── code_editor_service.gd      # Code completion & editor utilities
+│   ├── editor_chat_controller.gd   # AI assistant, reasoning tokens & streaming controller
+│   ├── editor_dialog_controller.gd # Lazy modal overlay dialog & toast controller
+│   ├── editor_file_manager.gd      # Multi-tab buffers, file tree & workspace search
+│   ├── editor_git_controller.gd   # Git status, smart commits, push/pull/sync & diffs
+│   ├── editor_input_handler.gd     # Global keyboard shortcuts & CodeEdit input router
+│   ├── editor_sidebar_builder.gd   # Lazy on-demand sidebar panel generator
+│   ├── editor_theme_manager.gd     # Theme manager, Kitty/Fish highlighters & XML importer
 │   ├── file_controller.gd          # File explorer and buffer management
-│   ├── file_kind.gd                # File type categorisation and icon mapping
+│   ├── file_kind.gd                # File type categorisation & 14px Lanczos icon scaling
 │   ├── git_service.gd              # Native Git & GitHub version control service
 │   ├── markdown_preview_renderer.gd# Markdown tab preview renderer
 │   ├── theme_color_scheme.gd       # Theme palette schema & definitions
 │   ├── theme_controller.gd         # Theme application and config controller
-│   ├── theme_resource_registry.gd  # Dynamic .theme builder and resource manager
+│   ├── theme_resource_registry.gd  # Theme resource manager with cache reuse (CACHE_MODE_REUSE)
 │   ├── ui_editor.gd                # Primary IDE orchestrator
 │   └── web_search_service.gd       # Real-time Internet and web search service
 ├── test/                           # Automated unit tests (GUT)
